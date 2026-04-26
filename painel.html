@@ -59,12 +59,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </head>
 <body>
 <div class="wrap">
-<div style="position:fixed;bottom:14px;right:14px;z-index:999;display:flex;align-items:center;gap:8px;">
-  <span style="font-size:11px;color:#8b949e;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:4px 10px;" id="sync-status">pronto</span>
-  <button onclick="salvarNuvem()" style="font-size:13px;font-weight:600;padding:7px 18px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;box-shadow:0 0 10px #23863640;" title="Salvar configurações na nuvem">
-    💾 Salvar
-  </button>
-</div>
+
 <div style="position:fixed;top:10px;right:10px;z-index:999;">
   <button onclick="logout()" style="font-size:11px;padding:4px 12px;border-radius:6px;border:0.5px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;">Sair</button>
 </div>
@@ -127,6 +122,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <span style="font-size:12px;color:#8b949e;">Status:</span>
       <span id="mqtt-st" style="font-size:12px;color:#e24b4a;font-weight:600;">Desconectado</span>
       <button class="btn-b" onclick="conectarMQTT()">Conectar</button>
+    </div>
+  </div>
+
+  <div class="card" style="border-color:#238636;">
+    <div class="sh" style="margin-bottom:10px;">salvar configuracoes na nuvem</div>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:12px;">Salva todas as configuracoes (coils, monitoramento, set points) no JSONBin. Carrega automaticamente em qualquer dispositivo.</p>
+    <div class="row" style="justify-content:space-between;">
+      <span style="font-size:12px;" id="sync-status" style="color:#8b949e;">pronto</span>
+      <button onclick="salvarNuvem()" style="font-size:14px;font-weight:600;padding:9px 28px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;">
+        💾 Salvar na Nuvem
+      </button>
     </div>
   </div>
 </div>
@@ -227,7 +233,10 @@ function getConfig() {
   };
 }
 
+var carregando = false; // flag para bloquear save durante load
+
 function aplicarConfig(c) {
+  carregando = true; // bloqueia qualquer save automático
   if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
   if (c.local)   document.getElementById('cfg-l').value = c.local;
   if (c.device)  document.getElementById('cfg-d').value = c.device;
@@ -236,6 +245,7 @@ function aplicarConfig(c) {
   if (c.qty)   { qty = c.qty; document.getElementById('qty-lbl').textContent = qty; document.getElementById('m-sp').textContent = qty; }
   if (c.sps)     sps   = c.sps;
   updateBase(); updateTopics(); updateMetrics(); renderCoils(); renderMons(); renderSPs();
+  carregando = false; // libera após load completo
 }
 
 function mostrarStatus(msg, cor) {
@@ -244,6 +254,7 @@ function mostrarStatus(msg, cor) {
 }
 
 function salvarNuvem() {
+  if (carregando) return; // bloqueado durante load
   if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
     mostrarStatus('⚠️ Master Key não configurada', '#e24b4a');
     return;
@@ -300,7 +311,8 @@ function carregarNuvem() {
 
 // ── PERSISTÊNCIA LOCAL (backup) ─────────────────────
 function salvarConfig() {
-  salvarNuvem();
+  if (carregando) return; // bloqueado durante load
+  localStorage.setItem("esp32config", JSON.stringify(getConfig()));
 }
 function salvarConfigLocal() {
   var config = {
