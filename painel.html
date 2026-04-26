@@ -59,6 +59,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </head>
 <body>
 <div class="wrap">
+<div style="position:fixed;bottom:10px;right:10px;z-index:999;background:#161b22;border:0.5px solid #30363d;border-radius:8px;padding:5px 12px;">
+  <span style="font-size:11px;" id="sync-status">Iniciando...</span>
+</div>
 <div style="position:fixed;top:10px;right:10px;z-index:999;">
   <button onclick="logout()" style="font-size:11px;padding:4px 12px;border-radius:6px;border:0.5px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;">Sair</button>
 </div>
@@ -198,8 +201,106 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 
 
-// ── PERSISTÊNCIA DE CONFIGURAÇÕES ────────────────────
+
+// ── JSONBIN.IO — CONFIGURAÇÃO ─────────────────────────
+var JSONBIN_ID  = '69ee74c6856a68218976161c';
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
+// ⚠️ Insira sua X-MASTER-KEY abaixo:
+var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
+// ─────────────────────────────────────────────────────
+
+var salvandoNuvem = false;
+var timerSalvar = null;
+
+function getConfig() {
+  return {
+    projeto: document.getElementById('cfg-p').value,
+    local:   document.getElementById('cfg-l').value,
+    device:  document.getElementById('cfg-d').value,
+    coils:   coils,
+    mons:    mons,
+    qty:     qty,
+    sps:     sps
+  };
+}
+
+function aplicarConfig(c) {
+  if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
+  if (c.local)   document.getElementById('cfg-l').value = c.local;
+  if (c.device)  document.getElementById('cfg-d').value = c.device;
+  if (c.coils)   coils = c.coils;
+  if (c.mons)    mons  = c.mons;
+  if (c.qty)   { qty = c.qty; document.getElementById('qty-lbl').textContent = qty; document.getElementById('m-sp').textContent = qty; }
+  if (c.sps)     sps   = c.sps;
+  updateBase(); updateTopics(); updateMetrics(); renderCoils(); renderMons(); renderSPs();
+}
+
+function mostrarStatus(msg, cor) {
+  var el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.color = cor || '#8b949e'; }
+}
+
+function salvarNuvem() {
+  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') return;
+  // Debounce — espera 1.5s após última mudança
+  clearTimeout(timerSalvar);
+  timerSalvar = setTimeout(function() {
+    mostrarStatus('Salvando...', '#ef9f27');
+    var config = getConfig();
+    // Salva também no localStorage como backup
+    localStorage.setItem('esp32config', JSON.stringify(config));
+    fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY
+      },
+      body: JSON.stringify({ config: config })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { mostrarStatus('Salvo na nuvem ✓', '#3fb950'); })
+    .catch(function() {
+      mostrarStatus('Erro ao salvar (usando local)', '#e24b4a');
+    });
+  }, 1500);
+}
+
+function carregarNuvem() {
+  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
+    mostrarStatus('⚠️ Insira a Master Key no painel.html', '#ef9f27');
+    // Tenta carregar do localStorage como fallback
+    var raw = localStorage.getItem('esp32config');
+    if (raw) { try { aplicarConfig(JSON.parse(raw)); mostrarStatus('Config local carregada', '#8b949e'); } catch(e) {} }
+    return;
+  }
+  mostrarStatus('Carregando da nuvem...', '#ef9f27');
+  fetch(JSONBIN_URL, {
+    headers: { 'X-Master-Key': JSONBIN_KEY }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
+      aplicarConfig(data.record.config);
+      mostrarStatus('Config carregada da nuvem ✓', '#3fb950');
+    } else {
+      mostrarStatus('Sem config salva — usando padrão', '#8b949e');
+      updateBase(); updateTopics(); updateMetrics(); renderCoils(); renderMons(); renderSPs();
+    }
+  })
+  .catch(function() {
+    mostrarStatus('Erro de rede — usando config local', '#e24b4a');
+    var raw = localStorage.getItem('esp32config');
+    if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e) {} }
+    else { updateBase(); updateTopics(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); }
+  });
+}
+// ─────────────────────────────────────────────────────
+
+// ── PERSISTÊNCIA LOCAL (backup) ─────────────────────
 function salvarConfig() {
+  salvarNuvem();
+}
+function salvarConfigLocal() {
   var config = {
     projeto: document.getElementById('cfg-p').value,
     local:   document.getElementById('cfg-l').value,
@@ -212,7 +313,7 @@ function salvarConfig() {
   localStorage.setItem('esp32config', JSON.stringify(config));
 }
 
-function carregarConfig() {
+function carregarConfigLocal() {
   var raw = localStorage.getItem('esp32config');
   if (!raw) return false;
   try {
@@ -618,14 +719,8 @@ function updateMetrics(){
   document.getElementById('m-on').textContent=on;
   document.getElementById('m-on').style.color=on>0?'#3fb950':'#e8eaf0';
 }
-// Carrega configurações salvas ou usa padrão
-if (carregarConfig()) {
-  updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
-  console.log('Configuracoes carregadas do localStorage!');
-} else {
-  updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
-  console.log('Usando configuracoes padrao');
-}
+// Carrega configurações da nuvem ao iniciar
+carregarNuvem();
 </script>
 </body>
 </html>
