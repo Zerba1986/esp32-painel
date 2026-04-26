@@ -59,8 +59,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </head>
 <body>
 <div class="wrap">
-<div style="position:fixed;bottom:10px;right:10px;z-index:999;background:#161b22;border:0.5px solid #30363d;border-radius:8px;padding:5px 12px;">
-  <span style="font-size:11px;" id="sync-status">Iniciando...</span>
+<div style="position:fixed;bottom:14px;right:14px;z-index:999;display:flex;align-items:center;gap:8px;">
+  <span style="font-size:11px;color:#8b949e;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:4px 10px;" id="sync-status">pronto</span>
+  <button onclick="salvarNuvem()" style="font-size:13px;font-weight:600;padding:7px 18px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;box-shadow:0 0 10px #23863640;" title="Salvar configurações na nuvem">
+    💾 Salvar
+  </button>
 </div>
 <div style="position:fixed;top:10px;right:10px;z-index:999;">
   <button onclick="logout()" style="font-size:11px;padding:4px 12px;border-radius:6px;border:0.5px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;">Sair</button>
@@ -241,28 +244,27 @@ function mostrarStatus(msg, cor) {
 }
 
 function salvarNuvem() {
-  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') return;
-  // Debounce — espera 1.5s após última mudança
-  clearTimeout(timerSalvar);
-  timerSalvar = setTimeout(function() {
-    mostrarStatus('Salvando...', '#ef9f27');
-    var config = getConfig();
-    // Salva também no localStorage como backup
-    localStorage.setItem('esp32config', JSON.stringify(config));
-    fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_KEY
-      },
-      body: JSON.stringify({ config: config })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function() { mostrarStatus('Salvo na nuvem ✓', '#3fb950'); })
-    .catch(function() {
-      mostrarStatus('Erro ao salvar (usando local)', '#e24b4a');
-    });
-  }, 1500);
+  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
+    mostrarStatus('⚠️ Master Key não configurada', '#e24b4a');
+    return;
+  }
+  mostrarStatus('Salvando...', '#ef9f27');
+  var config = getConfig();
+  // Salva no localStorage como backup local
+  localStorage.setItem('esp32config', JSON.stringify(config));
+  fetch(JSONBIN_URL, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_KEY
+    },
+    body: JSON.stringify({ config: config })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() { mostrarStatus('✅ Salvo na nuvem!', '#3fb950'); })
+  .catch(function() {
+    mostrarStatus('❌ Erro — salvo localmente', '#e24b4a');
+  });
 }
 
 function carregarNuvem() {
@@ -369,8 +371,7 @@ function gst(i,t){return getBase()+'/setpoints/sp'+String(i+1).padStart(2,'0')+'
 function updateBase(){
   document.getElementById('hdr-base').textContent=getBase();
   updateTopics();renderCoils();renderSPs();
-  salvarConfig();
-}
+  }
 function updateTopics(){
   var b=getBase();
   var items=[['telemetria',b+'/telemetria'],['status',b+'/status'],['coil_01/cmd',b+'/atuadores/coil_01/comando'],['coil_01/est',b+'/atuadores/coil_01/estado'],['sp01/cmd',b+'/setpoints/sp01/comando'],['sp01/est',b+'/setpoints/sp01/estado']];
@@ -450,11 +451,11 @@ function addCoil(){
   if(coils.length>=MAX_COILS)return;
   var pins=[2,26,27];
   coils.push({nome:'Coil '+String(coils.length+1).padStart(2,'0'),pino:pins[coils.length]||14,estado:false,open:true,msgA:'1',msgD:'0'});
-  renderCoils();updateMetrics();salvarConfig();
+  renderCoils();updateMetrics();
 }
-function removeCoil(i){coils.splice(i,1);renderCoils();updateMetrics();checkSPs();salvarConfig();}
+function removeCoil(i){coils.splice(i,1);renderCoils();updateMetrics();checkSPs();}
 function allCoils(s){coils.forEach(function(_,i){setCoil(i,s);});}
-function setCoil(i,s){coils[i].estado=s;mqttPub(gct(i,'comando'),s?coils[i].msgA:coils[i].msgD);renderCoils();updateMetrics();salvarConfig();}
+function setCoil(i,s){coils[i].estado=s;mqttPub(gct(i,'comando'),s?coils[i].msgA:coils[i].msgD);renderCoils();updateMetrics();}
 function toggleCoilPanel(i){
   coils[i].open=!coils[i].open;
   var p=document.getElementById('cp-'+i),a=document.getElementById('ca-'+i);
@@ -508,10 +509,10 @@ function addMon(tipo){
     ?{tipo:'analog',nome:'Sensor '+(i+1),topico:base+'/telemetria',jsonKey:'volt',unid:'V',min:0,max:3.3,val:0,open:true}
     :{tipo:'digital',nome:'Entrada '+(i+1),topico:base+'/entradas/digital/btn_01',jsonKey:'btn_01',valT:'1',valF:'0',estado:false,open:true}
   );
-  renderMons();updateMetrics();updateSpMonSels();salvarConfig();
+  renderMons();updateMetrics();updateSpMonSels();
   if(mqclient&&mqclient.connected)mqclient.subscribe(mons[i].topico);
 }
-function removeMon(i){mons.splice(i,1);renderMons();updateMetrics();updateSpMonSels();checkSPs();salvarConfig();}
+function removeMon(i){mons.splice(i,1);renderMons();updateMetrics();updateSpMonSels();checkSPs();}
 function toggleMonPanel(i){
   mons[i].open=!mons[i].open;
   var p=document.getElementById('mp-'+i),a=document.getElementById('ma-'+i);
@@ -597,7 +598,7 @@ var CORES=[
 var TIPOS=['Histerese','Janela'],ACOES=['Dashboard','MQTT','Dashboard+MQTT'];
 var qty=2,sps=Array.from({length:10},function(_,i){return {nome:'SP'+String(i+1).padStart(2,'0'),tipo:0,monIdx:-1,min:0.5+i*0.3,max:1.0+i*0.3,cor:i%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:false};});
 
-function setQty(v){qty=parseInt(v);document.getElementById('qty-lbl').textContent=v;document.getElementById('m-sp').textContent=v;renderSPs();salvarConfig();}
+function setQty(v){qty=parseInt(v);document.getElementById('qty-lbl').textContent=v;document.getElementById('m-sp').textContent=v;renderSPs();}
 function updateSpMonSels(){
   for(var i=0;i<qty;i++){
     var s=document.getElementById('msel-'+i);if(!s)continue;
@@ -711,8 +712,7 @@ function checkSPs(){
   document.getElementById('m-spac').textContent=ac;
   document.getElementById('m-spac').style.color=ac>0?'#3fb950':'#e8eaf0';
   document.getElementById('sp-status').innerHTML=pills.length?pills.join(''):'<p style="font-size:12px;color:#8b949e;">Nenhum set point acionado</p>';
-  salvarConfig();
-}
+  }
 function updateMetrics(){
   var on=coils.filter(function(c){return c.estado;}).length;
   document.getElementById('m-coils').textContent=coils.length;
