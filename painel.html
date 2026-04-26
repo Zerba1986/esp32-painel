@@ -99,7 +99,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <!-- CONFIG -->
 <div class="pane active" id="pane-cfg">
   <div class="card">
-    <div class="sh">identificacao do dispositivo</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div class="sh" style="margin:0;">identificacao do dispositivo</div><button class="btn-del" onclick="limparConfig()" title="Limpar configuracoes salvas">&#128465; Limpar config</button></div>
     <div class="grid3" style="margin-bottom:10px;">
       <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" oninput="updateBase()"></div>
       <div class="col"><label class="lbl">Local</label><input type="text" id="cfg-l" value="sala" oninput="updateBase()"></div>
@@ -197,6 +197,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 })();
 
 
+
+// ── PERSISTÊNCIA DE CONFIGURAÇÕES ────────────────────
+function salvarConfig() {
+  var config = {
+    projeto: document.getElementById('cfg-p').value,
+    local:   document.getElementById('cfg-l').value,
+    device:  document.getElementById('cfg-d').value,
+    coils:   coils,
+    mons:    mons,
+    qty:     qty,
+    sps:     sps
+  };
+  localStorage.setItem('esp32config', JSON.stringify(config));
+}
+
+function carregarConfig() {
+  var raw = localStorage.getItem('esp32config');
+  if (!raw) return false;
+  try {
+    var c = JSON.parse(raw);
+    if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
+    if (c.local)   document.getElementById('cfg-l').value = c.local;
+    if (c.device)  document.getElementById('cfg-d').value = c.device;
+    if (c.coils)   coils = c.coils;
+    if (c.mons)    mons  = c.mons;
+    if (c.qty)   { qty = c.qty; document.getElementById('qty-lbl').textContent = qty; document.getElementById('m-sp').textContent = qty; }
+    if (c.sps)     sps   = c.sps;
+    return true;
+  } catch(e) { return false; }
+}
+
+function limparConfig() {
+  if (confirm('Limpar todas as configurações salvas?')) {
+    localStorage.removeItem('esp32config');
+    location.reload();
+  }
+}
+// ─────────────────────────────────────────────────────
+
 function logout() {
   sessionStorage.removeItem('esp32auth');
   window.location.href = 'index.html';
@@ -229,6 +268,7 @@ function gst(i,t){return getBase()+'/setpoints/sp'+String(i+1).padStart(2,'0')+'
 function updateBase(){
   document.getElementById('hdr-base').textContent=getBase();
   updateTopics();renderCoils();renderSPs();
+  salvarConfig();
 }
 function updateTopics(){
   var b=getBase();
@@ -309,11 +349,11 @@ function addCoil(){
   if(coils.length>=MAX_COILS)return;
   var pins=[2,26,27];
   coils.push({nome:'Coil '+String(coils.length+1).padStart(2,'0'),pino:pins[coils.length]||14,estado:false,open:true,msgA:'1',msgD:'0'});
-  renderCoils();updateMetrics();
+  renderCoils();updateMetrics();salvarConfig();
 }
-function removeCoil(i){coils.splice(i,1);renderCoils();updateMetrics();checkSPs();}
+function removeCoil(i){coils.splice(i,1);renderCoils();updateMetrics();checkSPs();salvarConfig();}
 function allCoils(s){coils.forEach(function(_,i){setCoil(i,s);});}
-function setCoil(i,s){coils[i].estado=s;mqttPub(gct(i,'comando'),s?coils[i].msgA:coils[i].msgD);renderCoils();updateMetrics();}
+function setCoil(i,s){coils[i].estado=s;mqttPub(gct(i,'comando'),s?coils[i].msgA:coils[i].msgD);renderCoils();updateMetrics();salvarConfig();}
 function toggleCoilPanel(i){
   coils[i].open=!coils[i].open;
   var p=document.getElementById('cp-'+i),a=document.getElementById('ca-'+i);
@@ -367,10 +407,10 @@ function addMon(tipo){
     ?{tipo:'analog',nome:'Sensor '+(i+1),topico:base+'/telemetria',jsonKey:'volt',unid:'V',min:0,max:3.3,val:0,open:true}
     :{tipo:'digital',nome:'Entrada '+(i+1),topico:base+'/entradas/digital/btn_01',jsonKey:'btn_01',valT:'1',valF:'0',estado:false,open:true}
   );
-  renderMons();updateMetrics();updateSpMonSels();
+  renderMons();updateMetrics();updateSpMonSels();salvarConfig();
   if(mqclient&&mqclient.connected)mqclient.subscribe(mons[i].topico);
 }
-function removeMon(i){mons.splice(i,1);renderMons();updateMetrics();updateSpMonSels();checkSPs();}
+function removeMon(i){mons.splice(i,1);renderMons();updateMetrics();updateSpMonSels();checkSPs();salvarConfig();}
 function toggleMonPanel(i){
   mons[i].open=!mons[i].open;
   var p=document.getElementById('mp-'+i),a=document.getElementById('ma-'+i);
@@ -456,7 +496,7 @@ var CORES=[
 var TIPOS=['Histerese','Janela'],ACOES=['Dashboard','MQTT','Dashboard+MQTT'];
 var qty=2,sps=Array.from({length:10},function(_,i){return {nome:'SP'+String(i+1).padStart(2,'0'),tipo:0,monIdx:-1,min:0.5+i*0.3,max:1.0+i*0.3,cor:i%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:false};});
 
-function setQty(v){qty=parseInt(v);document.getElementById('qty-lbl').textContent=v;document.getElementById('m-sp').textContent=v;renderSPs();}
+function setQty(v){qty=parseInt(v);document.getElementById('qty-lbl').textContent=v;document.getElementById('m-sp').textContent=v;renderSPs();salvarConfig();}
 function updateSpMonSels(){
   for(var i=0;i<qty;i++){
     var s=document.getElementById('msel-'+i);if(!s)continue;
@@ -570,6 +610,7 @@ function checkSPs(){
   document.getElementById('m-spac').textContent=ac;
   document.getElementById('m-spac').style.color=ac>0?'#3fb950':'#e8eaf0';
   document.getElementById('sp-status').innerHTML=pills.length?pills.join(''):'<p style="font-size:12px;color:#8b949e;">Nenhum set point acionado</p>';
+  salvarConfig();
 }
 function updateMetrics(){
   var on=coils.filter(function(c){return c.estado;}).length;
@@ -577,7 +618,14 @@ function updateMetrics(){
   document.getElementById('m-on').textContent=on;
   document.getElementById('m-on').style.color=on>0?'#3fb950':'#e8eaf0';
 }
-updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
+// Carrega configurações salvas ou usa padrão
+if (carregarConfig()) {
+  updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
+  console.log('Configuracoes carregadas do localStorage!');
+} else {
+  updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
+  console.log('Usando configuracoes padrao');
+}
 </script>
 </body>
 </html>
