@@ -189,7 +189,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div class="row">
       <span style="font-size:12px;color:#8b949e;">Status:</span>
       <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#e24b4a;">Desconectado</span>
-      <button class="btn-b" onclick="conectarMQTT()">&#128268; Conectar</button>
+      <button class="btn-b" id="btn-conectar" onclick="conectarMQTT()">&#128268; Conectar</button>
     </div>
   </div>
   <div class="card" style="border-color:#238636;">
@@ -368,26 +368,13 @@ function refreshPainel() {
 }
 
 function resubscribirTopicos() {
-  // Re-subscreve sem desconectar o MQTT
   if (!mqclient || !mqclient.connected) {
     syncSt('MQTT desconectado — conecte primeiro', '#e24b4a');
     return;
   }
-  var base = getBase();
-  mqclient.subscribe(base+'/status',             {qos:1});
-  mqclient.subscribe(base+'/telemetria',         {qos:1});
-  mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
-  mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
-  // Subscreve tópicos únicos das entradas de monitoramento
-  var tops = {};
-  mons.forEach(function(m){
-    if (m.topico && !tops[m.topico]) {
-      tops[m.topico] = 1;
-      mqclient.subscribe(m.topico, {qos:1});
-    }
-  });
-  addLog('clog', '<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos', 'pub');
-  syncSt('Topicos atualizados!', '#3fb950');
+  subscreverTopicos();
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos','pub');
+  syncSt('Topicos atualizados!','#3fb950');
 }
 var _saveLocalTimer = null;
 
@@ -760,48 +747,94 @@ function atualizaValMon(i, val) {
   if (gb) { gb.style.width = pct.toFixed(1)+'%'; gb.style.background = gc; }
 }
 
+function setBtnConectar(conectado) {
+  var btn = document.getElementById('btn-conectar');
+  if (!btn) return;
+  if (conectado) {
+    btn.textContent = 'Conectado';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor  = 'not-allowed';
+  } else {
+    btn.innerHTML = '&#128268; Conectar';
+    btn.disabled  = false;
+    btn.style.opacity = '1';
+    btn.style.cursor  = 'pointer';
+  }
+}
+
+function subscreverTopicos() {
+  if (!mqclient || !mqclient.connected) return;
+  var base = getBase();
+  mqclient.subscribe(base+'/status',             {qos:1});
+  mqclient.subscribe(base+'/telemetria',         {qos:1});
+  mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
+  mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
+  var tops = {};
+  mons.forEach(function(m){
+    if (m.topico && !tops[m.topico]) { tops[m.topico]=1; mqclient.subscribe(m.topico,{qos:1}); }
+  });
+}
+
 function conectarMQTT() {
+  // Bloqueia se já conectado
+  if (mqclient && mqclient.connected) {
+    syncSt('Ja esta conectado!', '#3fb950');
+    return;
+  }
+
   var st = document.getElementById('mqtt-st');
   st.textContent = 'Conectando...'; st.style.color = '#ef9f27';
+
+  // Encerra conexão anterior
   if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
+
   mqclient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-    clientId: 'painel-'+Math.random().toString(16).substr(2,8),
-    keepalive: 30,
-    reconnectPeriod: 5000,
-    clean: true
+    clientId:       'painel-'+Math.random().toString(16).substr(2,8),
+    keepalive:      30,
+    reconnectPeriod:5000,
+    connectTimeout: 10000,
+    clean:          true
   });
+
   mqclient.on('connect', function() {
     st.textContent = 'Conectado'; st.style.color = '#3fb950';
     document.getElementById('dot-broker').style.background = '#3fb950';
-    document.getElementById('lbl-broker').style.color = '#3fb950';
+    document.getElementById('lbl-broker').style.color      = '#3fb950';
+    setBtnConectar(true);
     setESP32Status('---');
-    var base = getBase();
-    mqclient.subscribe(base+'/status',             {qos:1});
-    mqclient.subscribe(base+'/telemetria',         {qos:1});
-    mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
-    mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
-    // Subscreve tópicos únicos das entradas
-    var tops = {};
-    mons.forEach(function(m){ if(m.topico && !tops[m.topico]){ tops[m.topico]=1; mqclient.subscribe(m.topico,{qos:1}); } });
+    subscreverTopicos();
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b>','pub');
-    // Ignora mensagens retained por 2s após conectar
     _ignorarRetained = true;
     setTimeout(function(){ _ignorarRetained = false; }, 2000);
   });
-  mqclient.on('message', function(topic, message) { processarMsg(topic, message.toString()); });
-  mqclient.on('reconnect', function() { st.textContent='Reconectando...'; st.style.color='#ef9f27'; });
-  mqclient.on('close', function() {
-    st.textContent='Desconectado'; st.style.color='#e24b4a';
-    document.getElementById('dot-broker').style.background='#8b949e';
-    document.getElementById('lbl-broker').style.color='#8b949e';
-    setESP32Status('---');
-    // Quando broker desconecta, não sabemos estado real dos coils
-    // Mantém os estados mas avisa o usuário
-    syncSt('Broker desconectado — estados podem estar desatualizados','#ef9f27');
-  });
-  mqclient.on('error', function(e) { st.textContent='Erro'; st.style.color='#e24b4a'; });
-}
 
+  mqclient.on('message', function(topic, message) {
+    processarMsg(topic, message.toString());
+  });
+
+  mqclient.on('reconnect', function() {
+    st.textContent = 'Reconectando...'; st.style.color = '#ef9f27';
+    document.getElementById('dot-broker').style.background = '#ef9f27';
+    setBtnConectar(false);
+    addLog('clog','<b style="color:#ef9f27;">Reconectando automaticamente...</b>','sub');
+  });
+
+  mqclient.on('close', function() {
+    st.textContent = 'Desconectado'; st.style.color = '#e24b4a';
+    document.getElementById('dot-broker').style.background = '#8b949e';
+    document.getElementById('lbl-broker').style.color      = '#8b949e';
+    setESP32Status('---');
+    setBtnConectar(false);
+    syncSt('Broker desconectado — reconectando em 5s...','#ef9f27');
+  });
+
+  mqclient.on('error', function(e) {
+    st.textContent = 'Erro'; st.style.color = '#e24b4a';
+    setBtnConectar(false);
+    addLog('clog','<b style="color:#e24b4a;">ERRO: '+e.message+'</b>','sub');
+  });
+}
 // ════════════════════════════════════════════════
 // COILS
 // ════════════════════════════════════════════════
