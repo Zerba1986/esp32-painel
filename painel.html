@@ -326,14 +326,24 @@ function getConfig(){
 
 function aplicarConfig(c){
   carregando=true;
-  if(c.projeto)document.getElementById('cfg-p').value=c.projeto;
-  if(c.local)  document.getElementById('cfg-l').value=c.local;
-  if(c.device) document.getElementById('cfg-d').value=c.device;
-  if(c.coils)  coils=c.coils;
-  if(c.mons)   mons=c.mons;
-  if(c.qty){qty=c.qty;document.getElementById('qty-lbl').textContent=qty;document.getElementById('m-sp').textContent=qty;}
-  if(c.sps)    sps=c.sps;
-  updateBase();updateTopics();updateMetrics();renderCoils();renderMons();renderSPs();
+  if(c.projeto) document.getElementById('cfg-p').value=c.projeto;
+  if(c.local)   document.getElementById('cfg-l').value=c.local;
+  if(c.device)  document.getElementById('cfg-d').value=c.device;
+  if(c.coils && Array.isArray(c.coils))  coils=c.coils;
+  if(c.mons  && Array.isArray(c.mons))   mons=c.mons;
+  if(c.qty   && !isNaN(c.qty)){
+    qty=parseInt(c.qty);
+    document.getElementById('qty-lbl').textContent=qty;
+    document.getElementById('m-sp').textContent=qty;
+  }
+  if(c.sps && Array.isArray(c.sps)) sps=c.sps;
+  document.getElementById('hdr-base').textContent=getBase();
+  updateTopics();
+  updateMetrics();
+  renderCoils();
+  renderMons();
+  renderSPs();
+  updateSpMonSels();
   carregando=false;
 }
 
@@ -376,6 +386,48 @@ function carregarNuvem(){
 }
 
 // ── LOG ───────────────────────────────────────────────
+
+function updateESP32Status(status){
+  var cfg = {
+    'online':  {bg:'#3fb950', shadow:'0 0 6px #3fb950', tx:'#3fb950', label:'ONLINE',       pulse:true},
+    'offline': {bg:'#e24b4a', shadow:'0 0 6px #e24b4a', tx:'#e24b4a', label:'OFFLINE',      pulse:false},
+    '---':     {bg:'#8b949e', shadow:'none',             tx:'#8b949e', label:'Aguardando...', pulse:false}
+  };
+  var c = cfg[status] || cfg['---'];
+
+  // Badge no header
+  var dot = document.getElementById('dot-esp');
+  var lbl = document.getElementById('lbl-esp');
+  var st  = document.getElementById('st-esp');
+  if(dot){ dot.style.background=c.bg; dot.style.boxShadow=c.shadow; c.pulse?dot.classList.add('pulse'):dot.classList.remove('pulse'); }
+  if(lbl){ lbl.style.color=c.tx; }
+  if(st) { st.textContent=c.label; st.style.color=c.tx; }
+
+  // Card Status ESP32 na aba Config
+  var dot2 = document.getElementById('dot-esp2');
+  var st2  = document.getElementById('st-esp2');
+  if(dot2){ dot2.style.background=c.bg; dot2.style.boxShadow=c.shadow; }
+  if(st2) { st2.textContent=c.label; st2.style.color=c.tx; }
+
+  // Borda do card
+  var card = document.getElementById('esp32-status-card');
+  if(card) card.style.borderLeftColor = c.bg;
+
+  // Aba Geral — dot e status
+  var gdot = document.getElementById('geral-dot-esp');
+  var gst  = document.getElementById('geral-st-esp');
+  if(gdot){ gdot.style.background=c.bg; gdot.style.boxShadow=c.shadow; }
+  if(gst) { gst.textContent=c.label; gst.style.color=c.tx; }
+
+  // Última atualização e tópico LWT
+  if(status !== '---'){
+    var lu = document.getElementById('esp-last-update');
+    if(lu) lu.textContent = new Date().toLocaleTimeString('pt-BR');
+  }
+  var lt = document.getElementById('esp-lwt-topic');
+  if(lt) lt.textContent = getBase()+'/status';
+}
+
 function toggleLog(id){
   var b=document.getElementById(id+'-bdy');
   var a=document.getElementById(id+'-arr');
