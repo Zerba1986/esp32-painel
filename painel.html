@@ -483,6 +483,19 @@ function setESP32Status(s) {
     var lu = document.getElementById('cfg-last');
     if (lu) lu.textContent = new Date().toLocaleTimeString('pt-BR');
   }
+  // Quando ESP32 volta online, libera processamento de estados
+  if (s === 'online') {
+    // Pequeno delay para garantir que o status foi processado antes dos estados
+    setTimeout(function(){
+      _ignorarRetained = false;
+    }, 500);
+  }
+  // Quando ESP32 vai offline, limpa estados dos coils
+  if (s === 'offline') {
+    coils.forEach(function(c){ c.estado = false; });
+    sps.forEach(function(sp){ sp.estado = false; });
+    renderCoils(); updateMetrics(); renderGeral(); checkSPs();
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -512,7 +525,8 @@ function addLog(id, msg, tipo) {
 // MQTT
 // ════════════════════════════════════════════════
 var mqclient = null;
-var _esp32Online = false;  // controle de estado do ESP32
+var _esp32Online = false;   // true somente quando ESP32 confirma via LWT
+var _ignorarRetained = false; // ignora msgs retidas logo após conectar
 
 function mqttPub(topic, payload) {
   if (mqclient && mqclient.connected) {
@@ -532,6 +546,11 @@ function processarMsg(topic, msg) {
   var cm = topic.match(/coil_(\d+)\/estado$/);
   if (cm) {
     var ci = parseInt(cm[1])-1;
+    // Ignora retained logo após conectar ou se ESP32 offline
+    if (_ignorarRetained || !_esp32Online) {
+      addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
+      return;
+    }
     addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='1'?'#7ee787':'#ffa0a0')+';">'+msg+'</b> (ESP32 confirmou)','sub');
     if (ci >= 0 && ci < coils.length) { coils[ci].estado=(msg==='1'); renderCoils(); updateMetrics(); renderGeral(); }
     return;
@@ -540,6 +559,10 @@ function processarMsg(topic, msg) {
   var sm = topic.match(/sp(\d+)\/estado$/);
   if (sm) {
     var si = parseInt(sm[1])-1;
+    if (_ignorarRetained || !_esp32Online) {
+      addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
+      return;
+    }
     addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='1'?'#7ee787':'#ffa0a0')+';">'+msg+'</b> (ESP32 confirmou)','sub');
     if (si >= 0 && si < qty) { sps[si].estado=(msg==='1'); checkSPs(); }
     return;
@@ -614,6 +637,9 @@ function conectarMQTT() {
     var tops = {};
     mons.forEach(function(m){ if(m.topico && !tops[m.topico]){ tops[m.topico]=1; mqclient.subscribe(m.topico,{qos:1}); } });
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b>','pub');
+    // Ignora mensagens retained por 2s após conectar
+    _ignorarRetained = true;
+    setTimeout(function(){ _ignorarRetained = false; }, 2000);
   });
   mqclient.on('message', function(topic, message) { processarMsg(topic, message.toString()); });
   mqclient.on('reconnect', function() { st.textContent='Reconectando...'; st.style.color='#ef9f27'; });
