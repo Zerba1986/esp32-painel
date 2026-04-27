@@ -99,6 +99,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <span style="font-size:11px;color:#8b949e;">ESP32</span>
       <span style="font-size:11px;font-weight:600;color:#8b949e;" id="lbl-esp">---</span>
     </div>
+    <button class="btn-b" onclick="refreshPainel()" style="font-size:12px;padding:6px 14px;" title="Recarregar config e re-subscrever topicos">&#128260; Refresh</button>
     <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
     <button class="btn-exit" onclick="logout()">&#128682; Sair</button>
   </div>
@@ -320,10 +321,69 @@ function logout() {
 // ════════════════════════════════════════════════
 var JSONBIN_ID  = '69ee74c6856a68218976161c';
 var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
-var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
+var JSONBIN_KEY = 'SUA_MASTER_KEY_AQUI';
 var _carregando = false;
 
 var _toastTimer = null;
+
+function refreshPainel() {
+  syncSt('Atualizando...', '#ef9f27');
+
+  // Passo 1: Recarrega config da nuvem (sem perder conexão MQTT)
+  if (JSONBIN_KEY !== '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG') {
+    fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
+        aplicarConfig(data.record.config);
+        syncSt('Config atualizada da nuvem!', '#3fb950');
+      } else {
+        syncSt('Sem config na nuvem', '#8b949e');
+      }
+      // Passo 2: Re-subscreve tópicos sem desconectar
+      resubscribirTopicos();
+    })
+    .catch(function(){
+      syncSt('Erro na nuvem — usando local', '#e24b4a');
+      var raw = localStorage.getItem('esp32cfg');
+      if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e){} }
+      resubscribirTopicos();
+    });
+  } else {
+    // Sem nuvem — usa localStorage
+    var raw = localStorage.getItem('esp32cfg');
+    if (raw) {
+      try { aplicarConfig(JSON.parse(raw)); syncSt('Config local atualizada!', '#3fb950'); }
+      catch(e) { syncSt('Erro ao carregar local', '#e24b4a'); }
+    } else {
+      syncSt('Nenhuma config salva', '#8b949e');
+    }
+    resubscribirTopicos();
+  }
+}
+
+function resubscribirTopicos() {
+  // Re-subscreve sem desconectar o MQTT
+  if (!mqclient || !mqclient.connected) {
+    syncSt('MQTT desconectado — conecte primeiro', '#e24b4a');
+    return;
+  }
+  var base = getBase();
+  mqclient.subscribe(base+'/status',             {qos:1});
+  mqclient.subscribe(base+'/telemetria',         {qos:1});
+  mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
+  mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
+  // Subscreve tópicos únicos das entradas de monitoramento
+  var tops = {};
+  mons.forEach(function(m){
+    if (m.topico && !tops[m.topico]) {
+      tops[m.topico] = 1;
+      mqclient.subscribe(m.topico, {qos:1});
+    }
+  });
+  addLog('clog', '<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos', 'pub');
+  syncSt('Topicos atualizados!', '#3fb950');
+}
 var _saveLocalTimer = null;
 
 function saveLocal() {
