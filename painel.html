@@ -324,6 +324,15 @@ var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG'
 var _carregando = false;
 
 var _toastTimer = null;
+var _saveLocalTimer = null;
+
+function saveLocal() {
+  // Salva no localStorage com debounce de 1s (não usa nuvem, não mostra toast)
+  clearTimeout(_saveLocalTimer);
+  _saveLocalTimer = setTimeout(function() {
+    localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
+  }, 1000);
+}
 
 function syncSt(msg, cor) {
   // Atualiza elemento inline da aba Config (se existir)
@@ -472,6 +481,7 @@ function updateBase() {
   updateTopics();
   renderCoils();
   renderSPs();
+  saveLocal();
 }
 
 function updateTopics() {
@@ -809,9 +819,9 @@ function renderCoils() {
        +'<div class="sep"></div>'
        +'<div class="grid4">'
          +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;"></div>'
-         +'<div class="col"><label class="lbl">Pino</label><input type="text" value="'+c.pino+'" style="width:55px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;"></div>'
-         +'<div class="col"><label class="lbl">Msg ON</label><input type="text" value="'+c.msgA+'" style="width:55px;" oninput="coils['+i+'].msgA=this.value;"></div>'
-         +'<div class="col"><label class="lbl">Msg OFF</label><input type="text" value="'+c.msgD+'" style="width:55px;" oninput="coils['+i+'].msgD=this.value;"></div>'
+         +'<div class="col"><label class="lbl">Pino</label><input type="text" value="'+c.pino+'" style="width:55px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;saveLocal();"></div>'
+         +'<div class="col"><label class="lbl">Msg ON</label><input type="text" value="'+c.msgA+'" style="width:55px;" oninput="coils['+i+'].msgA=this.value;saveLocal();"></div>'
+         +'<div class="col"><label class="lbl">Msg OFF</label><input type="text" value="'+c.msgD+'" style="width:55px;" oninput="coils['+i+'].msgD=this.value;saveLocal();"></div>'
        +'</div>'
        +'<div style="font-size:11px;color:#8b949e;margin-top:8px;">sub estado: <code style="color:#79c0ff;">'+te+'</code></div>'
      +'</div>';
@@ -881,11 +891,11 @@ function renderMons() {
           +'<div class="grid2" style="margin-bottom:8px;">'
             +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
             +'<div class="col"><label class="lbl">Unidade</label><select onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;">'+UNIDS.map(function(u){return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>'
-            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;"></div>'
+            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
             +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
           +'</div>'
           +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;"></div>'
-          +'<div class="col"><label class="lbl">Max</label><input type="number" value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;"></div></div>'
+          +'<div class="col"><label class="lbl">Max</label><input type="number" value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div></div>'
         +'</div>';
     } else {
       var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
@@ -914,7 +924,7 @@ function renderMons() {
             +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;"></div>'
           +'</div>'
           +'<div class="row"><div class="col"><label class="lbl">Valor HIGH</label><input type="text" value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;"></div>'
-          +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;"></div></div>'
+          +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;saveLocal();"></div></div>'
         +'</div>';
     }
     el.appendChild(d);
@@ -1044,8 +1054,8 @@ function renderSPs() {
         +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
           +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
           +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
-            +'<div class="col"><label class="lbl">&#128308; Msg ON — acionado</label><input type="text" value="'+sps[i].msgA+'" oninput="sps['+i+'].msgA=this.value;updateSPSum('+i+');"></div>'
-            +'<div class="col"><label class="lbl">&#9898; Msg OFF — desacionado</label><input type="text" value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');"></div>'
+            +'<div class="col"><label class="lbl">&#128308; Msg ON — acionado</label><input type="text" value="'+sps[i].msgA+'" oninput="sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">&#9898; Msg OFF — desacionado</label><input type="text" value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();"></div>'
           +'</div>'
           +'<div style="font-size:11px;color:#8b949e;">ESP32 confirma via <code style="color:#79c0ff;">sp'+String(i+1).padStart(2,'0')+'/estado</code> com o mesmo valor enviado</div>'
         +'</div>'
