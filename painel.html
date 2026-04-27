@@ -295,7 +295,7 @@ function logout() {
 // ════════════════════════════════════════════════
 var JSONBIN_ID  = '69ee74c6856a68218976161c';
 var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
-var JSONBIN_KEY = 'SUA_MASTER_KEY_AQUI';
+var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
 var _carregando = false;
 
 function syncSt(msg, cor) {
@@ -642,22 +642,32 @@ function addCoil() {
   renderCoils(); updateMetrics();
 }
 function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); }
-function allCoils(s)   { coils.forEach(function(_,i){ setCoil(i,s); }); }
-function setCoil(i, s) {
-  if (!mqclient || !mqclient.connected) {
-    alert('MQTT desconectado! Va em Config e clique Conectar.');
+function allCoils(s) {
+  if (!_esp32Online) {
+    syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
+    setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
     return;
   }
-  mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
-  if (!_esp32Online) {
-    // ESP32 offline: mostra aviso mas não muda estado visual
-    syncSt('ESP32 offline — comando enviado mas sem confirmacao','#ef9f27');
+  coils.forEach(function(_,i){ setCoil(i,s); });
+}
+function setCoil(i, s) {
+  // Bloqueia se broker desconectado
+  if (!mqclient || !mqclient.connected) {
+    syncSt('MQTT desconectado! Va em Config e clique Conectar.','#e24b4a');
     setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
+    return;
   }
-  // Estado visual SÓ muda quando ESP32 confirmar via coil_XX/estado
-  // Mas simulamos o estado localmente para UX (cinza = aguardando)
-  coils[i].estado = s;
-  renderCoils(); updateMetrics(); renderGeral();
+  // Bloqueia se ESP32 offline — não muda estado visual
+  if (!_esp32Online) {
+    syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
+    setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
+    return;
+  }
+  // ESP32 online: publica comando e aguarda confirmação via coil_XX/estado
+  // Estado visual SÓ é atualizado quando ESP32 confirmar no tópico /estado
+  mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
+  syncSt('Comando enviado — aguardando confirmacao ESP32...','#ef9f27');
+  setTimeout(function(){ syncSt('pronto','#8b949e'); }, 3000);
 }
 function toggleCoilPanel(i) {
   coils[i].open = !coils[i].open;
