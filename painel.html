@@ -551,8 +551,22 @@ function processarMsg(topic, msg) {
       addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
       return;
     }
-    addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='1'?'#7ee787':'#ffa0a0')+';">'+msg+'</b> (ESP32 confirmou)','sub');
-    if (ci >= 0 && ci < coils.length) { coils[ci].estado=(msg==='1'); renderCoils(); updateMetrics(); renderGeral(); }
+    if (ci >= 0 && ci < coils.length) {
+      var coil = coils[ci];
+      // Compara com msgA e msgD configurados pelo usuário
+      if (msg === coil.msgA) {
+        coil.estado = true;
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
+        renderCoils(); updateMetrics(); renderGeral();
+      } else if (msg === coil.msgD) {
+        coil.estado = false;
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
+        renderCoils(); updateMetrics(); renderGeral();
+      } else {
+        // Mensagem desconhecida — não muda estado
+        addLog('clog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+coil.msgA+'") nem msgOFF("'+coil.msgD+'")','sub');
+      }
+    }
     return;
   }
   // 3. Estado SPs
@@ -563,8 +577,20 @@ function processarMsg(topic, msg) {
       addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
       return;
     }
-    addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='1'?'#7ee787':'#ffa0a0')+';">'+msg+'</b> (ESP32 confirmou)','sub');
-    if (si >= 0 && si < qty) { sps[si].estado=(msg==='1'); checkSPs(); }
+    if (si >= 0 && si < qty) {
+      var sp = sps[si];
+      if (msg === sp.msgA) {
+        sp.estado = true;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
+        checkSPs();
+      } else if (msg === sp.msgD) {
+        sp.estado = false;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
+        checkSPs();
+      } else {
+        addLog('splog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
+      }
+    }
     return;
   }
   // 4. Entradas de monitoramento (qualquer tópico)
