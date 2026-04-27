@@ -88,8 +88,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div style="font-size:13px;font-weight:500;" id="clk-t">--:--:--</div>
       <div style="font-size:11px;color:#8b949e;" id="clk-d">---</div>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <!-- MQTT Broker status -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <!-- Broker status -->
       <div style="display:flex;align-items:center;gap:5px;">
         <span class="dot pulse" id="dot-s" style="background:#8b949e;"></span>
         <span style="font-size:11px;color:#8b949e;" id="lbl-s">broker</span>
@@ -98,8 +98,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div style="display:flex;align-items:center;gap:5px;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:3px 10px;">
         <span class="dot" id="dot-esp" style="background:#8b949e;"></span>
         <span style="font-size:11px;color:#8b949e;" id="lbl-esp">ESP32</span>
-        <span style="font-size:11px;font-weight:600;" id="st-esp" style="color:#8b949e;">---</span>
+        <span style="font-size:11px;font-weight:600;color:#8b949e;" id="st-esp">---</span>
       </div>
+      <!-- Botões fixos -->
+      <button class="btn-save" onclick="salvarNuvem()" style="font-size:12px;padding:5px 14px;">&#128190; Salvar</button>
+      <button class="btn-exit" onclick="logout()" style="font-size:12px;padding:5px 12px;">&#128682; Sair</button>
     </div>
   </div>
 </div>
@@ -115,12 +118,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- TABS -->
 <div class="tabs">
+  <button class="tab"        id="btn-geral" onclick="showTab('geral')">&#127968; Geral</button>
   <button class="tab active" id="btn-cfg"   onclick="showTab('cfg')">&#9881;&#65039; Config</button>
   <button class="tab"        id="btn-coils" onclick="showTab('coils')">&#128268; Coils</button>
   <button class="tab"        id="btn-mon"   onclick="showTab('mon')">&#128202; Monitoramento</button>
   <button class="tab"        id="btn-sp"    onclick="showTab('sp')">&#127919; Set Points</button>
 </div>
 
+<!-- ═══ GERAL ═══ -->
+<div class="pane" id="pane-geral">
+  <!-- Status ESP32 -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:8px;" id="geral-grid-top">
+    <div class="card" style="text-align:center;padding:16px 12px;" id="geral-esp32">
+      <div style="font-size:10px;color:#8b949e;font-weight:700;letter-spacing:1px;margin-bottom:8px;">ESP32</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px;">
+        <span class="dot" id="geral-dot-esp" style="background:#8b949e;width:12px;height:12px;"></span>
+        <span style="font-size:18px;font-weight:700;color:#8b949e;" id="geral-st-esp">---</span>
+      </div>
+      <div style="font-size:11px;color:#8b949e;" id="geral-uptime">Uptime: ---</div>
+      <div style="font-size:11px;color:#8b949e;" id="geral-rssi">RSSI: ---</div>
+    </div>
+  </div>
+  <!-- Coils -->
+  <div class="card">
+    <div class="sh" style="margin-bottom:8px;">&#128268; Coils</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;" id="geral-coils">
+      <p style="font-size:12px;color:#8b949e;">Nenhum coil configurado.</p>
+    </div>
+  </div>
+  <!-- Monitoramento -->
+  <div class="card">
+    <div class="sh" style="margin-bottom:8px;">&#128202; Monitoramento</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;" id="geral-mons">
+      <p style="font-size:12px;color:#8b949e;">Nenhuma entrada configurada.</p>
+    </div>
+  </div>
+  <!-- Set Points -->
+  <div class="card">
+    <div class="sh" style="margin-bottom:8px;">&#127919; Set Points</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;" id="geral-sps">
+      <p style="font-size:12px;color:#8b949e;">Nenhum set point acionado.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIG ═══ -->
+<div class="pane active" id="pane-cfg">
 <!-- ═══ CONFIG ═══ -->
 <div class="pane active" id="pane-cfg">
   <div class="card">
@@ -164,13 +207,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
   <div class="card" style="border-color:#238636;">
     <div class="sh">salvar configuracoes na nuvem</div>
-    <p style="font-size:12px;color:#8b949e;margin-bottom:12px;">Salva coils, monitoramento e set points no JSONBin. Carrega automaticamente em qualquer dispositivo.</p>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:8px;">Salva coils, monitoramento e set points no JSONBin. Carrega automaticamente em qualquer dispositivo.</p>
     <div class="row" style="justify-content:space-between;">
       <span id="sync-status" style="font-size:12px;color:#8b949e;">pronto</span>
-      <div class="row">
-        <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar na Nuvem</button>
-        <button class="btn-exit" onclick="logout()">&#128682; Sair</button>
-      </div>
+      <span style="font-size:11px;color:#8b949e;">Use o botao Salvar no topo da pagina &#8593;</span>
     </div>
   </div>
 </div>
@@ -366,13 +406,14 @@ setInterval(tick,1000);tick();
 
 // ── TABS ──────────────────────────────────────────────
 function showTab(id){
-  ['cfg','coils','mon','sp'].forEach(function(t){
+  ['geral','cfg','coils','mon','sp'].forEach(function(t){
     document.getElementById('pane-'+t).classList.remove('active');
     document.getElementById('btn-'+t).classList.remove('active');
   });
   document.getElementById('pane-'+id).classList.add('active');
   document.getElementById('btn-'+id).classList.add('active');
   if(id==='cfg'){updateTopics();updateResumo();}
+  if(id==='geral'){renderGeral();}
 }
 
 // ── BASE ──────────────────────────────────────────────
@@ -422,7 +463,7 @@ function conectarMQTT(){
   if(mqclient){try{mqclient.end();}catch(e){}}
   var b=getBase();
   mqclient=mqtt.connect('wss://broker.emqx.io:8084/mqtt',{
-    clientId:'painel-'+Math.random().toString(16).substr(2,6),keepalive:30,reconnectPeriod:5000
+    clientId:'painel-'+Math.random().toString(16).substr(2,6),keepalive:30,reconnectPeriod:5000,clean:false
   });
   mqclient.on('connect',function(){
     st.textContent='Conectado';st.style.color='#3fb950';
@@ -430,10 +471,17 @@ function conectarMQTT(){
     document.getElementById('lbl-s').textContent='broker';
     document.getElementById('lbl-s').style.color='#3fb950';
     updateESP32Status('---'); // aguarda LWT do ESP32
-    mqclient.subscribe(b+'/telemetria');
-    mqclient.subscribe(b+'/status');
-    mqclient.subscribe(b+'/atuadores/+/estado');
-    mqclient.subscribe(b+'/setpoints/+/estado');
+    // Subscreve todos os tópicos base
+    var base = getBase();
+    mqclient.subscribe(base+'/telemetria',{qos:1});
+    mqclient.subscribe(base+'/status',{qos:1});
+    mqclient.subscribe(base+'/atuadores/+/estado',{qos:1});
+    mqclient.subscribe(base+'/setpoints/+/estado',{qos:1});
+    // Subscreve tópicos das entradas de monitoramento
+    mons.forEach(function(m){
+      if(m.topico) mqclient.subscribe(m.topico,{qos:1});
+    });
+    updateESP32Status('---');
   });
   mqclient.on('message',function(topic,message){
     var msg=message.toString();
@@ -447,6 +495,18 @@ function conectarMQTT(){
       addLog('mlog','<b style="color:#8b949e;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → '+msg.substring(0,50)+(msg.length>50?'...':''),'sub');
       try{
         var d=JSON.parse(msg);
+        // Atualiza uptime e rssi na aba geral
+        if(d.uptime!==undefined){
+          var s=parseInt(d.uptime)||0;
+          var h=Math.floor(s/3600),m2=Math.floor((s%3600)/60),sec=s%60;
+          var gu=document.getElementById('geral-uptime');
+          if(gu)gu.textContent='Uptime: '+h+'h '+m2+'m '+sec+'s';
+        }
+        if(d.rssi!==undefined){
+          var gr=document.getElementById('geral-rssi');
+          if(gr)gr.textContent='RSSI: '+d.rssi+' dBm';
+        }
+        // Atualiza valores na aba geral se estiver aberta
         mons.forEach(function(m,i){
           if(m.tipo==='analog'&&d[m.jsonKey]!==undefined){
             m.val=parseFloat(d[m.jsonKey]);
@@ -458,8 +518,45 @@ function conectarMQTT(){
           }
         });
         checkSPs();
+        // Atualiza valores na aba geral em tempo real
+        mons.forEach(function(m2,i2){
+          var gv=document.getElementById('gval-'+i2);
+          var gb2=document.getElementById('gbar-'+i2);
+          if(gv&&m2.tipo==='analog'){
+            gv.textContent=m2.val.toFixed(2);
+            var gc3=vcolor(m2.val,m2.min,m2.max);
+            gv.style.color=gc3;
+            var pct2=Math.min(100,Math.max(0,((m2.val-m2.min)/(m2.max-m2.min||1))*100));
+            if(gb2){gb2.style.width=pct2.toFixed(1)+'%';gb2.style.background=gc3;}
+          }
+        });
       }catch(e){}
     }
+    // Processa qualquer tópico de monitoramento registrado
+    mons.forEach(function(m,i){
+      if(topic === m.topico && m.tipo==='analog'){
+        try{
+          var dj=JSON.parse(msg);
+          if(dj[m.jsonKey]!==undefined){
+            m.val=parseFloat(dj[m.jsonKey]);
+            var pct=Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
+            var vv=document.getElementById('mv-'+i);
+            var vb=document.getElementById('mb-'+i);
+            if(vv)vv.textContent=m.val.toFixed(2);
+            if(vb){vb.style.width=pct.toFixed(1)+'%';vb.style.background=vcolor(m.val,m.min,m.max);}
+            // Atualiza aba geral
+            var gv=document.getElementById('gval-'+i);
+            var gb2=document.getElementById('gbar-'+i);
+            if(gv){gv.textContent=m.val.toFixed(2);gv.style.color=vcolor(m.val,m.min,m.max);}
+            if(gb2){gb2.style.width=pct.toFixed(1)+'%';gb2.style.background=vcolor(m.val,m.min,m.max);}
+          }
+        }catch(e){}
+      }
+      if(topic === m.topico && m.tipo==='digital'){
+        m.estado=(msg===m.valT||msg==='1'||msg==='true');
+      }
+    });
+
     // Estado Coils — confirmação real do ESP32
     var cm=topic.match(/coil_(\d+)\/estado$/);
     if(cm){
@@ -562,7 +659,7 @@ function addMon(tipo){
     :{tipo:'digital',nome:'Entrada '+(i+1),topico:base+'/entradas/digital/btn_01',jsonKey:'btn_01',valT:'1',valF:'0',estado:false,open:true}
   );
   renderMons();updateMetrics();updateSpMonSels();
-  if(mqclient&&mqclient.connected)mqclient.subscribe(mons[i].topico);
+  if(mqclient&&mqclient.connected)mqclient.subscribe(mons[i].topico,{qos:1});
 }
 function removeMon(i){mons.splice(i,1);renderMons();updateMetrics();updateSpMonSels();checkSPs();}
 function toggleMonPanel(i){
@@ -795,6 +892,94 @@ function checkSPs(){
   document.getElementById('m-spac').style.color=ac>0?'#3fb950':'#e8eaf0';
   document.getElementById('sp-status').innerHTML=pills.length?pills.join(''):'<p style="font-size:12px;color:#8b949e;">Nenhum set point acionado</p>';
 }
+function renderGeral(){
+  // ESP32 status — sincroniza com o badge do header
+  var dot=document.getElementById('geral-dot-esp');
+  var st=document.getElementById('geral-st-esp');
+  var hst=document.getElementById('st-esp');
+  if(dot&&st&&hst){
+    var cur=hst.textContent;
+    var col=cur==='ONLINE'?'#3fb950':cur==='OFFLINE'?'#e24b4a':'#8b949e';
+    dot.style.background=col;dot.style.boxShadow=cur!=='---'?'0 0 6px '+col:'none';
+    st.textContent=cur;st.style.color=col;
+  }
+
+  // Coils
+  var gc=document.getElementById('geral-coils');
+  if(gc){
+    if(!coils.length){gc.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum coil configurado.</p>';} 
+    else {
+      gc.innerHTML='';
+      coils.forEach(function(c,i){
+        var d=document.createElement('div');
+        d.style.cssText='background:#0d1117;border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';border-radius:8px;padding:12px;text-align:center;box-shadow:'+(c.estado?'0 0 10px #3fb95020':'none')+';transition:all .3s;';
+        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:6px;">COIL '+String(i+1).padStart(2,'0')+'</div>'
+          +'<div style="font-size:14px;font-weight:600;color:'+(c.estado?'#7ee787':'#8b949e')+';">'+c.nome+'</div>'
+          +'<div style="margin:8px 0;">'
+            +'<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+'">'+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
+          +'</div>'
+          +'<div class="row" style="justify-content:center;gap:6px;margin-top:6px;">'
+            +'<button class="btn-g'+(c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',true);renderGeral();">LIGA</button>'
+            +'<button class="btn-r'+(!c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',false);renderGeral();">DESLIGA</button>'
+          +'</div>';
+        gc.appendChild(d);
+      });
+    }
+  }
+
+  // Monitoramento
+  var gm=document.getElementById('geral-mons');
+  if(gm){
+    if(!mons.length){gm.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhuma entrada configurada.</p>';}
+    else {
+      gm.innerHTML='';
+      mons.forEach(function(m,i){
+        var d=document.createElement('div');
+        d.style.cssText='background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:12px;text-align:center;';
+        if(m.tipo==='analog'){
+          var pct=Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
+          var gc2=vcolor(m.val,m.min,m.max);
+          d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">ANALOGICA</div>'
+            +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:4px;">'+m.nome+'</div>'
+            +'<div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:6px;">'
+              +'<span style="font-size:28px;font-weight:700;color:'+gc2+';" id="gval-'+i+'">'+m.val.toFixed(2)+'</span>'
+              +'<span style="font-size:13px;color:#8b949e;">'+m.unid+'</span>'
+            +'</div>'
+            +'<div class="gb"><div class="gf" id="gbar-'+i+'" style="width:'+pct.toFixed(1)+'%;background:'+gc2+';"></div></div>'
+            +'<div style="font-size:10px;color:#8b949e;margin-top:4px;">'+m.min+' – '+m.max+' '+m.unid+'</div>';
+        } else {
+          var sc=m.estado?{bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'}:{bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
+          d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">DIGITAL</div>'
+            +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:8px;">'+m.nome+'</div>'
+            +'<span style="font-size:16px;font-weight:700;padding:4px 14px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?'HIGH':'LOW')+'</span>';
+        }
+        gm.appendChild(d);
+      });
+    }
+  }
+
+  // Set Points
+  var gs=document.getElementById('geral-sps');
+  if(gs){
+    if(!qty){gs.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum set point.</p>';}
+    else {
+      gs.innerHTML='';
+      for(var i=0;i<qty;i++){
+        var sp=sps[i],c=CORES[sp.cor];
+        var m=mons[sp.monIdx];
+        var d=document.createElement('div');
+        d.style.cssText='background:#0d1117;border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';border-radius:8px;padding:12px;text-align:center;box-shadow:'+(sp.estado?'0 0 10px '+c.bd+'30':'none')+';transition:all .3s;';
+        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">'+TIPOS[sp.tipo].toUpperCase()+'</div>'
+          +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:2px;">'+sp.nome+'</div>'
+          +'<div style="font-size:11px;color:#8b949e;margin-bottom:8px;">'+(m?m.nome:'sem entrada')+'</div>'
+          +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+sp.min.toFixed(2)+' – '+sp.max.toFixed(2)+' '+(m?m.unid:'')+'</div>'
+          +'<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+'">'+(sp.estado?'ACIONADO':'AGUARDANDO')+'</span>';
+        gs.appendChild(d);
+      }
+    }
+  }
+}
+
 function updateMetrics(){
   var on=coils.filter(function(c){return c.estado;}).length;
   document.getElementById('m-coils').textContent=coils.length;
