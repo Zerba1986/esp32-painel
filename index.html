@@ -41,32 +41,12 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
       <label>Senha</label>
       <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     </div>
-    <div class="field" style="margin-top:16px;border-top:0.5px solid #30363d;padding-top:16px;">
-      <label style="display:flex;align-items:center;gap:6px;">
-        <span>&#128273; JSONBin Master Key</span>
-        <span style="font-size:10px;color:#8b949e;background:#21262d;padding:1px 6px;border-radius:4px;">opcional</span>
-      </label>
-      <input type="password" id="jbkey" placeholder="$2a$10$..." autocomplete="off"
-        style="font-size:11px;letter-spacing:1px;"
-        title="Cole aqui sua X-MASTER-KEY do JSONBin para sincronizar config na nuvem">
-      <div style="font-size:11px;color:#8b949e;margin-top:5px;">
-        Salvo na sessão — não fica no código
-      </div>
-    </div>
+
     <button class="btn-login" onclick="login()">Entrar</button>
     <div class="error" id="err">Usuário ou senha incorretos</div>
   </div>
 </div>
 <script>
-// Preenche o campo key se já existir na sessão
-window.onload = function() {
-  var k = localStorage.getItem('esp32_jbkey');
-  if (k) {
-    var el = document.getElementById('jbkey');
-    if (el) el.value = k;
-  }
-};
-
 // ── DEFINA SEU USUÁRIO E SENHA AQUI ──────────────────
 var USUARIO = "admin";
 var SENHA   = "esp32";
@@ -75,17 +55,13 @@ var SENHA   = "esp32";
 function login() {
   var u   = document.getElementById('user').value.trim();
   var p   = document.getElementById('pass').value;
-  var key = document.getElementById('jbkey').value.trim();
   var err = document.getElementById('err');
 
   if (u === USUARIO && p === SENHA) {
     // Salva sessão por 8 horas
     var expira = Date.now() + 8 * 60 * 60 * 1000;
     sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira:expira}));
-    // Salva Master Key na sessão (se informada)
-    if (key) {
-      localStorage.setItem('esp32_jbkey', key);
-    }
+
     window.location.href = 'painel.html';
   } else {
     err.style.display = 'block';
