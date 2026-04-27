@@ -539,8 +539,8 @@ function setESP32Status(s) {
   // Quando ESP32 vai offline, limpa estados dos coils
   if (s === 'offline') {
     coils.forEach(function(c){ c.estado = false; });
-    sps.forEach(function(sp){ sp.estado = false; });
-    renderCoils(); updateMetrics(); renderGeral(); checkSPs();
+    sps.forEach(function(sp){ sp.estado = false; sp._ultimoComando = null; });
+    renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
   }
 }
 
@@ -627,12 +627,12 @@ function processarMsg(topic, msg) {
       var sp = sps[si];
       if (msg === sp.msgA) {
         sp.estado = true;
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
-        checkSPs();
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓ (ESP32 confirmou)','sub');
+        renderSPStatus();
       } else if (msg === sp.msgD) {
         sp.estado = false;
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
-        checkSPs();
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓ (ESP32 confirmou)','sub');
+        renderSPStatus();
       } else {
         addLog('splog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
       }
@@ -1061,24 +1061,56 @@ function renderSPs() {
 }
 
 function checkSPs() {
+  // checkSPs só decide SE deve publicar o comando
+  // Estado visual (acionado/desacionado) SÓ muda via confirmação do ESP32
+  // igual ao comportamento dos coils
+  if (!_esp32Online) return; // ESP32 offline — não publica nada
+
+  for (var i=0; i<qty; i++) {
+    var m = mons[sps[i].monIdx];
+    if (!m) continue;
+
+    var val = m.tipo==='analog' ? m.val : (m.estado?1:0);
+    var deveAcionar = false;
+    if (sps[i].tipo===0) {
+      // Histerese
+      if (val > sps[i].max)      deveAcionar = true;
+      else if (val < sps[i].min) deveAcionar = false;
+      else                        deveAcionar = sps[i]._ultimoComando === sps[i].msgA;
+    } else {
+      // Janela
+      deveAcionar = (val >= sps[i].min && val <= sps[i].max);
+    }
+
+    var msgDesejada = deveAcionar ? sps[i].msgA : sps[i].msgD;
+
+    // Só publica se mudou de comando
+    if (msgDesejada !== sps[i]._ultimoComando) {
+      sps[i]._ultimoComando = msgDesejada;
+      if (sps[i].acao > 0) {
+        mqttPub(gst(i,'comando'), msgDesejada);
+        addLog('splog',
+          '<b>'+sps[i].nome+'</b> pub: <code style="color:#79c0ff;">'+gst(i,'comando')+'</code> → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
+      }
+    }
+  }
+
+  // Atualiza visual baseado no estado CONFIRMADO pelo ESP32 (sps[i].estado)
+  renderSPStatus();
+}
+
+function renderSPStatus() {
   var ac=0, pills=[];
   for (var i=0; i<qty; i++) {
     var tag=document.getElementById('sptag-'+i), card=document.getElementById('spc-'+i);
     if (!tag||!card) continue;
     var c=CORES[sps[i].cor], m=mons[sps[i].monIdx];
-    if (!m) { tag.textContent='sem entrada'; tag.style.cssText='background:#21262d;color:#8b949e;'; card.style.border='0.5px solid #30363d'; card.style.boxShadow='none'; continue; }
-    var val = m.tipo==='analog' ? m.val : (m.estado?1:0);
-    var on  = false;
-    if (sps[i].tipo===0){ if(val>sps[i].max) on=true; else if(val<sps[i].min) on=false; else on=sps[i].estado; }
-    else on = (val>=sps[i].min && val<=sps[i].max);
-    var mudou = on !== sps[i].estado;
-    sps[i].estado = on;
-    if (mudou && sps[i].acao>0) {
-      mqttPub(gst(i,'comando'), on?sps[i].msgA:sps[i].msgD);
-      addLog('splog','<b>'+sps[i].nome+'</b> → '+(on?'ACIONADO':'DESACIONADO'),'pub');
+    if (!m) {
+      tag.textContent='sem entrada'; tag.style.cssText='background:#21262d;color:#8b949e;';
+      card.style.border='0.5px solid #30363d'; card.style.boxShadow='none';
+      continue;
     }
-    if (mudou) { renderGeral(); }
-    if (on) {
+    if (sps[i].estado) {
       ac++;
       tag.textContent='acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
       card.style.border='1.5px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
@@ -1092,6 +1124,7 @@ function checkSPs() {
   document.getElementById('m-spac').textContent = ac;
   document.getElementById('m-spac').style.color = ac>0?'#3fb950':'#e8eaf0';
   document.getElementById('sp-status').innerHTML = pills.length ? pills.join('') : '<p style="font-size:12px;color:#8b949e;">Nenhum acionado</p>';
+  renderGeral();
 }
 
 // ════════════════════════════════════════════════
