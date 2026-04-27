@@ -321,7 +321,12 @@ function logout() {
 // ════════════════════════════════════════════════
 var JSONBIN_ID  = '69ee74c6856a68218976161c';
 var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
-var JSONBIN_KEY = localStorage.getItem('esp32_jbkey') || 'SUA_MASTER_KEY_AQUI';
+// ╔══════════════════════════════════════════════════════╗
+// ║           CONFIGURAÇÃO — EDITE AQUI                  ║
+// ║  Cole sua X-MASTER-KEY do JSONBin abaixo             ║
+// ╚══════════════════════════════════════════════════════╝
+var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
+// ════════════════════════════════════════════════════════
 var _carregando = false;
 
 var _toastTimer = null;
