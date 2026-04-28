@@ -777,37 +777,64 @@ function subscreverTopicos() {
 }
 
 function conectarMQTT() {
-if (mqclient && mqclient.connected) return;
+  // Bloqueia se já conectado
+  if (mqclient && mqclient.connected) {
+    syncSt('Ja esta conectado!', '#3fb950');
+    return;
+  }
 
   var st = document.getElementById('mqtt-st');
-  st.textContent = 'Conectando...'; 
-  st.style.color = '#ef9f27';
+  st.textContent = 'Conectando...'; st.style.color = '#ef9f27';
 
-  // O segredo está aqui: Gerar um ID aleatório forte para evitar conflito
-  const randomId = 'panel-' + Math.floor(Math.random() * 1000000);
+  // Encerra conexão anterior
+  if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
 
-  mqclient = mqtt.connect('wss://esphome64.up.railway.app/mqtt', {
-    clientId: randomId,
-    username: 'joazeirofelipe',
-    password: 'Mqtt@Railway2026', // Use a senha que você configurou no Mosquitto
-    keepalive: 60,
-    reconnectPeriod: 5000,
+  mqclient = mqtt.connect('wss://esphome64.up.railway.app:9001/mqtt', {
+    clientId:       'painel-'+Math.random().toString(16).substr(2,8),
+    username:       'joazeirofelipe',
+    password:       'Mqtt@Railway2026',
+    keepalive:      30,
+    reconnectPeriod:5000,
     connectTimeout: 10000,
-    clean: true,
-    rejectUnauthorized: false // Importante para evitar erros de certificado em alguns navegadores
+    clean:          true
   });
 
   mqclient.on('connect', function() {
-    console.log("Conectado ao Broker!");
-    st.textContent = 'Conectado'; 
-    st.style.color = '#3fb950';
-    // ... restante do código
+    st.textContent = 'Conectado'; st.style.color = '#3fb950';
+    document.getElementById('dot-broker').style.background = '#3fb950';
+    document.getElementById('lbl-broker').style.color      = '#3fb950';
+    setBtnConectar(true);
+    setESP32Status('---');
+    subscreverTopicos();
+    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b>','pub');
+    _ignorarRetained = true;
+    setTimeout(function(){ _ignorarRetained = false; }, 2000);
   });
 
-  mqclient.on('error', function(err) {
-    console.error("Erro na conexão:", err);
-    st.textContent = 'Erro de Conexão';
-    st.style.color = '#e24b4a';
+  mqclient.on('message', function(topic, message) {
+    processarMsg(topic, message.toString());
+  });
+
+  mqclient.on('reconnect', function() {
+    st.textContent = 'Reconectando...'; st.style.color = '#ef9f27';
+    document.getElementById('dot-broker').style.background = '#ef9f27';
+    setBtnConectar(false);
+    addLog('clog','<b style="color:#ef9f27;">Reconectando automaticamente...</b>','sub');
+  });
+
+  mqclient.on('close', function() {
+    st.textContent = 'Desconectado'; st.style.color = '#e24b4a';
+    document.getElementById('dot-broker').style.background = '#8b949e';
+    document.getElementById('lbl-broker').style.color      = '#8b949e';
+    setESP32Status('---');
+    setBtnConectar(false);
+    syncSt('Broker desconectado — reconectando em 5s...','#ef9f27');
+  });
+
+  mqclient.on('error', function(e) {
+    st.textContent = 'Erro'; st.style.color = '#e24b4a';
+    setBtnConectar(false);
+    addLog('clog','<b style="color:#e24b4a;">ERRO: '+e.message+'</b>','sub');
   });
 }
 // ════════════════════════════════════════════════
