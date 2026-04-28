@@ -777,38 +777,31 @@ function subscreverTopicos() {
 }
 
 function conectarMQTT() {
-  // Bloqueia se já conectado
-  if (mqclient && mqclient.connected) {
-    syncSt('Ja esta conectado!', '#3fb950');
-    return;
-  }
+if (mqclient && mqclient.connected) return;
 
   var st = document.getElementById('mqtt-st');
   st.textContent = 'Conectando...'; st.style.color = '#ef9f27';
 
-  // Encerra conexão anterior
   if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
 
-  mqclient = mqtt.connect('wss://esphome64.up.railway.app:9001/mqtt', {
-    clientId:       'painel-'+Math.random().toString(16).substr(2,8),
-    username:       'joazeirofelipe',
-    password:       'Mqtt@Railway2026',
-    keepalive:      30,
-    reconnectPeriod:5000,
+  // Conexão via WSS (Porta 443 implícita do Railway)
+  mqclient = mqtt.connect('wss://esphome64.up.railway.app/mqtt', {
+    clientId: 'painel-' + Math.random().toString(16).substr(2, 8),
+    username: 'joazeirofelipe',
+    password: 'Zerba@@1986', // Senha "limpa"
+    keepalive: 30,
+    reconnectPeriod: 5000,
     connectTimeout: 10000,
-    clean:          true
+    clean: true
   });
 
   mqclient.on('connect', function() {
     st.textContent = 'Conectado'; st.style.color = '#3fb950';
     document.getElementById('dot-broker').style.background = '#3fb950';
-    document.getElementById('lbl-broker').style.color      = '#3fb950';
+    document.getElementById('lbl-broker').style.color = '#3fb950';
     setBtnConectar(true);
-    setESP32Status('---');
     subscreverTopicos();
-    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b>','pub');
-    _ignorarRetained = true;
-    setTimeout(function(){ _ignorarRetained = false; }, 2000);
+    addLog('clog','<b>MQTT CONECTADO</b>','pub');
   });
 
   mqclient.on('message', function(topic, message) {
