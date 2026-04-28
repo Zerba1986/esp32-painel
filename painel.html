@@ -3,47 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESP32 Painel Pro</title>
+<title>ESP32 Painel</title>
 <style>
-/* Mantive seus estilos e adicionei melhorias de grid */
 html,body{margin:0;padding:0;background:#0d1117;color:#e8eaf0;font-family:sans-serif;font-size:14px;}
 *{box-sizing:border-box;}
 .wrap{padding:14px;max-width:1400px;}
+/* CARDS */
 .card{background:#161b22;border:0.5px solid #30363d;border-radius:10px;padding:12px 14px;margin-bottom:8px;}
-.icard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:7px;transition:all .2s;}
+.icard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:7px;transition:border .2s,box-shadow .2s;}
 .icard.gon{border-color:#3fb950!important;box-shadow:0 0 10px #3fb95020;}
+/* LAYOUT */
 .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 .sh{font-size:10px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 .lbl{font-size:11px;color:#8b949e;margin-bottom:3px;display:block;}
 .col{display:flex;flex-direction:column;}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .sep{height:0.5px;background:#21262d;margin:10px 0;}
+/* METRICS */
 .mbox{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
 .mt{background:#161b22;border:0.5px solid #30363d;border-radius:8px;padding:9px 12px;flex:1;min-width:65px;}
 .ml{font-size:10px;color:#8b949e;margin-bottom:1px;}
 .mv{font-size:17px;font-weight:500;}
+/* TABS */
 .tabs{display:flex;gap:4px;margin-bottom:12px;background:#161b22;border-radius:8px;padding:4px;}
-.tab{flex:1;font-size:12px;padding:8px 8px;border-radius:6px;border:none;background:transparent;color:#8b949e;cursor:pointer;transition:all .15s;}
+.tab{flex:1;font-size:12px;padding:6px 8px;border-radius:6px;border:none;background:transparent;color:#8b949e;cursor:pointer;text-align:center;outline:none;transition:all .15s;}
 .tab.active{background:#21262d;color:#e8eaf0;}
 .pane{display:none;}
 .pane.active{display:block;}
-.btn-g{padding:5px 14px;border-radius:6px;border:0.5px solid #3fb950;background:#0f2d1a;color:#7ee787;cursor:pointer;font-size:12px;}
-.btn-r{padding:5px 14px;border-radius:6px;border:0.5px solid #e24b4a;background:#3d1a1a;color:#ffa0a0;cursor:pointer;font-size:12px;}
-.btn-b{padding:5px 14px;border-radius:6px;border:0.5px solid #58a6ff;background:#0d1f3c;color:#79c0ff;cursor:pointer;font-size:12px;}
-.btn-save{font-size:12px;font-weight:600;padding:8px 20px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;}
-input[type=text],input[type=number],select{font-size:12px;padding:6px 8px;border-radius:6px;border:0.5px solid #30363d;background:#0d1117;color:#e8eaf0;outline:none;}
-.gb{height:5px;background:#21262d;border-radius:3px;overflow:hidden;margin-top:5px;}
-.gf{height:100%;border-radius:3px;transition:width .3s;}
+/* BUTTONS */
+.btn-g{padding:5px 14px;border-radius:6px;border:0.5px solid #3fb950;background:#0f2d1a;color:#7ee787;cursor:pointer;font-size:12px;font-weight:500;outline:none;transition:all .15s;}
+.btn-g.on,.btn-g:hover{background:#3fb950;color:#0d1117;}
+.btn-r{padding:5px 14px;border-radius:6px;border:0.5px solid #e24b4a;background:#3d1a1a;color:#ffa0a0;cursor:pointer;font-size:12px;font-weight:500;outline:none;transition:all .15s;}
+.btn-r.on,.btn-r:hover{background:#e24b4a;color:#fff;}
+.btn-b{padding:5px 14px;border-radius:6px;border:0.5px solid #58a6ff;background:#0d1f3c;color:#79c0ff;cursor:pointer;font-size:12px;outline:none;}
+.btn-save{font-size:12px;font-weight:600;padding:6px 16px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;outline:none;}
+/* MISC */
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-.pulse{animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.geral-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;}
+.pulse{animation:pulse 1.5s infinite;}
+.geral-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;}
 .gcard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:12px;text-align:center;}
-
-@media (max-width: 600px) {
-    .mbox { grid-template-columns: 1fr 1fr; display: grid; }
-    .geral-grid { grid-template-columns: 1fr 1fr; }
-}
+.gcard.gon{border-color:#3fb950;box-shadow:0 0 10px #3fb95020;}
 </style>
 </head>
 <body>
@@ -51,19 +51,19 @@ input[type=text],input[type=number],select{font-size:12px;padding:6px 8px;border
 
 <div class="hdr" style="margin-bottom:12px;">
   <div>
-    <div style="font-size:16px;font-weight:700;color:#79c0ff;">Painel IoT Felipe</div>
-    <div style="font-size:11px;color:#8b949e;" id="hdr-base">carregando...</div>
+    <div style="font-size:15px;font-weight:600;">Painel ESP32</div>
+    <div style="font-size:11px;color:#8b949e;" id="hdr-base">---</div>
   </div>
   <div class="row">
-    <div style="font-size:13px;font-weight:600;background:#161b22;padding:4px 10px;border-radius:6px;" id="clk-t">--:--:--</div>
-    <div style="display:flex;align-items:center;gap:6px;">
+    <div style="font-size:13px;font-weight:500;" id="clk-t">--:--:--</div>
+    <div style="display:flex;align-items:center;gap:5px;">
       <span class="dot pulse" id="dot-broker" style="background:#8b949e;"></span>
-      <span style="font-size:11px;color:#8b949e;font-weight:600;" id="lbl-broker">BROKER</span>
+      <span style="font-size:11px;color:#8b949e;" id="lbl-broker">broker</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:4px 12px;">
+    <div style="display:flex;align-items:center;gap:5px;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:3px 10px;">
       <span class="dot" id="dot-esp" style="background:#8b949e;"></span>
-      <span style="font-size:11px;font-weight:700;color:#8b949e;" id="lbl-esp">OFFLINE</span>
-      <span id="hdr-rssi" style="font-size:10px;color:#8b949e;margin-left:4px;"></span>
+      <span style="font-size:11px;color:#8b949e;">ESP32</span>
+      <span style="font-size:11px;font-weight:600;color:#8b949e;" id="lbl-esp">---</span>
     </div>
     <button class="btn-b" onclick="refreshPainel()">&#128260; Refresh</button>
     <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
@@ -72,117 +72,100 @@ input[type=text],input[type=number],select{font-size:12px;padding:6px 8px;border
 
 <div class="mbox">
   <div class="mt"><div class="ml">Coils</div><div class="mv" id="m-coils">0</div></div>
-  <div class="mt"><div class="ml">Acionados</div><div class="mv" id="m-on">0</div></div>
+  <div class="mt"><div class="ml">Acionados</div><div class="mv" id="m-on" style="color:#3fb950;">0</div></div>
   <div class="mt"><div class="ml">Sensores</div><div class="mv" id="m-mon">0</div></div>
-  <div class="mt"><div class="ml">SPs Ativos</div><div class="mv" id="m-spac">0</div></div>
+  <div class="mt"><div class="ml">Set Points</div><div class="mv" id="m-sp">0</div></div>
+  <div class="mt"><div class="ml">SP Ativos</div><div class="mv" id="m-spac" style="color:#3fb950;">0</div></div>
 </div>
 
 <div class="tabs">
-  <button class="tab active" id="btn-geral" onclick="showTab('geral')">&#127968; Geral</button>
-  <button class="tab" id="btn-cfg" onclick="showTab('cfg')">&#9881; Config</button>
+  <button class="tab" id="btn-geral" onclick="showTab('geral')">&#127968; Geral</button>
+  <button class="tab active" id="btn-cfg" onclick="showTab('cfg')">&#9881; Config</button>
   <button class="tab" id="btn-coils" onclick="showTab('coils')">&#128268; Coils</button>
   <button class="tab" id="btn-mon" onclick="showTab('mon')">&#128202; Monitor</button>
   <button class="tab" id="btn-sp" onclick="showTab('sp')">&#127919; SPs</button>
 </div>
 
-<div class="pane active" id="pane-geral">
+<div class="pane" id="pane-geral">
   <div class="card">
-    <div class="sh">dispositivo principal</div>
+    <div class="sh">dispositivo</div>
     <div class="geral-grid">
-      <div class="gcard" id="g-esp-card">
-        <div style="font-size:10px;color:#8b949e;margin-bottom:6px;">STATUS REAL-TIME</div>
-        <div class="row" style="justify-content:center;gap:6px;margin-bottom:8px;">
+      <div class="gcard">
+        <div style="font-size:10px;color:#8b949e;margin-bottom:6px;">ESP32</div>
+        <div class="row" style="justify-content:center;gap:6px;">
           <span class="dot" id="g-dot-esp" style="background:#8b949e;"></span>
           <span style="font-size:18px;font-weight:700;" id="g-lbl-esp">---</span>
-        </div>
-        <div id="g-metrics-box" style="font-size:11px;color:#8b949e;line-height:1.6;">
-            <div id="g-uptime">Uptime: ---</div>
-            <div id="g-rssi">Sinal: ---</div>
         </div>
       </div>
     </div>
   </div>
   <div class="card">
-    <div class="sh">acionamentos (coils)</div>
+    <div class="sh">coils</div>
     <div class="geral-grid" id="g-coils"></div>
   </div>
   <div class="card">
-    <div class="sh">monitoramento analógico</div>
+    <div class="sh">sensores</div>
     <div class="geral-grid" id="g-mons"></div>
   </div>
 </div>
 
-<div class="pane" id="pane-cfg">
+<div class="pane active" id="pane-cfg">
   <div class="card">
-    <div class="sh">identificação</div>
+    <div class="sh">identificacao</div>
     <div class="grid3">
       <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" oninput="updateBase()"></div>
       <div class="col"><label class="lbl">Local</label><input type="text" id="cfg-l" value="sala" oninput="updateBase()"></div>
       <div class="col"><label class="lbl">Device ID</label><input type="text" id="cfg-d" value="esp32_01" oninput="updateBase()"></div>
     </div>
   </div>
-  
   <div class="card">
-    <div class="sh">telemetria do hardware</div>
-    <div class="geral-grid">
-        <div class="gcard">
-            <div class="ml">SINAL WIFI</div>
-            <div class="mv" id="cfg-rssi">---</div>
-            <div style="font-size:10px;color:#8b949e;">dBm</div>
-        </div>
-        <div class="gcard">
-            <div class="ml">TEMPO LIGADO</div>
-            <div class="mv" id="cfg-uptime" style="font-size:14px;color:#79c0ff;">---</div>
-        </div>
-        <div class="gcard">
-            <div class="ml">IP DO DISPOSITIVO</div>
-            <div class="mv" id="cfg-ip" style="font-size:13px;color:#7ee787;">---</div>
-        </div>
+    <div class="sh">conexao mqtt</div>
+    <div class="row">
+      <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#e24b4a;">Desconectado</span>
+      <button class="btn-b" onclick="conectarMQTT()">Conectar</button>
     </div>
   </div>
-
-  <div class="card">
-    <div class="sh">conexão mqtt (hivemq cloud)</div>
-    <div class="row" style="justify-content:space-between;">
-      <div class="row">
-        <span id="mqtt-st" style="font-weight:700;color:#e24b4a;">DESCONECTADO</span>
-      </div>
-      <button class="btn-b" id="btn-conectar" onclick="conectarMQTT()">Conectar Agora</button>
-    </div>
+  <div class="card" style="border-color:#238636;">
+    <div class="sh">nuvem</div>
+    <span id="sync-st" style="font-size:11px;color:#8b949e;">pronto</span>
   </div>
 </div>
 
-<div class="pane" id="pane-coils"><div class="card"><div class="hdr"><div class="sh">Saídas Digitais</div><button class="btn-b" onclick="addCoil()">+ Coil</button></div><div id="coils-list"></div></div></div>
-<div class="pane" id="pane-mon"><div class="card"><div class="hdr"><div class="sh">Entradas</div><button class="btn-b" onclick="addMon('analog')">+ Analog</button></div><div id="mon-list"></div></div></div>
-<div class="pane" id="pane-sp"><div class="card"><div id="sp-list"></div></div></div>
-
+<div class="pane" id="pane-coils">
+  <div class="card">
+    <div class="hdr"><div class="sh">coils</div><button class="btn-b" onclick="addCoil()">+ Coil</button></div>
+    <div id="coils-list"></div>
+  </div>
 </div>
 
-<div id="toast"></div>
+<div class="pane" id="pane-mon">
+  <div class="card">
+    <div class="hdr"><div class="sh">sensores</div><button class="btn-b" onclick="addMon('analog')">+ Analog</button></div>
+    <div id="mon-list"></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-sp">
+  <div class="card"><div id="sp-list"></div></div>
+</div>
+
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 <script>
-// CONFIGURAÇÕES GLOBAIS
+// JSONBIN CONFIG
 var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
-var JSONBIN_ID  = '69ee74c6856a68218976161c';
+var JSONBIN_ID = '69ee74c6856a68218976161c';
 var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
 
 var coils = [], mons = [], sps = [], qty = 2;
 var mqclient = null;
 var _esp32Online = false;
-var _ignorarRetained = true;
 
-// --- FUNÇÕES DE INICIALIZAÇÃO ---
-window.onload = function() {
-    carregarNuvem();
-    tick();
-    setInterval(tick, 1000);
-};
+// INICIALIZACAO
+window.onload = function() { carregarNuvem(); setInterval(tick, 1000); tick(); };
 
-function tick() {
-    var n = new Date();
-    document.getElementById('clk-t').textContent = n.toLocaleTimeString('pt-BR');
-}
+function tick() { document.getElementById('clk-t').textContent = new Date().toLocaleTimeString('pt-BR'); }
 
 function showTab(id) {
     document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
@@ -192,142 +175,81 @@ function showTab(id) {
     if(id === 'geral') renderGeral();
 }
 
-// --- LOGICA MQTT ---
+// MQTT HIVEMQ
 function conectarMQTT() {
     if (mqclient && mqclient.connected) return;
-
-    var st = document.getElementById('mqtt-st');
-    st.textContent = 'CONECTANDO...'; st.style.color = '#ffc060';
-
-    // Sua URL do HiveMQ Cloud
+    document.getElementById('mqtt-st').textContent = 'Conectando...';
+    
     mqclient = mqtt.connect('wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt', {
-        clientId: 'felipe_painel_' + Math.random().toString(16).substr(2,5),
+        clientId: 'felipe_' + Math.random().toString(16).substr(2,4),
         username: 'joazeirofelipe',
         password: 'Mqtt@Railway2026',
         clean: true
     });
 
-    mqclient.on('connect', function() {
-        st.textContent = 'CONECTADO'; st.style.color = '#3fb950';
+    mqclient.on('connect', () => {
+        document.getElementById('mqtt-st').textContent = 'Conectado';
+        document.getElementById('mqtt-st').style.color = '#3fb950';
         document.getElementById('dot-broker').style.background = '#3fb950';
-        setESP32Status('---');
         subscreverTopicos();
-        _ignorarRetained = true;
-        setTimeout(() => { _ignorarRetained = false; }, 2000);
     });
 
-    mqclient.on('message', function(topic, msg) {
-        processarMsg(topic, msg.toString());
-    });
+    mqclient.on('message', (topic, msg) => processarMsg(topic, msg.toString()));
+}
+
+function subscreverTopicos() {
+    if(!mqclient) return;
+    mqclient.subscribe(getBase() + '/#');
 }
 
 function processarMsg(topic, msg) {
     var base = getBase();
+    if(topic === base + '/status') setESP32Status(msg);
     
-    // Status do ESP32
-    if (topic === base + '/status') {
-        setESP32Status(msg);
-    }
-
-    // Telemetria (RSSI, Uptime, IP)
-    if (topic === base + '/telemetria') {
-        try {
-            var d = JSON.parse(msg);
-            if(d.rssi) {
-                document.getElementById('cfg-rssi').textContent = d.rssi;
-                document.getElementById('g-rssi').textContent = 'Sinal: ' + d.rssi + ' dBm';
-                document.getElementById('hdr-rssi').textContent = '📶 ' + d.rssi + 'dBm';
-            }
-            if(d.uptime) {
-                var up = formatUptime(d.uptime);
-                document.getElementById('cfg-uptime').textContent = up;
-                document.getElementById('g-uptime').textContent = 'Uptime: ' + up;
-            }
-            if(d.ip) document.getElementById('cfg-ip').textContent = d.ip;
-        } catch(e) {}
-    }
-
-    // Estados dos Coils
+    // Estados Coils
     var cm = topic.match(/coil_(\d+)\/estado$/);
-    if (cm && !_ignorarRetained) {
+    if(cm) {
         var idx = parseInt(cm[1]) - 1;
         if(coils[idx]) {
             coils[idx].estado = (msg === coils[idx].msgA);
-            renderCoils();
-            renderGeral();
-            updateMetrics();
+            renderCoils(); renderGeral(); updateMetrics();
         }
     }
-}
-
-// --- AUXILIARES ---
-function formatUptime(s) {
-    var h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
-    return h + "h " + m + "m";
 }
 
 function setESP32Status(s) {
     _esp32Online = (s === 'online');
     var cor = _esp32Online ? '#3fb950' : '#e24b4a';
-    var txt = _esp32Online ? 'ONLINE' : 'OFFLINE';
-    
     document.getElementById('dot-esp').style.background = cor;
-    document.getElementById('lbl-esp').textContent = txt;
-    document.getElementById('lbl-esp').style.color = cor;
+    document.getElementById('lbl-esp').textContent = _esp32Online ? 'ONLINE' : 'OFFLINE';
     document.getElementById('g-dot-esp').style.background = cor;
-    document.getElementById('g-lbl-esp').textContent = txt;
-    document.getElementById('g-lbl-esp').style.color = cor;
-}
-
-// Chame renderGeral sempre que houver mudança nos dados
-function renderGeral() {
-    var gc = document.getElementById('g-coils');
-    gc.innerHTML = coils.length ? '' : '<p style="color:#8b949e;">Sem coils configurados.</p>';
-    coils.forEach((c, i) => {
-        var d = document.createElement('div');
-        d.className = 'gcard';
-        if(c.estado) d.style.borderColor = '#3fb950';
-        d.innerHTML = `
-            <div style="font-size:10px;color:#8b949e;">COIL ${i+1}</div>
-            <div style="font-weight:600;margin:4px 0;">${c.nome}</div>
-            <div style="color:${c.estado?'#3fb950':'#8b949e'}; font-size:11px;">${c.estado?'ATIVO':'INATIVO'}</div>
-        `;
-        gc.appendChild(d);
-    });
-
-    var gm = document.getElementById('g-mons');
-    gm.innerHTML = mons.length ? '' : '<p style="color:#8b949e;">Sem sensores configurados.</p>';
-    mons.forEach((m, i) => {
-        var d = document.createElement('div');
-        d.className = 'gcard';
-        d.innerHTML = `
-            <div style="font-size:10px;color:#8b949e;">${m.nome}</div>
-            <div style="font-size:18px;font-weight:700;color:#79c0ff;">${m.val || 0} ${m.unid}</div>
-        `;
-        gm.appendChild(d);
-    });
-}
-
-function updateBase() {
-    var b = getBase();
-    document.getElementById('hdr-base').textContent = b;
+    document.getElementById('g-lbl-esp').textContent = _esp32Online ? 'ONLINE' : 'OFFLINE';
 }
 
 function getBase() {
-    return document.getElementById('cfg-p').value + '/' +
-           document.getElementById('cfg-l').value + '/' +
-           document.getElementById('cfg-d').value;
+    return document.getElementById('cfg-p').value + '/' + document.getElementById('cfg-l').value + '/' + document.getElementById('cfg-d').value;
 }
 
-function subscreverTopicos() {
-    if(!mqclient) return;
-    var base = getBase();
-    mqclient.subscribe(base + '/#');
+function updateBase() { document.getElementById('hdr-base').textContent = getBase(); }
+
+function renderGeral() {
+    var gc = document.getElementById('g-coils');
+    gc.innerHTML = '';
+    coils.forEach((c, i) => {
+        gc.innerHTML += `<div class="gcard ${c.estado?'gon':''}">
+            <div style="font-size:10px;color:#8b949e;">COIL ${i+1}</div>
+            <div style="font-weight:600;">${c.nome}</div>
+            <div style="color:${c.estado?'#3fb950':'#8b949e'}">${c.estado?'LIGADO':'DESLIGADO'}</div>
+        </div>`;
+    });
 }
 
-// RE-ADICIONE SUAS FUNÇÕES DE RENDERIZAÇÃO DE COILS, MONS E SPs ABAIXO...
-// (Elas permanecem iguais, apenas certifique-se de chamar renderGeral() nelas)
+function updateMetrics() {
+    document.getElementById('m-coils').textContent = coils.length;
+    document.getElementById('m-on').textContent = coils.filter(c => c.estado).length;
+}
 
+// RE-ADICIONE AS FUNCOES DE ADD/REMOVE COIL E NUVEM AQUI...
 </script>
 </body>
 </html>
