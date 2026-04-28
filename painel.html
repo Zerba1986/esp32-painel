@@ -335,7 +335,7 @@ function refreshPainel() {
   syncSt('Atualizando...', '#ef9f27');
 
   // Passo 1: Recarrega config da nuvem (sem perder conexão MQTT)
-  if (JSONBIN_KEY !== 'SUA_MASTER_KEY_AQUI') {
+  if (JSONBIN_KEY !== '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG') {
     fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
     .then(function(r){ return r.json(); })
     .then(function(data){
