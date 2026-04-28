@@ -77,6 +77,75 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .geral-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;}
 .gcard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:12px;text-align:center;transition:border .2s,box-shadow .2s;}
 .gcard.gon{border-color:#3fb950;box-shadow:0 0 10px #3fb95020;}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — SMARTPHONE (max 600px)
+═══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .wrap { padding: 8px; }
+
+  /* Header — empilha em duas linhas */
+  .hdr { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .hdr > div:last-child { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+
+  /* Métricas — 3 por linha */
+  .mbox { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+  .mt { min-width: unset; padding: 7px 8px; }
+  .mv { font-size: 15px; }
+
+  /* Tabs — ícones menores, sem texto longo */
+  .tabs { gap: 2px; padding: 3px; }
+  .tab { font-size: 10px; padding: 6px 4px; }
+
+  /* Grids — 1 coluna no mobile */
+  .grid2 { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr; }
+  .grid4 { grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  /* Coil — empilha botões */
+  .icard .row { flex-wrap: wrap; }
+  .icard .row > div[style*="flex:1"] { width: 100%; }
+  .icard .row > .row { margin-top: 6px; width: 100%; justify-content: flex-end; }
+
+  /* Botões LIGA/DESLIGA — menores */
+  .btn-g, .btn-r { padding: 5px 10px; font-size: 11px; }
+  .btn-b, .btn-a { padding: 5px 10px; font-size: 11px; }
+  .btn-save { font-size: 11px; padding: 5px 12px; }
+  .btn-exit { font-size: 11px; padding: 5px 10px; }
+
+  /* Cards de coil — tag acionado menor */
+  .chip { font-size: 9px; padding: 1px 5px; }
+  .tag { font-size: 10px; padding: 2px 7px; }
+
+  /* Geral grid — 2 colunas */
+  .geral-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .gcard { padding: 8px; }
+
+  /* SP sliders — full width */
+  input[type=range] { width: 100% !important; }
+
+  /* Config — tópicos menores */
+  code { font-size: 9px; word-break: break-all; }
+
+  /* Log — menor */
+  .ll { font-size: 10px; }
+}
+
+/* TABLET (601px - 900px) */
+@media (min-width: 601px) and (max-width: 900px) {
+  .grid4 { grid-template-columns: 1fr 1fr; }
+  .grid3 { grid-template-columns: 1fr 1fr; }
+  .geral-grid { grid-template-columns: repeat(3, 1fr); }
+  .mbox { flex-wrap: wrap; }
+  .mt { min-width: 80px; }
+}
+
+
+@media (max-width: 380px) {
+  .tab-txt { display: none; }
+  .tab { font-size: 16px; padding: 6px 8px; }
+}
+
 </style>
 </head>
 <body>
@@ -98,6 +167,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <span class="dot" id="dot-esp" style="background:#8b949e;"></span>
       <span style="font-size:11px;color:#8b949e;">ESP32</span>
       <span style="font-size:11px;font-weight:600;color:#8b949e;" id="lbl-esp">---</span>
+      <span style="font-size:10px;color:#8b949e;margin-left:4px;border-left:0.5px solid #30363d;padding-left:6px;" id="hdr-rssi" title="Sinal WiFi"></span>
+      <span style="font-size:10px;color:#8b949e;" id="hdr-uptime" title="Tempo ligado"></span>
     </div>
     <button class="btn-b" onclick="refreshPainel()" style="font-size:12px;padding:6px 14px;" title="Recarregar config e re-subscrever topicos">&#128260; Refresh</button>
     <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
@@ -116,11 +187,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab" id="btn-geral"  onclick="showTab('geral')">&#127968; Geral</button>
-  <button class="tab active" id="btn-cfg"    onclick="showTab('cfg')">&#9881; Config</button>
-  <button class="tab" id="btn-coils"  onclick="showTab('coils')">&#128268; Coils</button>
-  <button class="tab" id="btn-mon"    onclick="showTab('mon')">&#128202; Monitoramento</button>
-  <button class="tab" id="btn-sp"     onclick="showTab('sp')">&#127919; Set Points</button>
+  <button class="tab" id="btn-geral"  onclick="showTab('geral')">&#127968; <span class="tab-txt">Geral</span></button>
+  <button class="tab active" id="btn-cfg"    onclick="showTab('cfg')">&#9881; <span class="tab-txt">Config</span></button>
+  <button class="tab" id="btn-coils"  onclick="showTab('coils')">&#128268; <span class="tab-txt">Coils</span></button>
+  <button class="tab" id="btn-mon"    onclick="showTab('mon')">&#128202; <span class="tab-txt">Mon</span></button>
+  <button class="tab" id="btn-sp"     onclick="showTab('sp')">&#127919; <span class="tab-txt">SPs</span></button>
 </div>
 
 <!-- PANE GERAL -->
@@ -173,7 +244,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
   <div class="card">
     <div class="sh">status esp32</div>
-    <div class="row" style="justify-content:space-between;">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
       <div>
         <div style="font-size:12px;color:#8b949e;margin-bottom:4px;">Topico LWT: <code style="color:#79c0ff;" id="cfg-lwt">---</code></div>
         <div style="font-size:12px;color:#8b949e;">Ultima atualizacao: <span id="cfg-last">---</span></div>
@@ -181,6 +252,26 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div class="row">
         <span class="dot" id="cfg-dot" style="background:#8b949e;width:12px;height:12px;"></span>
         <span style="font-size:15px;font-weight:700;color:#8b949e;" id="cfg-esp-lbl">Aguardando...</span>
+      </div>
+    </div>
+    <!-- Métricas do dispositivo -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">RSSI</div>
+        <div style="font-size:20px;font-weight:600;" id="cfg-rssi" style="color:#8b949e;">---</div>
+        <div style="font-size:10px;color:#8b949e;">dBm</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">UPTIME</div>
+        <div style="font-size:18px;font-weight:600;color:#79c0ff;" id="cfg-uptime">---</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">IP LOCAL</div>
+        <div style="font-size:13px;font-weight:600;color:#7ee787;" id="cfg-ip">---</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">PACOTES</div>
+        <div style="font-size:20px;font-weight:600;color:#ffc060;" id="cfg-pkts">0</div>
       </div>
     </div>
   </div>
@@ -335,7 +426,7 @@ function refreshPainel() {
   syncSt('Atualizando...', '#ef9f27');
 
   // Passo 1: Recarrega config da nuvem (sem perder conexão MQTT)
-  if (JSONBIN_KEY !== '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG') {
+  if (JSONBIN_KEY !== 'SUA_MASTER_KEY_AQUI') {
     fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
     .then(function(r){ return r.json(); })
     .then(function(data){
@@ -345,8 +436,9 @@ function refreshPainel() {
       } else {
         syncSt('Sem config na nuvem', '#8b949e');
       }
-      // Passo 2: Re-subscreve tópicos sem desconectar
+      // Passo 2: Re-subscreve tópicos e atualiza aba Geral
       resubscribirTopicos();
+      renderGeral();
     })
     .catch(function(){
       syncSt('Erro na nuvem — usando local', '#e24b4a');
@@ -439,6 +531,7 @@ function aplicarConfig(c) {
   renderMons();
   renderSPs();
   updateSpSels();
+  renderGeral(); // sincroniza aba Geral após carregar config
 }
 
 function salvarNuvem() {
@@ -602,6 +695,13 @@ function setESP32Status(s) {
   if (s === 'offline') {
     coils.forEach(function(c){ c.estado = false; });
     sps.forEach(function(sp){ sp.estado = false; sp._ultimoComando = null; });
+    // Limpa métricas da aba Config
+    var cr = document.getElementById('cfg-rssi'); if(cr){ cr.textContent='---'; cr.style.color='#8b949e'; }
+    var cu = document.getElementById('cfg-uptime'); if(cu) cu.textContent='---';
+    var ci = document.getElementById('cfg-ip'); if(ci) ci.textContent='---';
+    // Limpa header
+    var hr = document.getElementById('hdr-rssi'); if(hr){ hr.textContent=''; }
+    var hu = document.getElementById('hdr-uptime'); if(hu){ hu.textContent=''; }
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
   }
 }
@@ -849,9 +949,9 @@ function addCoil() {
   if (coils.length >= MAX_COILS) { syncSt('Limite de '+MAX_COILS+' coils atingido!','#e24b4a'); return; }
   var pins = [2,26,27];
   coils.push({ nome:'Coil '+String(coils.length+1).padStart(2,'0'), pino:pins[coils.length]||14, estado:false, open:true, msgA:'1', msgD:'0' });
-  renderCoils(); updateMetrics();
+  renderCoils(); updateMetrics(); renderGeral();
 }
-function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); }
+function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); }
 function allCoils(s) {
   if (!_esp32Online) {
     syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
@@ -953,10 +1053,10 @@ function addMon(tipo) {
     ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
     : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true}
   );
-  renderMons(); updateMetrics(); updateSpSels();
+  renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
 }
-function removeMon(i) { mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); }
+function removeMon(i) { mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral(); }
 function toggleMonPanel(i) {
   mons[i].open = !mons[i].open;
   var p=document.getElementById('mp-'+i), a=document.getElementById('ma-'+i);
