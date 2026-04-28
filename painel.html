@@ -789,11 +789,11 @@ function conectarMQTT() {
   // Encerra conexão anterior
   if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
 
-  mqclient = mqtt.connect('wss://esphome64.up.railway.app:9001/mqtt', {
+  mqclient = mqtt.connect('wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt', {
     clientId:       'painel-'+Math.random().toString(16).substr(2,8),
     username:       'joazeirofelipe',
     password:       'Mqtt@Railway2026',
-    keepalive:      60,
+    keepalive:      30,
     reconnectPeriod:5000,
     connectTimeout: 10000,
     clean:          true
