@@ -789,8 +789,10 @@ function conectarMQTT() {
   // Encerra conexão anterior
   if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
 
-  mqclient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+  mqclient = mqtt.connect('wss://esphome64.up.railway.app:9001/mqtt', {
     clientId:       'painel-'+Math.random().toString(16).substr(2,8),
+    username:       'joazeirofelipe',
+    password:       'Mqtt@Railway2026',
     keepalive:      30,
     reconnectPeriod:5000,
     connectTimeout: 10000,
@@ -838,11 +840,13 @@ function conectarMQTT() {
 // ════════════════════════════════════════════════
 // COILS
 // ════════════════════════════════════════════════
-var MAX_COILS = 3;
+var MAX_COILS = 20;   // máximo de coils
+var MAX_ANALOG = 20;  // máximo de entradas analógicas
+var MAX_DIGITAL = 10; // máximo de entradas digitais
 var coils = [];
 
 function addCoil() {
-  if (coils.length >= MAX_COILS) return;
+  if (coils.length >= MAX_COILS) { syncSt('Limite de '+MAX_COILS+' coils atingido!','#e24b4a'); return; }
   var pins = [2,26,27];
   coils.push({ nome:'Coil '+String(coils.length+1).padStart(2,'0'), pino:pins[coils.length]||14, estado:false, open:true, msgA:'1', msgD:'0' });
   renderCoils(); updateMetrics();
@@ -939,6 +943,11 @@ function vcolor(v, mi, ma) {
 }
 
 function addMon(tipo) {
+  // Verifica limites
+  var totalAnalog  = mons.filter(function(m){ return m.tipo==='analog'; }).length;
+  var totalDigital = mons.filter(function(m){ return m.tipo==='digital'; }).length;
+  if (tipo==='analog'  && totalAnalog  >= MAX_ANALOG)  { syncSt('Limite de '+MAX_ANALOG+' analogicas atingido!','#e24b4a'); return; }
+  if (tipo==='digital' && totalDigital >= MAX_DIGITAL) { syncSt('Limite de '+MAX_DIGITAL+' digitais atingido!','#e24b4a'); return; }
   var i = mons.length, base = getBase();
   mons.push(tipo==='analog'
     ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
