@@ -193,20 +193,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
 
-  <button onclick="toggleConfig()" id="btn-unlock"
-    style="
-      background:#e24b4a;
-      color:white;
-      border:none;
-      padding:8px 14px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:12px;
-      font-weight:600;
-    ">
-    🔒 LOCKED
-  </button>
-
 </div>
 
 <!-- METRICS -->
@@ -340,6 +326,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <button class="btn-r" style="font-size:11px;padding:4px 10px;" onclick="allCoils(false)">Todos OFF</button>
         <button class="btn-g" style="font-size:11px;padding:4px 10px;" onclick="allCoils(true)">Todos ON</button>
         <button class="btn-b" id="btn-add-coil" onclick="addCoil()">+ Coil</button>
+        <button onclick="toggleConfig()" id="btn-unlock"
+	style="
+ 	 background:#e24b4a;
+  	color:white;
+  	border:none;
+  	padding:8px 14px;
+  	border-radius:8px;
+  	cursor:pointer;
+  	font-size:12px;
+  	font-weight:600;
+	">
+	🔒 LOCKED
+	</button>
       </div>
     </div>
     <div id="coils-list"><p style="color:#8b949e;font-size:12px;">Nenhum coil. Clique em + Coil.</p></div>
