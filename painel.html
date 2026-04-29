@@ -193,7 +193,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
 
-  <button onclick="unlockConfig()" id="btn-unlock"
+  <button onclick="toggleConfig()" id="btn-unlock"
     style="
       background:#e24b4a;
       color:white;
@@ -205,20 +205,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       font-weight:600;
     ">
     🔒 LOCKED
-  </button>
-
-  <button onclick="saveAndLock()" id="btn-save"
-    style="
-      background:#238636;
-      color:white;
-      border:none;
-      padding:8px 14px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:12px;
-      font-weight:600;
-    ">
-    💾 SAVE
   </button>
 
 </div>
@@ -435,11 +421,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 <script>
 var CONFIG_LOCKED = true;
-function unlockConfig(){
+function toggleConfig(){
 
-  var s = prompt("Senha administrador");
+  if(CONFIG_LOCKED){
 
-  if(s === "1234"){
+    var s = prompt("Senha administrador");
+
+    if(s !== "1234"){
+      alert("Senha incorreta");
+      return;
+    }
 
     CONFIG_LOCKED = false;
 
@@ -459,34 +450,30 @@ function unlockConfig(){
     alert("Configuração liberada");
   }
   else{
-    alert("Senha incorreta");
+
+    saveLocal();
+
+    if(typeof saveCloud === 'function'){
+      saveCloud();
+    }
+
+    CONFIG_LOCKED = true;
+
+    var b = document.getElementById("btn-unlock");
+
+    if(b){
+      b.innerHTML = "🔒 LOCKED";
+      b.style.background = "#e24b4a";
+    }
+
+    renderCoils();
+
+    if(typeof renderSPs === 'function'){
+      renderSPs();
+    }
+
+    alert("Configuração salva");
   }
-}
-
-function saveAndLock(){
-
-  saveLocal();
-
-  if(typeof saveCloud === 'function'){
-    saveCloud();
-  }
-
-  CONFIG_LOCKED = true;
-
-  var b = document.getElementById("btn-unlock");
-
-  if(b){
-    b.innerHTML = "🔒 LOCKED";
-    b.style.background = "#e24b4a";
-  }
-
-  renderCoils();
-
-  if(typeof renderSPs === 'function'){
-    renderSPs();
-  }
-
-  alert("Configuração salva");
 }
 // ════════════════════════════════════════════════
 // AUTH
