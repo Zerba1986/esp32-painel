@@ -1511,7 +1511,26 @@ function renderSPs() {
 
         +'</div>'
 
-        +'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
+	+'<div class="row" style="gap:6px;">'
+
+  	+'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
+
+  	+(i===0
+    ? '<button onclick="toggleConfig()" id="btn-unlock-sp" '
+      +'style="'
+      +'background:'+(CONFIG_LOCKED?'#e24b4a':'#238636')+';'
+      +'color:white;'
+      +'border:none;'
+      +'padding:5px 10px;'
+      +'border-radius:8px;'
+      +'cursor:pointer;'
+      +'font-size:11px;'
+      +'font-weight:600;'
+      +'">'
+      +(CONFIG_LOCKED?'🔒 LOCKED':'🔓 UNLOCKED')
+      +'</button>'
+    : ''
+  )
 
       +'</div>'
 
