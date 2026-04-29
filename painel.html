@@ -1472,13 +1472,13 @@ function renderSPs() {
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
           +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;"></div>'
 
-	+'<div class="col"><label class="lbl">Entrada</label><select 	'+(CONFIG_LOCKED?'disabled':'')+'id="msel-'+i+'"onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'+mOpts+'</select></div>'
+	+'<div class="col"><label class="lbl">Entrada</label><select 	'+(CONFIG_LOCKED?'disabled':'')+'id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'+mOpts+'</select></div>'
 
-	+'<div class="col"><label class="lbl">Tipo</label><select '+(CONFIG_LOCKED?'disabled 	':'')+'onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'+tOpts+'</select></div>'
+	+'<div class="col"><label class="lbl">Tipo</label><select '+(CONFIG_LOCKED?'disabled 	':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'+tOpts+'</select></div>'
 
-	+'<div class="col"><label class="lbl">Cor</label><select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'+cOpts+'</select></div>'
+	+'<div class="col"><label class="lbl">Cor</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'+cOpts+'</select></div>'
 
-	+'<div class="col"><label class="lbl">Acao</label><select '+(CONFIG_LOCKED?'disabled 	':'')+'onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'+aOpts+'</select></div>'
+	+'<div class="col"><label class="lbl">Acao</label><select '+(CONFIG_LOCKED?'disabled 	':'')+' onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'+aOpts+'</select></div>'
 
         +'</div>'
         +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
