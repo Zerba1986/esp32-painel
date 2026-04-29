@@ -326,19 +326,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <button class="btn-r" style="font-size:11px;padding:4px 10px;" onclick="allCoils(false)">Todos OFF</button>
         <button class="btn-g" style="font-size:11px;padding:4px 10px;" onclick="allCoils(true)">Todos ON</button>
         <button class="btn-b" id="btn-add-coil" onclick="addCoil()">+ Coil</button>
-        <button onclick="toggleConfig()" id="btn-unlock"
-	style="
- 	 background:#e24b4a;
-  	color:white;
-  	border:none;
-  	padding:8px 14px;
-  	border-radius:8px;
-  	cursor:pointer;
-  	font-size:12px;
-  	font-weight:600;
+        <button onclick="toggleConfig()" id="btn-unlock"style="background:#e24b4a;color:white;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;
 	">
 	🔒 LOCKED
 	</button>
+
       </div>
     </div>
     <div id="coils-list"><p style="color:#8b949e;font-size:12px;">Nenhum coil. Clique em + Coil.</p></div>
@@ -1335,17 +1327,21 @@ function renderMons() {
              +'<div class="gb"><div class="gf" id="mb-'+i+'" style="width:'+pct.toFixed(1)+'%;background:'+gc+';"></div></div>'
            +'</div>'
          +'</div>'
-         +'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>'
+         +(
+  !CONFIG_LOCKED
+  ? '<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>'
+  : ''
+)
         +'</div>'
         +'<div class="slide" id="mp-'+i+'" style="max-height:'+(m.open?'280px':'0')+';overflow:hidden;">'
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
-            +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
+            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
             +'<div class="col"><label class="lbl">Unidade</label><select onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;">'+UNIDS.map(function(u){return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>'
             +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
             +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
           +'</div>'
-          +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;"></div>'
+          +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;"></div>'
           +'<div class="col"><label class="lbl">Max</label><input type="number" value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div></div>'
         +'</div>';
     } else {
@@ -1475,10 +1471,15 @@ function renderSPs() {
         +'<div class="sep"></div>'
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
           +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;"></div>'
-          +'<div class="col"><label class="lbl">Entrada</label><select id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'+mOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Tipo</label><select onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'+tOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Cor</label><select onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'+cOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Acao</label><select onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'+aOpts+'</select></div>'
+
+	+'<div class="col"><label class="lbl">Entrada</label><select 	'+(CONFIG_LOCKED?'disabled':'')+'id="msel-'+i+'"onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'+mOpts+'</select></div>'
+
+	+'<div class="col"><label class="lbl">Tipo</label><select '+(CONFIG_LOCKED?'disabled 	':'')+'onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'+tOpts+'</select></div>'
+
+	+'<div class="col"><label class="lbl">Cor</label><select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'+cOpts+'</select></div>'
+
+	+'<div class="col"><label class="lbl">Acao</label><select '+(CONFIG_LOCKED?'disabled 	':'')+'onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'+aOpts+'</select></div>'
+
         +'</div>'
         +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
           +'<div class="col"><label class="lbl">Min — desaciona</label><div class="row" style="gap:6px;">'
