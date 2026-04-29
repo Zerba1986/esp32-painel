@@ -1440,86 +1440,178 @@ function updateSPSum(i) {
 }
 
 function renderSPs() {
+
   var list = document.getElementById('sp-list');
   if (!list) return;
+
   list.innerHTML = '';
+
   for (var i=0; i<qty; i++) {
+
     var c    = CORES[sps[i].cor];
     var curM = mons[sps[i].monIdx];
-    var mn   = curM ? curM.min : 0, mx = curM ? curM.max : 3.3, un = curM ? curM.unid : '';
-    var top  = gst(i,'comando'), topE = gst(i,'estado');
-    var cOpts = CORES.map(function(cc,ci){ return '<option value="'+ci+'"'+(ci===sps[i].cor?' selected':'')+'>'+cc.l+'</option>'; }).join('');
-    var aOpts = ACOES.map(function(a,ai){ return '<option value="'+ai+'"'+(ai===sps[i].acao?' selected':'')+'>'+a+'</option>'; }).join('');
-    var tOpts = TIPOS.map(function(t,ti){ return '<option value="'+ti+'"'+(ti===sps[i].tipo?' selected':'')+'>'+t+'</option>'; }).join('');
-    var mOpts = '<option value="-1">-- escolher --</option>'+mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
+
+    var mn = curM ? curM.min : 0;
+    var mx = curM ? curM.max : 3.3;
+    var un = curM ? curM.unid : '';
+
+    var top  = gst(i,'comando');
+    var topE = gst(i,'estado');
+
+    var cOpts = CORES.map(function(cc,ci){
+      return '<option value="'+ci+'"'+(ci===sps[i].cor?' selected':'')+'>'+cc.l+'</option>';
+    }).join('');
+
+    var aOpts = ACOES.map(function(a,ai){
+      return '<option value="'+ai+'"'+(ai===sps[i].acao?' selected':'')+'>'+a+'</option>';
+    }).join('');
+
+    var tOpts = TIPOS.map(function(t,ti){
+      return '<option value="'+ti+'"'+(ti===sps[i].tipo?' selected':'')+'>'+t+'</option>';
+    }).join('');
+
+    var mOpts =
+      '<option value="-1">-- escolher --</option>' +
+      mons.map(function(m,mi){
+        return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>';
+      }).join('');
+
     var d = document.createElement('div');
-    d.className='icard'; d.id='spc-'+i;
+
+    d.className='icard';
+    d.id='spc-'+i;
+
     d.innerHTML =
+
       '<div class="row" style="justify-content:space-between;">'
-       +'<div class="row">'
-         +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(sps[i].open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-         +'<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(i+1)+'</div>'
-         +'<div onclick="toggleSP('+i+')" style="cursor:pointer;">'
-           +'<div class="row"><span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+sps[i].nome+'</span>'
-           +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+(curM?TIPOS[sps[i].tipo]+' · '+curM.nome:'sem entrada')+'</span></div>'
-           +'<div style="font-size:11px;color:#8b949e;margin-top:1px;" id="spm-'+i+'">pub: <code style="color:#79c0ff;">'+top+'</code></div>'
-         +'</div>'
-       +'</div>'
-       +'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
-      +'</div>'
-      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'420px':'0')+';overflow:hidden;">'
-        +'<div class="sep"></div>'
-        +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-          +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;"></div>'
 
-	+'<div class="col"><label class="lbl">Entrada</label><select 	'+(CONFIG_LOCKED?'disabled':'')+'id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'+mOpts+'</select></div>'
+        +'<div class="row">'
 
-	+'<div class="col"><label class="lbl">Tipo</label><select '+(CONFIG_LOCKED?'disabled 	':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'+tOpts+'</select></div>'
+          +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(sps[i].open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
 
-	+'<div class="col"><label class="lbl">Cor</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'+cOpts+'</select></div>'
+          +'<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(i+1)+'</div>'
 
-	+'<div class="col"><label class="lbl">Acao</label><select '+(CONFIG_LOCKED?'disabled 	':'')+' onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'+aOpts+'</select></div>'
+          +'<div onclick="toggleSP('+i+')" style="cursor:pointer;">'
 
-        +'</div>'
-        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
-          +'<div class="col"><label class="lbl">Min — desaciona</label><div class="row" style="gap:6px;">'
-            +'<input type="range" min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-            +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
-          +'</div></div>'
-          +'<div class="col"><label class="lbl">Max — aciona</label><div class="row" style="gap:6px;">'
-            +'<input type="range" min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-            +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
-          +'</div></div>'
-          +'<div class="ib">val &gt; max aciona &nbsp;|&nbsp; val &lt; min desaciona</div>'
-        +'</div>'
-        +'<div id="jan-'+i+'" style="display:'+(sps[i].tipo===1?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
-          +'<div class="col"><label class="lbl">Min janela</label><div class="row" style="gap:6px;">'
-            +'<input type="range" min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-            +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
-          +'</div></div>'
-          +'<div class="col"><label class="lbl">Max janela</label><div class="row" style="gap:6px;">'
-            +'<input type="range" min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-            +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
-          +'</div></div>'
-          +'<div class="ib">min &le; val &le; max aciona &nbsp;|&nbsp; fora desaciona</div>'
-        +'</div>'
-        +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
-          +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
-          +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
-            +'<div class="col"><label class="lbl">&#128308; Msg ON — acionado</label><input type="text" value="'+sps[i].msgA+'" oninput="sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">&#9898; Msg OFF — desacionado</label><input type="text" value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();"></div>'
+            +'<div class="row">'
+
+              +'<span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+sps[i].nome+'</span>'
+
+              +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+
+                (curM ? TIPOS[sps[i].tipo]+' · '+curM.nome : 'sem entrada')+
+              '</span>'
+
+            +'</div>'
+
+            +'<div style="font-size:11px;color:#8b949e;margin-top:1px;" id="spm-'+i+'">'
+              +'pub: <code style="color:#79c0ff;">'+top+'</code>'
+            +'</div>'
+
           +'</div>'
-          +'<div style="font-size:11px;color:#8b949e;">ESP32 confirma via <code style="color:#79c0ff;">sp'+String(i+1).padStart(2,'0')+'/estado</code> com o mesmo valor enviado</div>'
+
         +'</div>'
-        +'<div id="smqtt-'+i+'" style="display:'+(sps[i].acao>0?'flex':'none')+';gap:8px;flex-wrap:wrap;background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;">'
-          +'<div style="width:100%;font-size:10px;color:#58a6ff;font-weight:700;text-transform:uppercase;letter-spacing:1px;">MQTT Publish — Topico</div>'
-          +'<div style="width:100%;font-size:11px;color:#8b949e;">cmd: <code style="color:#79c0ff;">'+top+'</code></div>'
-          +'<div style="width:100%;font-size:11px;color:#8b949e;">est: <code style="color:#79c0ff;">'+topE+'</code></div>'
+
+        +'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
+
+      +'</div>'
+
+      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'420px':'0')+';overflow:hidden;">'
+
+        +'<div class="sep"></div>'
+
+        +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
+
+          +'<div class="col">'
+            +'<label class="lbl">Nome</label>'
+            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;">'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Entrada</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'
+              +mOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Tipo</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'
+              +tOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Cor</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'
+              +cOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Acao</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'
+              +aOpts+
+            '</select>'
+          +'</div>'
+
         +'</div>'
+
+        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
+
+          +'<div class="col">'
+            +'<label class="lbl">Min — desaciona</label>'
+            +'<div class="row" style="gap:6px;">'
+
+              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
+
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
+
+            +'</div>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Max — aciona</label>'
+            +'<div class="row" style="gap:6px;">'
+
+              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
+
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
+
+            +'</div>'
+          +'</div>'
+
+        +'</div>'
+
+        +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+
+          +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
+
+          +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
+
+            +'<div class="col">'
+              +'<label class="lbl">&#128308; Msg ON — acionado</label>'
+              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].msgA+'" oninput="sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();">'
+            +'</div>'
+
+            +'<div class="col">'
+              +'<label class="lbl">&#9898; Msg OFF — desacionado</label>'
+              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
+            +'</div>'
+
+          +'</div>'
+
+        +'</div>'
+
       +'</div>';
+
     list.appendChild(d);
+
   }
+
   checkSPs();
+
+}  
+
 }
 
 function checkSPs() {
