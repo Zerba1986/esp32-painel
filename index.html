@@ -31,7 +31,7 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
     <div class="logo">
       <div class="logo-icon"><div class="logo-dot pulse"></div></div>
       <div class="logo-title">ESP32 Painel</div>
-      <div class="logo-sub">minha_casa/sala/esp32_01</div>
+     
     </div>
     <div class="field">
       <label>Usuário</label>
@@ -41,27 +41,24 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
       <label>Senha</label>
       <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     </div>
-
     <button class="btn-login" onclick="login()">Entrar</button>
     <div class="error" id="err">Usuário ou senha incorretos</div>
   </div>
 </div>
 <script>
-// ── DEFINA SEU USUÁRIO E SENHA AQUI ──────────────────
+// ── DEFINA SEU USUÁRIO E SENHA AQUI ──────────────────  /////////////////////////////////////////////////senhas
 var USUARIO = "admin";
 var SENHA   = "esp32";
 // ─────────────────────────────────────────────────────
 
 function login() {
-  var u   = document.getElementById('user').value.trim();
-  var p   = document.getElementById('pass').value;
+  var u = document.getElementById('user').value.trim();
+  var p = document.getElementById('pass').value;
   var err = document.getElementById('err');
-
   if (u === USUARIO && p === SENHA) {
     // Salva sessão por 8 horas
     var expira = Date.now() + 8 * 60 * 60 * 1000;
     sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira:expira}));
-
     window.location.href = 'painel.html';
   } else {
     err.style.display = 'block';
