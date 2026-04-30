@@ -364,59 +364,74 @@ function logout() {
 }
 
 // ════════════════════════════════════════════════
-// LOCK/UNLOCK — única variável, sem duplicação
+// LOCK/UNLOCK — individual por aba
 // ════════════════════════════════════════════════
-var CONFIG_LOCKED = true;
-var ADMIN_PASS    = '1234';
+var ADMIN_PASS = '1234';
 
-function toggleLock(origem) {
-  if (CONFIG_LOCKED) {
-    var s = prompt('Senha administrador:');
+// Estado de cada aba — todos começam bloqueados
+var LOCKS = { cfg: true, coil: true, mon: true, sp: true };
+
+// Atalho para compatibilidade com código que usa CONFIG_LOCKED
+// Retorna true se QUALQUER aba ainda estiver bloqueada
+// (usado apenas nas funções que não têm contexto de aba)
+// Para verificação por aba use LOCKS[aba] diretamente
+var CONFIG_LOCKED = true; // mantido por compatibilidade — veja isLocked()
+
+function isLocked(aba) {
+  return LOCKS[aba] !== false;
+}
+
+function toggleLock(aba) {
+  if (isLocked(aba)) {
+    var s = prompt('Senha para liberar ' + aba.toUpperCase() + ':');
     if (s !== ADMIN_PASS) { syncSt('Senha incorreta!','#e24b4a'); return; }
-    CONFIG_LOCKED = false;
-    syncSt('Configuração LIBERADA','#3fb950');
+    LOCKS[aba] = false;
+    syncSt('Aba ' + aba.toUpperCase() + ' LIBERADA','#3fb950');
   } else {
-    CONFIG_LOCKED = true;
+    LOCKS[aba] = true;
     saveLocal();
     salvarNuvem();
-    syncSt('Configuração SALVA e BLOQUEADA','#58a6ff');
+    syncSt('Aba ' + aba.toUpperCase() + ' SALVA e BLOQUEADA','#58a6ff');
   }
-  atualizarBotoesLock();
-  renderCoils();
-  renderMons();
-  renderSPs();
+  // Atualiza CONFIG_LOCKED global (true se qualquer aba bloqueada)
+  CONFIG_LOCKED = Object.keys(LOCKS).some(function(k){ return LOCKS[k]; });
+  atualizarBotaoLock(aba);
+  if(aba==='cfg')  atualizarCamposConfig();
+  if(aba==='coil') renderCoils();
+  if(aba==='mon')  renderMons();
+  if(aba==='sp')   renderSPs();
+}
+
+function atualizarBotaoLock(aba) {
+  var b = document.getElementById('btn-lock-'+aba);
+  if (!b) return;
+  var bloqueado = isLocked(aba);
+  b.className = 'btn-lock ' + (bloqueado ? 'locked' : 'unlocked');
+  b.innerHTML = bloqueado ? '&#128274; LOCKED' : '&#128275; UNLOCKED';
+
+  // Controla botões de adicionar/remover da aba correspondente
+  var ids = {
+    coil: ['btn-add-coil'],
+    mon:  ['btn-add-analog','btn-add-digital'],
+    sp:   ['btn-sp-plus','btn-sp-minus'],
+    cfg:  []
+  };
+  (ids[aba]||[]).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){ el.disabled = bloqueado; el.style.opacity = bloqueado?'0.4':'1'; }
+  });
+}
+
+function atualizarTodosLocks() {
+  Object.keys(LOCKS).forEach(function(aba){ atualizarBotaoLock(aba); });
   atualizarCamposConfig();
 }
 
-function atualizarBotoesLock() {
-  ['coil','mon','sp','cfg'].forEach(function(id){
-    var b = document.getElementById('btn-lock-'+id);
-    if (!b) return;
-    if (CONFIG_LOCKED) {
-      b.className='btn-lock locked';
-      b.innerHTML='&#128274; LOCKED';
-    } else {
-      b.className='btn-lock unlocked';
-      b.innerHTML='&#128275; UNLOCKED';
-    }
-  });
-  // botões + nas abas
-  var ba = document.getElementById('btn-add-coil');
-  var bm1 = document.getElementById('btn-add-analog');
-  var bm2 = document.getElementById('btn-add-digital');
-  var bsp = document.getElementById('btn-sp-plus');
-  var bsm = document.getElementById('btn-sp-minus');
-  if(ba){ ba.disabled = CONFIG_LOCKED; ba.style.opacity = CONFIG_LOCKED?'0.4':'1'; }
-  if(bm1){ bm1.disabled = CONFIG_LOCKED; bm1.style.opacity = CONFIG_LOCKED?'0.4':'1'; }
-  if(bm2){ bm2.disabled = CONFIG_LOCKED; bm2.style.opacity = CONFIG_LOCKED?'0.4':'1'; }
-  if(bsp){ bsp.disabled = CONFIG_LOCKED; bsp.style.opacity = CONFIG_LOCKED?'0.4':'1'; }
-  if(bsm){ bsm.disabled = CONFIG_LOCKED; bsm.style.opacity = CONFIG_LOCKED?'0.4':'1'; }
-}
-
 function atualizarCamposConfig() {
+  var bloqueado = isLocked('cfg');
   ['cfg-p','cfg-l','cfg-d'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.readOnly = CONFIG_LOCKED;
+    if (el) el.readOnly = bloqueado;
   });
 }
 
@@ -537,7 +552,7 @@ function aplicarConfig(c) {
   }
   _carregando = false;
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
-  renderGeral(); atualizarBotoesLock(); atualizarCamposConfig();
+  renderGeral(); atualizarTodosLocks();
 }
 
 function salvarNuvem() {
@@ -586,7 +601,7 @@ function carregarNuvem() {
 
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
-  atualizarBotoesLock(); atualizarCamposConfig();
+  atualizarTodosLocks();
 }
 
 // ════════════════════════════════════════════════
@@ -917,13 +932,13 @@ var MAX_DIGITAL = 10;
 var coils = [];
 
 function addCoil(){
-  if(CONFIG_LOCKED){ syncSt('Desbloqueie primeiro!','#e24b4a'); return; }
+  if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; }
   if(coils.length>=MAX_COILS){ syncSt('Limite de '+MAX_COILS+' coils!','#e24b4a'); return; }
   var pins=[2,26,27,4,5,13,14,15,16,17,18,19,21,22,23,25];
   coils.push({nome:'Coil '+String(coils.length+1).padStart(2,'0'),pino:pins[coils.length]||33,estado:false,open:true,msgA:'1',msgD:'0'});
   renderCoils(); updateMetrics(); renderGeral(); saveLocal();
 }
-function removeCoil(i){ coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); saveLocal(); }
+function removeCoil(i){ if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; } coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); saveLocal(); }
 
 function allCoils(s){
   if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
@@ -1000,14 +1015,14 @@ function validarMsgCoil(idx, campo, novoVal){
 function renderCoils(){
   var el=document.getElementById('coils-list');
   var btn=document.getElementById('btn-add-coil');
-  if(btn){ btn.disabled=CONFIG_LOCKED; btn.style.opacity=CONFIG_LOCKED?'0.4':'1'; }
+  if(btn){ btn.disabled=isLocked('coil'); btn.style.opacity=isLocked('coil')?'0.4':'1'; }
   if(!el) return;
   if(!coils.length){ el.innerHTML='<p style="color:#8b949e;font-size:12px;">Nenhum coil. Desbloqueie e clique em + Coil.</p>'; return; }
   el.innerHTML='';
   coils.forEach(function(c,i){
     var tc=gct(i,'comando'), te=gct(i,'estado');
     var d=document.createElement('div');
-    d.className='icard'+(c.estado?' gon':'')+(CONFIG_LOCKED?' locked-panel':' unlocked-panel');
+    d.className='icard'+(c.estado?' gon':'')+(isLocked('coil')?' locked-panel':' unlocked-panel');
     d.innerHTML=
       '<div class="row" style="justify-content:space-between;">'
         +'<div class="row" style="flex:1;">'
@@ -1025,25 +1040,25 @@ function renderCoils(){
         +'<div class="row">'
           +'<button class="btn-g'+(c.estado?' on':'')+'" onclick="setCoil('+i+',true)">&#11014; LIGA</button>'
           +'<button class="btn-r'+(!c.estado?' on':'')+'" onclick="setCoil('+i+',false)">&#11015; DESLIGA</button>'
-          +(!CONFIG_LOCKED?'<button class="btn-del" onclick="removeCoil('+i+')">&#10005;</button>':'')
+          +(!isLocked('coil')?'<button class="btn-del" onclick="removeCoil('+i+')">&#10005;</button>':'')
         +'</div>'
       +'</div>'
       +'<div class="slide" id="cp-'+i+'" style="max-height:'+(c.open?'180px':'0')+';overflow:hidden;">'
         +'<div class="sep"></div>'
         +'<div class="grid4">'
           +'<div class="col"><label class="lbl">Nome</label>'
-            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'
           +'</div>'
           +'<div class="col"><label class="lbl">Pino</label>'
-            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+c.pino+'" style="width:55px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;saveLocal();">'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.pino+'" style="width:55px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;saveLocal();">'
           +'</div>'
           +'<div class="col"><label class="lbl">Msg ON</label>'
-            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+c.msgA+'" style="width:55px;" oninput="'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.msgA+'" style="width:55px;" oninput="'
               +'if(!validarMsgCoil('+i+',\'msgA\',this.value)){this.value=coils['+i+'].msgA;return;}'
               +'coils['+i+'].msgA=this.value;saveLocal();">'
           +'</div>'
           +'<div class="col"><label class="lbl">Msg OFF</label>'
-            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+c.msgD+'" style="width:55px;" oninput="'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.msgD+'" style="width:55px;" oninput="'
               +'if(!validarMsgCoil('+i+',\'msgD\',this.value)){this.value=coils['+i+'].msgD;return;}'
               +'coils['+i+'].msgD=this.value;saveLocal();">'
           +'</div>'
@@ -1066,7 +1081,7 @@ function vcolor(v,mi,ma){
 }
 
 function addMon(tipo){
-  if(CONFIG_LOCKED){ syncSt('Desbloqueie primeiro!','#e24b4a'); return; }
+  if(isLocked('mon')){ syncSt('Desbloqueie o card Mon primeiro!','#e24b4a'); return; }
   var totalA=mons.filter(function(m){ return m.tipo==='analog'; }).length;
   var totalD=mons.filter(function(m){ return m.tipo==='digital'; }).length;
   if(tipo==='analog'&&totalA>=MAX_ANALOG){ syncSt('Limite de '+MAX_ANALOG+' analogicas!','#e24b4a'); return; }
@@ -1082,7 +1097,7 @@ function addMon(tipo){
 }
 
 function removeMon(i){
-  if(CONFIG_LOCKED){ syncSt('Desbloqueie primeiro!','#e24b4a'); return; }
+  if(isLocked('mon')){ syncSt('Desbloqueie o card Mon primeiro!','#e24b4a'); return; }
   mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral(); saveLocal();
 }
 
@@ -1101,7 +1116,7 @@ function renderMons(){
   el.innerHTML='';
   mons.forEach(function(m,i){
     var d=document.createElement('div');
-    d.className='icard'+(CONFIG_LOCKED?' locked-panel':' unlocked-panel');
+    d.className='icard'+(isLocked('mon')?' locked-panel':' unlocked-panel');
     if(m.tipo==='analog'){
       var pct=Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
       var gc=vcolor(m.val,m.min,m.max);
@@ -1120,19 +1135,19 @@ function renderMons(){
               +'<div class="gb"><div class="gf" id="mb-'+i+'" style="width:'+pct.toFixed(1)+'%;background:'+gc+';"></div></div>'
             +'</div>'
           +'</div>'
-          +(!CONFIG_LOCKED?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
+          +(!isLocked('mon')?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
         +'</div>'
         +'<div class="slide" id="mp-'+i+'" style="max-height:'+(m.open?'280px':'0')+';overflow:hidden;">'
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
-            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Unidade</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'+UNIDS.map(function(u){ return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>'; }).join('')+'</select></div>'
-            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Unidade</label><select '+(isLocked('mon')?'disabled ':'')+' onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'+UNIDS.map(function(u){ return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>'; }).join('')+'</select></div>'
+            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
           +'</div>'
           +'<div class="row">'
-            +'<div class="col"><label class="lbl">Min</label><input type="number" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Max</label><input type="number" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Min</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Max</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div>'
           +'</div>'
         +'</div>';
     } else {
@@ -1152,18 +1167,18 @@ function renderMons(){
               +'</div>'
             +'</div>'
           +'</div>'
-          +(!CONFIG_LOCKED?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
+          +(!isLocked('mon')?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
         +'</div>'
         +'<div class="slide" id="mp-'+i+'" style="max-height:'+(m.open?'220px':'0')+';overflow:hidden;">'
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
-            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
-            +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
+            +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
           +'</div>'
           +'<div class="row">'
-            +'<div class="col"><label class="lbl">Valor HIGH</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Valor HIGH</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;saveLocal();"></div>'
           +'</div>'
         +'</div>';
     }
@@ -1192,7 +1207,7 @@ var sps=Array.from({length:10},function(_,i){
 });
 
 function changeQty(delta){
-  if(CONFIG_LOCKED){ syncSt('Desbloqueie primeiro!','#e24b4a'); return; }
+  if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
   var nv=qty+delta;
   if(nv<1||nv>10){ syncSt('Limite: 1 a 10 set points','#8b949e'); return; }
   qty=nv;
@@ -1240,7 +1255,7 @@ function renderSPs(){
     var tOpts=TIPOS.map(function(t,ti){ return '<option value="'+ti+'"'+(ti===sps[i].tipo?' selected':'')+'>'+t+'</option>'; }).join('');
     var mOpts='<option value="-1">-- escolher --</option>'+mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
     var d=document.createElement('div');
-    d.className='icard'+(CONFIG_LOCKED?' locked-panel':' unlocked-panel');
+    d.className='icard'+(isLocked('mon')?' locked-panel':' unlocked-panel');
     d.id='spc-'+i;
     d.innerHTML=
       '<div class="row" style="justify-content:space-between;">'
@@ -1262,22 +1277,22 @@ function renderSPs(){
       +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'440px':'0')+';overflow:hidden;">'
         +'<div class="sep"></div>'
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-          +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
-          +'<div class="col"><label class="lbl">Entrada</label><select '+(CONFIG_LOCKED?'disabled ':'')+' id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();saveLocal();">'+mOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Tipo</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');saveLocal();">'+tOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Cor</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');saveLocal();">'+cOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Acao</label><select '+(CONFIG_LOCKED?'disabled ':'')+' onchange="sps['+i+'].acao=parseInt(this.value);updateSPSum('+i+');saveLocal();">'+aOpts+'</select></div>'
+          +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
+          +'<div class="col"><label class="lbl">Entrada</label><select '+(isLocked('sp')?'disabled ':'')+' id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();saveLocal();">'+mOpts+'</select></div>'
+          +'<div class="col"><label class="lbl">Tipo</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');saveLocal();">'+tOpts+'</select></div>'
+          +'<div class="col"><label class="lbl">Cor</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');saveLocal();">'+cOpts+'</select></div>'
+          +'<div class="col"><label class="lbl">Acao</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].acao=parseInt(this.value);updateSPSum('+i+');saveLocal();">'+aOpts+'</select></div>'
         +'</div>'
         +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
           +'<div class="col"><label class="lbl">Min — desaciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
               +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
             +'</div>'
           +'</div>'
           +'<div class="col"><label class="lbl">Max — aciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
               +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
             +'</div>'
           +'</div>'
@@ -1285,13 +1300,13 @@ function renderSPs(){
         +'<div id="jan-'+i+'" style="display:'+(sps[i].tipo===1?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
           +'<div class="col"><label class="lbl">Limite Inferior</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
               +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jmv-'+i+'">'+sps[i].min.toFixed(2)+'</span>'
             +'</div>'
           +'</div>'
           +'<div class="col"><label class="lbl">Limite Superior</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
               +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jxv-'+i+'">'+sps[i].max.toFixed(2)+'</span>'
             +'</div>'
           +'</div>'
@@ -1300,13 +1315,13 @@ function renderSPs(){
           +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
           +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
             +'<div class="col"><label class="lbl">&#128308; Msg ON</label>'
-              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+sps[i].msgA+'" oninput="'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].msgA+'" oninput="'
                 +'if(this.value===sps['+i+'].msgD){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
                 +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
                 +'sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();">'
             +'</div>'
             +'<div class="col"><label class="lbl">&#9898; Msg OFF</label>'
-              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+sps[i].msgD+'" oninput="'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].msgD+'" oninput="'
                 +'if(this.value===sps['+i+'].msgA){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
                 +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
                 +'sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
@@ -1360,7 +1375,7 @@ function renderSPStatus(){
     var c=CORES[sps[i].cor], m=mons[sps[i].monIdx];
     if(!m){
       tag.textContent='sem entrada'; tag.style.cssText='background:#21262d;color:#8b949e;';
-      card.style.border=CONFIG_LOCKED?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none';
+      card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none';
       continue;
     }
     if(sps[i].estado){
@@ -1371,7 +1386,7 @@ function renderSPStatus(){
       pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+sps[i].nome+' — '+m.nome+' — '+as+' → <b>'+sps[i].msgA+'</b></span>');
     } else {
       tag.textContent='aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
-      if(!sps[i].estado){ card.style.border=CONFIG_LOCKED?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none'; }
+      if(!sps[i].estado){ card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none'; }
     }
   }
   document.getElementById('m-spac').textContent=ac;
