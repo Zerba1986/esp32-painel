@@ -203,11 +203,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <!-- PANE CONFIG -->
 <div class="pane" id="pane-cfg">
   <div class="card">
-    <div class="sh">identificacao do dispositivo</div>
+    <div class="hdr" style="margin-bottom:10px;">
+      <div class="sh" style="margin:0;">identificacao do dispositivo</div>
+      <button class="btn-lock locked" id="btn-lock-cfg" onclick="toggleLock('cfg')">&#128274; LOCKED</button>
+    </div>
     <div class="grid3" style="margin-bottom:10px;">
-      <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" oninput="updateBase()"></div>
-      <div class="col"><label class="lbl">Local</label><input type="text" id="cfg-l" value="sala" oninput="updateBase()"></div>
-      <div class="col"><label class="lbl">Device ID</label><input type="text" id="cfg-d" value="esp32_01" oninput="updateBase()"></div>
+      <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" readonly oninput="updateBase()"></div>
+      <div class="col"><label class="lbl">Local</label><input type="text" id="cfg-l" value="sala" readonly oninput="updateBase()"></div>
+      <div class="col"><label class="lbl">Device ID</label><input type="text" id="cfg-d" value="esp32_01" readonly oninput="updateBase()"></div>
     </div>
     <div style="background:#0d1117;border-radius:6px;padding:8px 10px;">
       <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:6px;">TOPICOS GERADOS</div>
@@ -386,7 +389,7 @@ function toggleLock(origem) {
 }
 
 function atualizarBotoesLock() {
-  ['coil','mon','sp'].forEach(function(id){
+  ['coil','mon','sp','cfg'].forEach(function(id){
     var b = document.getElementById('btn-lock-'+id);
     if (!b) return;
     if (CONFIG_LOCKED) {
