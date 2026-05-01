@@ -202,6 +202,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- PANE CONFIG -->
 <div class="pane" id="pane-cfg">
+
+  <!-- IDENTIFICAÇÃO -->
   <div class="card">
     <div class="hdr" style="margin-bottom:10px;">
       <div class="sh" style="margin:0;">identificacao do dispositivo</div>
@@ -217,10 +219,120 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div id="topic-list" style="font-size:11px;color:#8b949e;line-height:1.8;"></div>
     </div>
   </div>
+
+  <!-- ARMAZENAMENTO -->
   <div class="card">
-    <div class="sh">resumo</div>
-    <div id="cfg-resumo" style="font-size:12px;color:#8b949e;line-height:2;"></div>
+    <div class="hdr" style="margin-bottom:12px;">
+      <div class="sh" style="margin:0;">&#128190; armazenamento de configuracao</div>
+      <span id="sync-st" style="font-size:11px;color:#8b949e;">pronto</span>
+    </div>
+    <!-- Seletor de provedor -->
+    <div class="col" style="margin-bottom:12px;">
+      <label class="lbl">Provedor</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="prov-jsonbin" class="btn-b" style="font-size:11px;padding:4px 12px;" onclick="setProvedor('jsonbin')">JSONBin</button>
+        <button id="prov-custom" class="btn-sm" style="font-size:11px;padding:4px 12px;" onclick="setProvedor('custom')">URL Própria</button>
+      </div>
+    </div>
+
+    <!-- JSONBin -->
+    <div id="bloco-jsonbin">
+      <div class="grid2" style="margin-bottom:8px;">
+        <div class="col">
+          <label class="lbl">Bin ID</label>
+          <input type="text" id="cfg-bin-id" value="69ee74c6856a68218976161c" style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+        <div class="col">
+          <label class="lbl">Master Key <span style="color:#8b949e;font-size:10px;">(não salva no dispositivo)</span></label>
+          <input type="password" id="cfg-master-key" placeholder="$2a$10$..." style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8b949e;margin-bottom:10px;">
+        URL: <code style="color:#79c0ff;" id="cfg-bin-url">https://api.jsonbin.io/v3/b/...</code>
+      </div>
+    </div>
+
+    <!-- URL Própria -->
+    <div id="bloco-custom" style="display:none;">
+      <div class="grid2" style="margin-bottom:8px;">
+        <div class="col">
+          <label class="lbl">URL GET (carregar)</label>
+          <input type="text" id="cfg-url-get" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+        <div class="col">
+          <label class="lbl">URL PUT (salvar)</label>
+          <input type="text" id="cfg-url-put" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+        <div class="col">
+          <label class="lbl">Header de Auth</label>
+          <input type="text" id="cfg-auth-header" placeholder="Authorization" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+        <div class="col">
+          <label class="lbl">Valor do Header <span style="color:#8b949e;font-size:10px;">(token/senha)</span></label>
+          <input type="password" id="cfg-auth-value" placeholder="Bearer eyJhbGc..." style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px;">
+      <button class="btn-b" onclick="testarArmazenamento()" style="font-size:11px;">&#128268; Testar</button>
+      <button class="btn-b" onclick="carregarNuvem()" style="font-size:11px;">&#8595; Carregar</button>
+      <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
+    </div>
   </div>
+
+  <!-- BROKER MQTT -->
+  <div class="card">
+    <div class="hdr" style="margin-bottom:12px;">
+      <div class="sh" style="margin:0;">&#128268; broker mqtt</div>
+      <div class="row" style="gap:8px;">
+        <span class="dot pulse" id="dot-broker" style="background:#8b949e;"></span>
+        <span style="font-size:12px;font-weight:600;" id="mqtt-st">Desconectado</span>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:8px;">
+      <div class="col">
+        <label class="lbl">Protocolo</label>
+        <select id="cfg-mqtt-proto" onchange="salvarConexaoLocal()">
+          <option value="wss">wss:// (TLS — recomendado)</option>
+          <option value="ws">ws:// (sem TLS)</option>
+        </select>
+      </div>
+      <div class="col">
+        <label class="lbl">Porta WebSocket</label>
+        <input type="number" id="cfg-mqtt-porta" value="8884" style="width:80px;" oninput="salvarConexaoLocal()">
+      </div>
+      <div class="col" style="grid-column:1/-1;">
+        <label class="lbl">URL do Broker</label>
+        <input type="text" id="cfg-mqtt-url" value="4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud" style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+      </div>
+      <div class="col">
+        <label class="lbl">Usuário</label>
+        <input type="text" id="cfg-mqtt-user" value="joazeirofelipe" style="width:100%;" oninput="salvarConexaoLocal()">
+      </div>
+      <div class="col">
+        <label class="lbl">Senha</label>
+        <input type="password" id="cfg-mqtt-pass" value="Mqtt@Railway2026" style="width:100%;" oninput="salvarConexaoLocal()">
+      </div>
+      <div class="col">
+        <label class="lbl">Keepalive (segundos)</label>
+        <input type="number" id="cfg-mqtt-keepalive" value="15" min="5" max="120" style="width:80px;" oninput="salvarConexaoLocal()">
+      </div>
+      <div class="col">
+        <label class="lbl">Client ID</label>
+        <input type="text" id="cfg-mqtt-clientid" placeholder="gerado automaticamente" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+      </div>
+    </div>
+    <div style="font-size:11px;color:#8b949e;margin-bottom:10px;">
+      URL completa: <code style="color:#79c0ff;" id="cfg-mqtt-fullurl">wss://...</code>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px;">
+      <button class="btn-r" onclick="desconectarMQTT()" style="font-size:11px;">&#9632; Desconectar</button>
+      <button class="btn-g" onclick="reconectarMQTT()" style="font-size:11px;">&#9654; Conectar</button>
+    </div>
+  </div>
+
+  <!-- STATUS ESP32 -->
   <div class="card">
     <div class="sh">status esp32</div>
     <div class="row" style="justify-content:space-between;margin-bottom:10px;">
@@ -234,21 +346,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
     </div>
   </div>
+
+  <!-- RESUMO -->
   <div class="card">
-    <div class="sh">conexao mqtt</div>
-    <div class="row">
-      <span style="font-size:12px;color:#8b949e;">Status:</span>
-      <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#ef9f27;">Conectando...</span>
-    </div>
+    <div class="sh">resumo</div>
+    <div id="cfg-resumo" style="font-size:12px;color:#8b949e;line-height:2;"></div>
   </div>
-  <div class="card" style="border-color:#238636;">
-    <div class="sh">salvar na nuvem (jsonbin)</div>
-    <p style="font-size:12px;color:#8b949e;margin-bottom:10px;">Salva todas as configuracoes e carrega automaticamente em qualquer dispositivo.</p>
-    <div class="row" style="justify-content:space-between;">
-      <span id="sync-st" style="font-size:12px;color:#8b949e;">pronto</span>
-      <button class="btn-save" onclick="salvarNuvem()" style="font-size:13px;padding:8px 24px;">&#128190; Salvar na Nuvem</button>
-    </div>
-  </div>
+
 </div>
 
 <!-- PANE COILS -->
@@ -303,9 +407,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div class="hdr" style="margin-bottom:10px;">
       <div class="sh" style="margin:0;">set points de controle</div>
       <div class="row">
-        <button class="btn-qty" id="btn-sp-minus" onclick="changeQty(-1)">&#8722;</button>
-        <span style="font-size:15px;font-weight:700;min-width:24px;text-align:center;" id="qty-lbl">2</span>
-        <button class="btn-qty" id="btn-sp-plus"  onclick="changeQty(+1)">&#43;</button>
+        <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;" id="qty-lbl">0</span>
+        <span style="font-size:11px;color:#8b949e;">SPs</span>
+        <button class="btn-b" id="btn-sp-plus" onclick="addSP()">+ SP</button>
         <button class="btn-lock locked" id="btn-lock-sp" onclick="toggleLock('sp')">&#128274; LOCKED</button>
       </div>
     </div>
@@ -413,7 +517,7 @@ function atualizarBotaoLock(aba) {
   var ids = {
     coil: ['btn-add-coil'],
     mon:  ['btn-add-analog','btn-add-digital'],
-    sp:   ['btn-sp-plus','btn-sp-minus'],
+    sp:   ['btn-sp-plus'],
     cfg:  []
   };
   (ids[aba]||[]).forEach(function(id){
@@ -432,6 +536,16 @@ function atualizarCamposConfig() {
   ['cfg-p','cfg-l','cfg-d'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.readOnly = bloqueado;
+  });
+  // Campos de armazenamento e broker também bloqueados
+  ['cfg-bin-id','cfg-url-get','cfg-url-put','cfg-auth-header',
+   'cfg-mqtt-url','cfg-mqtt-porta','cfg-mqtt-user','cfg-mqtt-keepalive','cfg-mqtt-clientid'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.readOnly = bloqueado;
+  });
+  ['cfg-mqtt-proto'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.disabled = bloqueado;
   });
 }
 
@@ -461,16 +575,144 @@ function confirmarModal() {
 // ════════════════════════════════════════════════
 // JSONBIN
 // ════════════════════════════════════════════════
-var JSONBIN_ID  = '69ee74c6856a68218976161c';
-var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
-var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
+// ════════════════════════════════════════════════
+// CONFIG DE CONEXÃO — lida dos campos da aba Config
+// Tudo dinâmico — sem credenciais hardcoded
+// ════════════════════════════════════════════════
 var _carregando = false;
 var _toastTimer = null;
+var _provedor = 'jsonbin'; // 'jsonbin' ou 'custom'
+
+// Provedor ativo — lido dos campos da aba Config
+function getCfgArmazenamento() {
+  if (_provedor === 'jsonbin') {
+    var binId  = (document.getElementById('cfg-bin-id')  ||{}).value || '';
+    var mKey   = (document.getElementById('cfg-master-key')||{}).value || '';
+    return {
+      tipo:    'jsonbin',
+      urlGet:  'https://api.jsonbin.io/v3/b/' + binId,
+      urlPut:  'https://api.jsonbin.io/v3/b/' + binId,
+      headers: { 'X-Master-Key': mKey, 'Content-Type': 'application/json' },
+      valido:  binId.length > 0 && mKey.length > 0
+    };
+  } else {
+    var urlGet   = (document.getElementById('cfg-url-get')    ||{}).value || '';
+    var urlPut   = (document.getElementById('cfg-url-put')    ||{}).value || '';
+    var authH    = (document.getElementById('cfg-auth-header')||{}).value || 'Authorization';
+    var authV    = (document.getElementById('cfg-auth-value') ||{}).value || '';
+    var headers  = { 'Content-Type': 'application/json' };
+    if (authH && authV) headers[authH] = authV;
+    return {
+      tipo:    'custom',
+      urlGet:  urlGet,
+      urlPut:  urlPut,
+      headers: headers,
+      valido:  urlGet.length > 0
+    };
+  }
+}
+
+// Config broker MQTT — lida dos campos
+function getCfgBroker() {
+  var proto    = (document.getElementById('cfg-mqtt-proto')    ||{}).value || 'wss';
+  var url      = (document.getElementById('cfg-mqtt-url')      ||{}).value || '';
+  var porta    = (document.getElementById('cfg-mqtt-porta')    ||{}).value || '8884';
+  var user     = (document.getElementById('cfg-mqtt-user')     ||{}).value || '';
+  var pass     = (document.getElementById('cfg-mqtt-pass')     ||{}).value || '';
+  var keepalive= parseInt((document.getElementById('cfg-mqtt-keepalive')||{}).value || '15');
+  var clientId = (document.getElementById('cfg-mqtt-clientid') ||{}).value || '';
+  if (!clientId) clientId = 'painel-' + Math.random().toString(16).substr(2,8);
+  return {
+    urlCompleta: proto + '://' + url + ':' + porta + '/mqtt',
+    user:        user,
+    pass:        pass,
+    keepalive:   keepalive,
+    clientId:    clientId,
+    valido:      url.length > 0
+  };
+}
+
+function setProvedor(prov) {
+  _provedor = prov;
+  document.getElementById('bloco-jsonbin').style.display = prov==='jsonbin' ? 'block' : 'none';
+  document.getElementById('bloco-custom').style.display  = prov==='custom'  ? 'block' : 'none';
+  document.getElementById('prov-jsonbin').className = prov==='jsonbin' ? 'btn-b' : 'btn-sm';
+  document.getElementById('prov-custom').className  = prov==='custom'  ? 'btn-b' : 'btn-sm';
+  atualizarUrlsBroker();
+  salvarConexaoLocal();
+}
+
+function atualizarUrlsBroker() {
+  var proto = (document.getElementById('cfg-mqtt-proto')||{}).value || 'wss';
+  var url   = (document.getElementById('cfg-mqtt-url')  ||{}).value || '';
+  var porta = (document.getElementById('cfg-mqtt-porta')||{}).value || '8884';
+  var full  = document.getElementById('cfg-mqtt-fullurl');
+  if (full) full.textContent = proto+'://'+url+':'+porta+'/mqtt';
+  var binId = (document.getElementById('cfg-bin-id')||{}).value || '';
+  var binUrl = document.getElementById('cfg-bin-url');
+  if (binUrl) binUrl.textContent = 'https://api.jsonbin.io/v3/b/'+(binId||'...');
+}
+
+// Salva config de conexão no sessionStorage (não no JSONBin — segurança)
+function salvarConexaoLocal() {
+  atualizarUrlsBroker();
+  var dados = {
+    provedor: _provedor,
+    binId:    (document.getElementById('cfg-bin-id')      ||{}).value || '',
+    urlGet:   (document.getElementById('cfg-url-get')     ||{}).value || '',
+    urlPut:   (document.getElementById('cfg-url-put')     ||{}).value || '',
+    authH:    (document.getElementById('cfg-auth-header') ||{}).value || '',
+    mqttProto:(document.getElementById('cfg-mqtt-proto')  ||{}).value || 'wss',
+    mqttUrl:  (document.getElementById('cfg-mqtt-url')    ||{}).value || '',
+    mqttPorta:(document.getElementById('cfg-mqtt-porta')  ||{}).value || '8884',
+    mqttUser: (document.getElementById('cfg-mqtt-user')   ||{}).value || '',
+    mqttKA:   (document.getElementById('cfg-mqtt-keepalive')||{}).value || '15'
+    // ⚠️ Senhas NÃO são salvas — re-digitadas a cada sessão
+  };
+  sessionStorage.setItem('esp32conexao', JSON.stringify(dados));
+}
+
+// Restaura config de conexão (sem senhas)
+function restaurarConexaoLocal() {
+  try {
+    var raw = sessionStorage.getItem('esp32conexao');
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    if (d.provedor) { _provedor = d.provedor; setProvedor(d.provedor); }
+    if (d.binId    && document.getElementById('cfg-bin-id'))       document.getElementById('cfg-bin-id').value       = d.binId;
+    if (d.urlGet   && document.getElementById('cfg-url-get'))      document.getElementById('cfg-url-get').value      = d.urlGet;
+    if (d.urlPut   && document.getElementById('cfg-url-put'))      document.getElementById('cfg-url-put').value      = d.urlPut;
+    if (d.authH    && document.getElementById('cfg-auth-header'))  document.getElementById('cfg-auth-header').value  = d.authH;
+    if (d.mqttProto&& document.getElementById('cfg-mqtt-proto'))   document.getElementById('cfg-mqtt-proto').value   = d.mqttProto;
+    if (d.mqttUrl  && document.getElementById('cfg-mqtt-url'))     document.getElementById('cfg-mqtt-url').value     = d.mqttUrl;
+    if (d.mqttPorta&& document.getElementById('cfg-mqtt-porta'))   document.getElementById('cfg-mqtt-porta').value   = d.mqttPorta;
+    if (d.mqttUser && document.getElementById('cfg-mqtt-user'))    document.getElementById('cfg-mqtt-user').value    = d.mqttUser;
+    if (d.mqttKA   && document.getElementById('cfg-mqtt-keepalive'))document.getElementById('cfg-mqtt-keepalive').value = d.mqttKA;
+    atualizarUrlsBroker();
+  } catch(e) {}
+}
+
+function testarArmazenamento() {
+  var cfg = getCfgArmazenamento();
+  if (!cfg.valido) { syncSt('Preencha os campos de armazenamento!','#e24b4a'); return; }
+  syncSt('Testando conexão...','#ef9f27');
+  fetch(cfg.urlGet, { headers: cfg.headers })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.record || d.config || d.data || Object.keys(d).length > 0) {
+      syncSt('✅ Conexão OK! Dados encontrados.','#3fb950');
+    } else {
+      syncSt('⚠️ Conectou mas sem dados ainda.','#ef9f27');
+    }
+  })
+  .catch(function(e){ syncSt('❌ Erro: '+e.message,'#e24b4a'); });
+}
 
 function refreshPainel() {
   syncSt('Atualizando...','#ef9f27');
   if (JSONBIN_KEY !== 'SUA_MASTER_KEY_AQUI') {
-    fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
+    var _arqR = getCfgArmazenamento();
+    fetch(_arqR.urlGet, { headers: _arqR.headers })
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
@@ -572,7 +814,7 @@ function getConfig() {
     projeto: document.getElementById('cfg-p').value,
     local:   document.getElementById('cfg-l').value,
     device:  document.getElementById('cfg-d').value,
-    coils: coils, mons: mons, qty: qty, sps: sps
+    coils: coils, mons: mons, sps: sps
   };
 }
 
@@ -581,14 +823,24 @@ function aplicarConfig(c) {
   if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
   if (c.local)   document.getElementById('cfg-l').value = c.local;
   if (c.device)  document.getElementById('cfg-d').value = c.device;
-  if (Array.isArray(c.coils)) coils = c.coils;
-  if (Array.isArray(c.mons))  mons  = c.mons;
-  if (Array.isArray(c.sps))   sps   = c.sps;
-  if (c.qty && !isNaN(c.qty)) {
-    qty = parseInt(c.qty);
-    document.getElementById('qty-lbl').textContent = qty;
-    document.getElementById('m-sp').textContent    = qty;
+  if (Array.isArray(c.coils)) {
+    coils = c.coils.map(function(coil, idx){
+      // Compatibilidade: coils antigos sem .numero recebem número pelo índice
+      if(!coil.numero) coil.numero = idx+1;
+      return coil;
+    });
+    coils.sort(function(a,b){ return a.numero-b.numero; });
   }
+  if (Array.isArray(c.mons))  mons  = c.mons;
+  if (Array.isArray(c.sps)) {
+    sps = c.sps.map(function(sp, idx){
+      if(!sp.numero) sp.numero = idx+1;
+      return sp;
+    });
+    sps.sort(function(a,b){ return a.numero-b.numero; });
+  }
+  qty = sps.length;
+  atualizarQtyLabel();
   _carregando = false;
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
@@ -596,51 +848,60 @@ function aplicarConfig(c) {
   if (!mqclient || !mqclient.connected) {
     conectarMQTT();
   } else {
-    // Já conectado — força resub para pegar retained com config nova
+    // Já conectado — processa fila pendente e força resub
+    processarFilaPendente();
     subscreverTopicos(true);
   }
 }
 
 function salvarNuvem() {
   if (_carregando) return;
-  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') { syncSt('Insira a Master Key!','#e24b4a'); return; }
+  var arq = getCfgArmazenamento();
+  if (!arq.valido) { syncSt('Configure o armazenamento na aba Config!','#e24b4a'); return; }
   syncSt('Salvando...','#ef9f27');
   var cfg = getConfig();
   localStorage.setItem('esp32cfg', JSON.stringify(cfg));
-  fetch(JSONBIN_URL, {
-    method: 'PUT',
-    headers: { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_KEY },
-    body: JSON.stringify({ config: cfg })
-  })
+  // Formato adaptado por provedor
+  var body = arq.tipo === 'jsonbin'
+    ? JSON.stringify({ config: cfg })
+    : JSON.stringify(cfg);
+  fetch(arq.urlPut, { method:'PUT', headers: arq.headers, body: body })
   .then(function(r){ return r.json(); })
   .then(function(){ syncSt('Salvo!','#3fb950'); })
-  .catch(function(){ syncSt('Erro — salvo local','#e24b4a'); });
+  .catch(function(e){ syncSt('Erro ao salvar: '+e.message,'#e24b4a'); });
 }
 
 function carregarNuvem() {
   setTimeout(function(){ _carregando = false; }, 10000);
-  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
+  var arq = getCfgArmazenamento();
+  if (!arq.valido) {
+    syncSt('Configure o armazenamento na aba Config!','#ef9f27');
     var raw = localStorage.getItem('esp32cfg');
     if (raw) { try { aplicarConfig(JSON.parse(raw)); syncSt('Config local','#8b949e'); } catch(e){ initDefault(); } }
     else initDefault();
     return;
   }
   syncSt('Carregando...','#ef9f27');
-  fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
+  fetch(arq.urlGet, { headers: arq.headers })
   .then(function(r){ return r.json(); })
   .then(function(data){
-    if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
-      aplicarConfig(data.record.config);
+    // Suporta formato JSONBin {record:{config:{}}} ou direto {config:{}} ou {}
+    var cfg = (data.record && data.record.config) ? data.record.config
+            : (data.config) ? data.config
+            : (data.coils || data.projeto) ? data
+            : null;
+    if (cfg && Object.keys(cfg).length > 0) {
+      aplicarConfig(cfg);
       syncSt('Config carregada!','#3fb950');
     } else {
-      syncSt('Sem config — padrao','#8b949e');
+      syncSt('Sem config — usando padrão','#8b949e');
       initDefault();
     }
   })
-  .catch(function(){
-    syncSt('Erro rede — usando local','#e24b4a');
+  .catch(function(e){
+    syncSt('Erro rede: '+e.message+' — usando local','#e24b4a');
     var raw = localStorage.getItem('esp32cfg');
-    if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e){ initDefault(); } }
+    if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e2){ initDefault(); } }
     else initDefault();
   });
 }
@@ -670,7 +931,7 @@ function showTab(id) {
   });
   document.getElementById('pane-'+id).classList.add('active');
   document.getElementById('btn-'+id).classList.add('active');
-  if (id==='cfg')   { updateTopics(); updateResumo(); }
+  if (id==='cfg')   { updateTopics(); updateResumo(); atualizarUrlsBroker(); }
   if (id==='geral') { renderGeral(); }
 }
 
@@ -682,8 +943,15 @@ function getBase() {
         +(document.getElementById('cfg-l').value||'l')+'/'
         +(document.getElementById('cfg-d').value||'d');
 }
-function gct(i,t){ return getBase()+'/atuadores/coil_'+String(i+1).padStart(2,'0')+'/'+t; }
-function gst(i,t){ return getBase()+'/setpoints/sp'+String(i+1).padStart(2,'00')+'/'+t; }
+function gct(i,t){
+  // Usa o número definido pelo usuário, não o índice do array
+  var num = (coils[i] && coils[i].numero) ? coils[i].numero : (i+1);
+  return getBase()+'/atuadores/coil_'+String(num).padStart(2,'0')+'/'+t;
+}
+function gst(i,t){
+  var num = (sps[i] && sps[i].numero) ? sps[i].numero : (i+1);
+  return getBase()+'/setpoints/sp'+String(num).padStart(2,'0')+'/'+t;
+}
 
 function updateBase() {
   var b = getBase();
@@ -713,9 +981,9 @@ function updateTopics() {
 function updateResumo() {
   document.getElementById('cfg-resumo').innerHTML = [
     '<b style="color:#e8eaf0;">Base:</b> '+getBase(),
-    '<b style="color:#e8eaf0;">Coils ('+coils.length+'):</b> '+(coils.map(function(c,i){ return 'coil_'+String(i+1).padStart(2,'0')+' '+c.nome; }).join(', ')||'nenhum'),
+    '<b style="color:#e8eaf0;">Coils ('+coils.length+'):</b> '+(coils.map(function(c){ return 'coil_'+String(c.numero||1).padStart(2,'0')+' '+c.nome; }).join(', ')||'nenhum'),
     '<b style="color:#e8eaf0;">Monitoramento ('+mons.length+'):</b> '+(mons.map(function(m){ return m.nome+'['+m.tipo+']'; }).join(', ')||'nenhum'),
-    '<b style="color:#e8eaf0;">Set Points ('+qty+'):</b> '+Array.from({length:qty},function(_,i){ return 'SP'+String(i+1).padStart(2,'0')+'['+TIPOS[sps[i].tipo]+']'; }).join(', '),
+    '<b style="color:#e8eaf0;">Set Points ('+sps.length+'):</b> '+sps.map(function(s){ return 'SP'+String(s.numero||1).padStart(2,'0')+'['+TIPOS[s.tipo]+']'; }).join(', '),
   ].join('<br>');
 }
 
@@ -800,6 +1068,17 @@ function addLog(id, msg, tipo) {
 var mqclient = null;
 var _ignorarRetained = false;
 
+// Fila de mensagens que chegaram antes do coils[] estar populado
+var _filaMsgs = [];
+
+function processarFilaPendente() {
+  if (_filaMsgs.length === 0) return;
+  addLog('clog','<b style="color:#ef9f27;">Processando '+_filaMsgs.length+' mensagens pendentes...</b>','pub');
+  var fila = _filaMsgs.slice();
+  _filaMsgs = [];
+  fila.forEach(function(m){ processarMsg(m.topic, m.msg); });
+}
+
 function mqttPub(topic, payload) {
   if(mqclient && mqclient.connected){
     mqclient.publish(topic, String(payload), {qos:1, retain:false});
@@ -878,8 +1157,15 @@ function processarMsg(topic, msg) {
   // 3. Estado Coils — aceita sempre (retained mantém último estado real)
   var cm=topic.match(/coil_(\d+)\/estado$/);
   if(cm){
-    var ci=parseInt(cm[1])-1;
-    if(ci>=0 && ci<coils.length){
+    var numCoil=parseInt(cm[1]); // número do coil do tópico
+    if(coils.length===0){
+      _filaMsgs.push({topic:topic, msg:msg});
+      addLog('clog','<b style="color:#8b949e;">SUB (fila)</b> <code style="color:#5a6478;">'+topic+'</code> → coils[] não pronto ainda','sub');
+      return;
+    }
+    // Busca coil pelo NÚMERO, não pelo índice do array
+    var ci = coils.findIndex(function(c){ return c.numero===numCoil; });
+    if(ci>=0){
       var coil=coils[ci];
       if(msg===coil.msgA){
         coil.estado=true;
@@ -890,28 +1176,43 @@ function processarMsg(topic, msg) {
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = DESACIONADO ✓','sub');
         salvarEstadosLocal(); renderCoils(); updateMetrics(); renderGeral();
       } else {
-        // Estado NÃO muda — painel aguarda valor correto
         addLog('clog','<b style="color:#e24b4a;">⚠️ MSG DESCONHECIDA</b> <code style="color:#79c0ff;">'+topic+'</code> → ESP32 enviou "'+msg+'" | esperado msgON="'+coil.msgA+'" ou msgOFF="'+coil.msgD+'" | estado mantido','sub');
         syncSt('⚠️ '+coil.nome+': ESP32 enviou "'+msg+'" — não bate com msgON/OFF configurado! Verifique.','#e24b4a');
       }
+    } else {
+      addLog('clog','<b style="color:#e24b4a;">⚠️ COIL índice '+ci+' fora do range (total: '+coils.length+')</b>','sub');
     }
     return;
   }
-  // 4. Estado SPs — aceita sempre (retained mantém último estado real)
+  // 4. Estado SPs — busca pelo número, fila se sps[] vazio
   var sm=topic.match(/sp(\d+)\/estado$/);
   if(sm){
-    var si=parseInt(sm[1])-1;
-    if(si>=0 && si<qty){
+    var numSP=parseInt(sm[1]);
+    if(sps.length===0){
+      _filaMsgs.push({topic:topic, msg:msg});
+      addLog('splog','<b style="color:#8b949e;">SUB (fila)</b> <code style="color:#5a6478;">'+topic+'</code> → sps[] não pronto','sub');
+      return;
+    }
+    var si=sps.findIndex(function(s){ return s.numero===numSP; });
+    if(si>=0){
       var sp=sps[si];
-      if(msg===sp.msgA){ sp.estado=true; addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">ACIONADO ✓</b>','sub'); salvarEstadosLocal(); renderSPStatus(); }
-      else if(msg===sp.msgD){ sp.estado=false; addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">DESACIONADO ✓</b>','sub'); salvarEstadosLocal(); renderSPStatus(); }
-      else {
-        // Estado NÃO muda — painel aguarda valor correto
-        addLog('splog','<b style="color:#e24b4a;">⚠️ MSG DESCONHECIDA</b> <code style="color:#79c0ff;">'+topic+'</code> → ESP32 enviou "'+msg+'" | esperado msgON="'+sp.msgA+'" ou msgOFF="'+sp.msgD+'" | estado mantido','sub');
-        syncSt('⚠️ '+sps[si].nome+': ESP32 enviou "'+msg+'" — não bate com msgON/OFF configurado! Verifique.','#e24b4a');
+      if(msg===sp.msgA){
+        sp.estado=true;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">ACIONADO ✓</b>','sub');
+        salvarEstadosLocal(); renderSPStatus(); renderGeral();
+      } else if(msg===sp.msgD){
+        sp.estado=false;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">DESACIONADO ✓</b>','sub');
+        salvarEstadosLocal(); renderSPStatus(); renderGeral();
+      } else {
+        addLog('splog','<b style="color:#e24b4a;">⚠️ MSG DESCONHECIDA</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não bate com msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
+        syncSt('⚠️ '+sp.nome+': valor "'+msg+'" não reconhecido!','#e24b4a');
       }
+    } else {
+      addLog('splog','<b style="color:#8b949e;">SP'+String(numSP).padStart(2,'0')+' não configurado no painel</b>','sub');
     }
     return;
+  }
   }
   // 5a. Wildcard digital — entradas/digital/sn01, sn02...
   // Chega direto como payload "0" ou "1" — atualiza a mon cujo tópico bate
@@ -1010,6 +1311,21 @@ function subscreverTopicos(forcarRetained){
   }
 }
 
+function desconectarMQTT(){
+  if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
+  var st=document.getElementById('mqtt-st');
+  if(st){ st.textContent='Desconectado'; st.style.color='#e24b4a'; }
+  document.getElementById('dot-broker').style.background='#8b949e';
+  document.getElementById('lbl-broker').style.color='#8b949e';
+  setESP32Status('---');
+  syncSt('MQTT desconectado','#8b949e');
+}
+
+function reconectarMQTT(){
+  desconectarMQTT();
+  setTimeout(function(){ conectarMQTT(); }, 500);
+}
+
 // MQTT — conexão automática ao abrir
 function conectarMQTT(){
   if(mqclient&&mqclient.connected){ syncSt('Ja conectado!','#3fb950'); return; }
@@ -1017,11 +1333,17 @@ function conectarMQTT(){
   st.textContent='Conectando...'; st.style.color='#ef9f27';
   if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
 
-  mqclient=mqtt.connect('wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt',{
-    clientId:       'painel-'+Math.random().toString(16).substr(2,8),
-    username:       'joazeirofelipe',
-    password:       'Mqtt@Railway2026',
-    keepalive:      30,
+  var _broker = getCfgBroker();
+  if (!_broker.valido) {
+    syncSt('Configure o broker MQTT na aba Config!','#e24b4a');
+    return;
+  }
+  atualizarUrlsBroker();
+  mqclient=mqtt.connect(_broker.urlCompleta,{
+    clientId:       _broker.clientId,
+    username:       _broker.user,
+    password:       _broker.pass,
+    keepalive:      _broker.keepalive,
     reconnectPeriod:5000,
     connectTimeout: 10000,
     clean:          true
@@ -1031,14 +1353,16 @@ function conectarMQTT(){
     st.textContent='Conectado'; st.style.color='#3fb950';
     document.getElementById('dot-broker').style.background='#3fb950';
     document.getElementById('lbl-broker').style.color='#3fb950';
-    // Limpa estados locais — retained do broker são a fonte de verdade
+    // Limpa fila e estados antes dos retained chegarem
+    _filaMsgs = [];
     localStorage.removeItem('esp32estados');
-    // Zera estados visuais antes dos retained chegarem
     coils.forEach(function(c){ c.estado=false; });
     sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
     subscreverTopicos();
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO — aguardando retained do ESP32...</b>','pub');
+    // Processa fila após pequeno delay (caso retained cheguem antes da config)
+    setTimeout(processarFilaPendente, 2000);
   });
 
   mqclient.on('message',function(topic,message){
@@ -1076,9 +1400,39 @@ var coils = [];
 function addCoil(){
   if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; }
   if(coils.length>=MAX_COILS){ syncSt('Limite de '+MAX_COILS+' coils!','#e24b4a'); return; }
-  var pins=[2,26,27,4,5,13,14,15,16,17,18,19,21,22,23,25];
-  coils.push({nome:'Coil '+String(coils.length+1).padStart(2,'0'),pino:pins[coils.length]||33,estado:false,open:true,msgA:'1',msgD:'0'});
+
+  // Pede o número do coil ao usuário
+  var input = prompt('Número do Coil (1 a '+MAX_COILS+'):');
+  if(input===null) return; // cancelou
+  var num = parseInt(input);
+  if(isNaN(num)||num<1||num>MAX_COILS){
+    syncSt('⚠️ Número inválido! Use entre 1 e '+MAX_COILS,'#e24b4a');
+    return;
+  }
+
+  // Verifica duplicado
+  var duplicado = coils.some(function(c){ return c.numero===num; });
+  if(duplicado){
+    syncSt('⚠️ Coil '+String(num).padStart(2,'0')+' já existe!','#e24b4a');
+    return;
+  }
+
+  // Cria coil com número definido pelo usuário
+  coils.push({
+    numero: num,
+    nome:   'Coil '+String(num).padStart(2,'0'),
+    pino:   num,  // referência — pino real definido no firmware
+    estado: false,
+    open:   true,
+    msgA:   '1',
+    msgD:   '0'
+  });
+
+  // Ordena por número do coil
+  coils.sort(function(a,b){ return a.numero - b.numero; });
+
   renderCoils(); updateMetrics(); renderGeral(); saveLocal();
+  syncSt('Coil '+String(num).padStart(2,'0')+' adicionado!','#3fb950');
 }
 function removeCoil(i){ if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; } coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); saveLocal(); }
 
@@ -1184,7 +1538,7 @@ function renderCoils(){
           +'<div onclick="toggleCoilPanel('+i+')" style="cursor:pointer;flex:1;">'
             +'<div class="row">'
               +'<span style="font-size:13px;font-weight:500;color:'+(c.estado?'#7ee787':'#e8eaf0')+';" id="cn-'+i+'">'+c.nome+'</span>'
-              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';"> pino '+c.pino+'</span>'
+              +'<span class="chip" style="background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;"> coil_'+String(c.numero||i+1).padStart(2,'0')+'</span>'
               +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
             +'</div>'
             +'<div style="font-size:11px;color:#8b949e;margin-top:2px;">pub: <code style="color:#79c0ff;">'+tc+'</code></div>'
@@ -1199,11 +1553,11 @@ function renderCoils(){
       +'<div class="slide" id="cp-'+i+'" style="max-height:'+(c.open?'180px':'0')+';overflow:hidden;">'
         +'<div class="sep"></div>'
         +'<div class="grid4">'
+          +'<div class="col"><label class="lbl">Nº Coil</label>'
+            +'<input type="number" '+(isLocked('coil')?'readonly ':'')+' value="'+(c.numero||i+1)+'" min="1" max="'+MAX_COILS+'" style="width:55px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)||nv<1){this.value=coils['+i+'].numero;return;}var dup=coils.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){syncSt('Número já existe!','#e24b4a');this.value=coils['+i+'].numero;return;}coils['+i+'].numero=nv;coils.sort(function(a,b){return a.numero-b.numero;});renderCoils();saveLocal();">'
+          +'</div>'
           +'<div class="col"><label class="lbl">Nome</label>'
             +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'
-          +'</div>'
-          +'<div class="col"><label class="lbl">Pino</label>'
-            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.pino+'" style="width:55px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;saveLocal();">'
           +'</div>'
           +'<div class="col"><label class="lbl">Msg ON</label>'
             +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.msgA+'" style="width:55px;" oninput="'
@@ -1367,113 +1721,165 @@ var CORES=[
 ];
 var TIPOS=['Histerese','Janela'];
 var ACOES=['Dashboard','MQTT','Dashboard+MQTT'];
-var qty=2;
-var sps=Array.from({length:10},function(_,i){
-  return {nome:'SP'+String(i+1).padStart(2,'0'),tipo:0,monIdx:-1,min:0.5+i*0.3,max:1.0+i*0.3,cor:i%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:false,_ultimoComando:null};
-});
+var qty=0;
+var sps=[];  // dinâmico — igual aos coils
 
-function changeQty(delta){
+
+
+var MAX_SPS = 10;
+
+function addSP(){
   if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
-  var nv=qty+delta;
-  if(nv<1||nv>10){ syncSt('Limite: 1 a 10 set points','#8b949e'); return; }
-  qty=nv;
-  document.getElementById('qty-lbl').textContent=qty;
-  document.getElementById('m-sp').textContent=qty;
+  if(sps.length>=MAX_SPS){ syncSt('Limite de '+MAX_SPS+' set points!','#e24b4a'); return; }
+
+  var input = prompt('Número do Set Point (1 a '+MAX_SPS+'):');
+  if(input===null) return;
+  var num = parseInt(input);
+  if(isNaN(num)||num<1||num>MAX_SPS){
+    syncSt('⚠️ Número inválido! Use entre 1 e '+MAX_SPS,'#e24b4a');
+    return;
+  }
+  var duplicado = sps.some(function(s){ return s.numero===num; });
+  if(duplicado){
+    syncSt('⚠️ SP '+String(num).padStart(2,'0')+' já existe!','#e24b4a');
+    return;
+  }
+
+  sps.push({
+    numero:  num,
+    nome:    'SP'+String(num).padStart(2,'0'),
+    tipo:    0,
+    monIdx:  -1,
+    min:     0.5,
+    max:     1.0,
+    cor:     sps.length % CORES.length,
+    acao:    1,
+    msgA:    '1',
+    msgD:    '0',
+    estado:  false,
+    open:    false,
+    _ultimoComando: null
+  });
+
+  sps.sort(function(a,b){ return a.numero-b.numero; });
+  qty = sps.length;
+  atualizarQtyLabel();
   renderSPs(); saveLocal();
+  syncSt('SP '+String(num).padStart(2,'0')+' adicionado!','#3fb950');
+}
+
+function removeSP(i){
+  if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
+  sps.splice(i,1);
+  qty = sps.length;
+  atualizarQtyLabel();
+  renderSPs(); updateMetrics(); renderGeral(); saveLocal();
+}
+
+function atualizarQtyLabel(){
+  var el = document.getElementById('qty-lbl');
+  if(el) el.textContent = qty;
+  document.getElementById('m-sp').textContent = qty;
+}
+
+function changeQty(delta){ // mantido para compatibilidade
+  if(delta>0) addSP(); else if(sps.length>0) removeSP(sps.length-1);
 }
 
 function updateSpSels(){
-  for(var i=0;i<qty;i++){
+  for(var i=0;i<sps.length;i++){
     var s=document.getElementById('msel-'+i);
     if(!s) continue;
-    var cur=sps[i].monIdx;
+    var cur=spItem.monIdx;
     s.innerHTML='<option value="-1">-- escolher --</option>'
       +mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===cur?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
   }
 }
 function toggleSP(i){
-  sps[i].open=!sps[i].open;
+  spItem.open=!spItem.open;
   var p=document.getElementById('spp-'+i), a=document.getElementById('spa-'+i);
-  if(p) p.style.maxHeight=sps[i].open?'440px':'0';
-  if(a) a.style.transform=sps[i].open?'rotate(90deg)':'rotate(0)';
+  if(p) p.style.maxHeight=spItem.open?'440px':'0';
+  if(a) a.style.transform=spItem.open?'rotate(90deg)':'rotate(0)';
 }
 function refreshSPBadge(i){
-  var c=CORES[sps[i].cor], b=document.getElementById('spb-'+i);
+  var c=CORES[spItem.cor], b=document.getElementById('spb-'+i);
   if(b){ b.style.background=c.bg; b.style.color=c.tx; b.style.border='0.5px solid '+c.bd; }
   checkSPs();
 }
 function updateSPSum(i){
-  var m=mons[sps[i].monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
-  if(sl) sl.textContent=m?TIPOS[sps[i].tipo]+' · '+m.nome+' · '+sps[i].min.toFixed(2)+'-'+sps[i].max.toFixed(2)+' '+(m.unid||''):'sem entrada';
-  if(ml) ml.textContent=sps[i].acao>0?'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"':'';
+  var m=mons[spItem.monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
+  if(sl) sl.textContent=m?TIPOS[spItem.tipo]+' · '+m.nome+' · '+spItem.min.toFixed(2)+'-'+spItem.max.toFixed(2)+' '+(m.unid||''):'sem entrada';
+  if(ml) ml.textContent=spItem.acao>0?'pub: '+gst(i,'comando')+' → "'+spItem.msgA+'" / "'+spItem.msgD+'"':'';
 }
 
 function renderSPs(){
   var list=document.getElementById('sp-list');
   if(!list) return;
   list.innerHTML='';
-  for(var i=0;i<qty;i++){
-    var c=CORES[sps[i].cor], curM=mons[sps[i].monIdx];
+  sps.forEach(function(spItem, i){
+    var c=CORES[spItem.cor], curM=mons[spItem.monIdx];
     var mn=curM?curM.min:0, mx=curM?curM.max:3.3, un=curM?curM.unid:'';
     var top=gst(i,'comando'), topE=gst(i,'estado');
-    var cOpts=CORES.map(function(cc,ci){ return '<option value="'+ci+'"'+(ci===sps[i].cor?' selected':'')+'>'+cc.l+'</option>'; }).join('');
-    var aOpts=ACOES.map(function(a,ai){ return '<option value="'+ai+'"'+(ai===sps[i].acao?' selected':'')+'>'+a+'</option>'; }).join('');
-    var tOpts=TIPOS.map(function(t,ti){ return '<option value="'+ti+'"'+(ti===sps[i].tipo?' selected':'')+'>'+t+'</option>'; }).join('');
-    var mOpts='<option value="-1">-- escolher --</option>'+mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
+    var cOpts=CORES.map(function(cc,ci){ return '<option value="'+ci+'"'+(ci===spItem.cor?' selected':'')+'>'+cc.l+'</option>'; }).join('');
+    var aOpts=ACOES.map(function(a,ai){ return '<option value="'+ai+'"'+(ai===spItem.acao?' selected':'')+'>'+a+'</option>'; }).join('');
+    var tOpts=TIPOS.map(function(t,ti){ return '<option value="'+ti+'"'+(ti===spItem.tipo?' selected':'')+'>'+t+'</option>'; }).join('');
+    var mOpts='<option value="-1">-- escolher --</option>'+mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===spItem.monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
     var d=document.createElement('div');
     d.className='icard'+(isLocked('mon')?' locked-panel':' unlocked-panel');
     d.id='spc-'+i;
     d.innerHTML=
       '<div class="row" style="justify-content:space-between;">'
         +'<div class="row">'
-          +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(sps[i].open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-          +'<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(i+1)+'</div>'
+          +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(spItem.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
+          +'<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(spItem.numero||i+1)+'</div>'
           +'<div onclick="toggleSP('+i+')" style="cursor:pointer;">'
             +'<div class="row">'
-              +'<span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+sps[i].nome+'</span>'
-              +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+(curM?TIPOS[sps[i].tipo]+' · '+curM.nome:'sem entrada')+'</span>'
+              +'<span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+spItem.nome+'</span>'
+              +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+(curM?TIPOS[spItem.tipo]+' · '+curM.nome:'sem entrada')+'</span>'
             +'</div>'
             +'<div style="font-size:11px;color:#8b949e;margin-top:1px;" id="spm-'+i+'">pub: <code style="color:#79c0ff;">'+top+'</code></div>'
           +'</div>'
         +'</div>'
         +'<div class="row" style="gap:6px;">'
           +'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
+          +(!isLocked('sp')?'<button class="btn-del" onclick="removeSP('+i+')" title="Remover SP">&#10005;</button>':'')
         +'</div>'
       +'</div>'
-      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'440px':'0')+';overflow:hidden;">'
+      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(spItem.open?'440px':'0')+';overflow:hidden;">'
         +'<div class="sep"></div>'
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-          +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
+          +'<div class="col"><label class="lbl">Nº SP</label><input type="number" '+(isLocked('sp')?'readonly ':'')+' value="'+(spItem.numero||i+1)+'" min="1" max="'+MAX_SPS+'" style="width:50px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)){this.value=sps['+i+'].numero;return;}var dup=sps.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){syncSt(\'Já existe!\',\'#e24b4a\');this.value=sps['+i+'].numero;return;}sps['+i+'].numero=nv;sps.sort(function(a,b){return a.numero-b.numero;});renderSPs();saveLocal();"></div>'
+          +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
           +'<div class="col"><label class="lbl">Entrada</label><select '+(isLocked('sp')?'disabled ':'')+' id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();saveLocal();">'+mOpts+'</select></div>'
           +'<div class="col"><label class="lbl">Tipo</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');saveLocal();">'+tOpts+'</select></div>'
           +'<div class="col"><label class="lbl">Cor</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');saveLocal();">'+cOpts+'</select></div>'
           +'<div class="col"><label class="lbl">Acao</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].acao=parseInt(this.value);updateSPSum('+i+');saveLocal();">'+aOpts+'</select></div>'
         +'</div>'
-        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
+        +'<div id="hist-'+i+'" style="display:'+(spItem.tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
           +'<div class="col"><label class="lbl">Min — desaciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+spItem.min.toFixed(2)+' '+un+'</span>'
             +'</div>'
           +'</div>'
           +'<div class="col"><label class="lbl">Max — aciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+spItem.max.toFixed(2)+' '+un+'</span>'
             +'</div>'
           +'</div>'
         +'</div>'
-        +'<div id="jan-'+i+'" style="display:'+(sps[i].tipo===1?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
+        +'<div id="jan-'+i+'" style="display:'+(spItem.tipo===1?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
           +'<div class="col"><label class="lbl">Limite Inferior</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jmv-'+i+'">'+sps[i].min.toFixed(2)+'</span>'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jmv-'+i+'">'+spItem.min.toFixed(2)+'</span>'
             +'</div>'
           +'</div>'
           +'<div class="col"><label class="lbl">Limite Superior</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jxv-'+i+'">'+sps[i].max.toFixed(2)+'</span>'
+              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jxv-'+i+'">'+spItem.max.toFixed(2)+'</span>'
             +'</div>'
           +'</div>'
         +'</div>'
@@ -1481,13 +1887,13 @@ function renderSPs(){
           +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
           +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
             +'<div class="col"><label class="lbl">&#128308; Msg ON</label>'
-              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].msgA+'" oninput="'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.msgA+'" oninput="'
                 +'if(this.value===sps['+i+'].msgD){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
                 +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
                 +'sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();">'
             +'</div>'
             +'<div class="col"><label class="lbl">&#9898; Msg OFF</label>'
-              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+sps[i].msgD+'" oninput="'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.msgD+'" oninput="'
                 +'if(this.value===sps['+i+'].msgA){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
                 +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
                 +'sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
@@ -1497,36 +1903,36 @@ function renderSPs(){
         +'</div>'
       +'</div>';
     list.appendChild(d);
-  }
+  });
   checkSPs();
 }
 
 function toggleSPBlocks(i){
   var h=document.getElementById('hist-'+i), j=document.getElementById('jan-'+i);
-  if(h) h.style.display=sps[i].tipo===0?'flex':'none';
-  if(j) j.style.display=sps[i].tipo===1?'flex':'none';
+  if(h) h.style.display=spItem.tipo===0?'flex':'none';
+  if(j) j.style.display=spItem.tipo===1?'flex':'none';
 }
 
 function checkSPs(){
   if(!_esp32Online) return;
   for(var i=0;i<qty;i++){
-    var m=mons[sps[i].monIdx];
+    var m=mons[spItem.monIdx];
     if(!m) continue;
     var val=m.tipo==='analog'?m.val:(m.estado?1:0);
     var deveAcionar=false;
-    if(sps[i].tipo===0){
-      if(val>sps[i].max) deveAcionar=true;
-      else if(val<sps[i].min) deveAcionar=false;
-      else deveAcionar=sps[i]._ultimoComando===sps[i].msgA;
+    if(spItem.tipo===0){
+      if(val>spItem.max) deveAcionar=true;
+      else if(val<spItem.min) deveAcionar=false;
+      else deveAcionar=spItem._ultimoComando===spItem.msgA;
     } else {
-      deveAcionar=(val>=sps[i].min&&val<=sps[i].max);
+      deveAcionar=(val>=spItem.min&&val<=spItem.max);
     }
-    var msgDesejada=deveAcionar?sps[i].msgA:sps[i].msgD;
-    if(msgDesejada!==sps[i]._ultimoComando){
-      sps[i]._ultimoComando=msgDesejada;
-      if(sps[i].acao>0){
+    var msgDesejada=deveAcionar?spItem.msgA:spItem.msgD;
+    if(msgDesejada!==spItem._ultimoComando){
+      spItem._ultimoComando=msgDesejada;
+      if(spItem.acao>0){
         mqttPub(gst(i,'comando'),msgDesejada);
-        addLog('splog','<b>'+sps[i].nome+'</b> pub → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
+        addLog('splog','<b>'+spItem.nome+'</b> pub → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
       }
     }
   }
@@ -1535,10 +1941,10 @@ function checkSPs(){
 
 function renderSPStatus(){
   var ac=0, pills=[];
-  for(var i=0;i<qty;i++){
+  for(var i=0;i<sps.length;i++){
     var tag=document.getElementById('sptag-'+i), card=document.getElementById('spc-'+i);
     if(!tag||!card) continue;
-    var c=CORES[sps[i].cor], m=mons[sps[i].monIdx];
+    var c=CORES[spItem.cor], m=mons[spItem.monIdx];
     if(!m){
       tag.textContent='sem entrada'; tag.style.cssText='background:#21262d;color:#8b949e;';
       card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none';
@@ -1548,8 +1954,8 @@ function renderSPStatus(){
       ac++;
       tag.textContent='acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
       card.style.border='1.5px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
-      var as=sps[i].acao===0?'dash':sps[i].acao===1?'MQTT':'dash+MQTT';
-      pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+sps[i].nome+' — '+m.nome+' — '+as+' → <b>'+sps[i].msgA+'</b></span>');
+      var as=spItem.acao===0?'dash':spItem.acao===1?'MQTT':'dash+MQTT';
+      pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+spItem.nome+' — '+m.nome+' — '+as+' → <b>'+spItem.msgA+'</b></span>');
     } else {
       tag.textContent='aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
       if(!sps[i].estado){ card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none'; }
@@ -1617,15 +2023,16 @@ function renderGeral(){
   // SPs
   var gs=document.getElementById('g-sps');
   if(gs){
-    if(!qty){ gs.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum set point.</p>'; }
+    if(!sps.length){ gs.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum set point.</p>'; }
     else {
       gs.innerHTML='';
-      for(var i=0;i<qty;i++){
+      for(var i=0;i<sps.length;i++){
         var sp=sps[i], c=CORES[sp.cor], m=mons[sp.monIdx];
+        var numStr=String(sp.numero||i+1).padStart(2,'0');
         var d=document.createElement('div');
         d.className='gcard';
         if(sp.estado) d.style.cssText='border:0.5px solid '+c.bd+';box-shadow:0 0 10px '+c.bd+'30;';
-        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">'+TIPOS[sp.tipo].toUpperCase()+'</div>'
+        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">SP'+numStr+' — '+TIPOS[sp.tipo].toUpperCase()+'</div>'
           +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:2px;">'+sp.nome+'</div>'
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+(m?m.nome:'sem entrada')+'</div>'
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+sp.min.toFixed(2)+' – '+sp.max.toFixed(2)+' '+(m?m.unid:'')+'</div>'
@@ -1645,12 +2052,14 @@ function updateMetrics(){
   document.getElementById('m-on').textContent=on;
   document.getElementById('m-on').style.color=on>0?'#3fb950':'#e8eaf0';
   document.getElementById('m-mon').textContent=mons.length;
-  document.getElementById('m-sp').textContent=qty;
+  document.getElementById('m-sp').textContent=sps.length;
 }
 
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
+// Restaura config de conexão (sem senhas) do sessionStorage
+restaurarConexaoLocal();
 // MQTT é conectado pelo aplicarConfig/initDefault após carregar config
 // Garante que coils[] está populado antes dos retained chegarem
 carregarNuvem();
