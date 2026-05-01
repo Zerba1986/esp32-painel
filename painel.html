@@ -689,18 +689,17 @@ var _esp32Online = false;
 var _offlineTimer = null;
 
 function setESP32Status(s) {
-  // Debounce no offline — aguarda 3s antes de aceitar
-  // Evita race condition quando broker entrega LWT antes do "online"
   if(s==='offline'){
-    if(_offlineTimer) return; // já está aguardando, ignora duplicata
+    // Debounce 3s — se chegar "online" neste período cancela
+    // Evita race condition do broker entregar LWT antes do "online"
+    if(_offlineTimer) return; // já está no debounce
     _offlineTimer = setTimeout(function(){
       _offlineTimer = null;
-      // Só aplica offline se ainda não recebemos "online" neste período
-      if(!_esp32Online) _aplicarStatus('offline');
+      _aplicarStatus('offline'); // aplica offline após debounce
     }, 3000);
     return;
   }
-  // online ou --- cancela o timer de offline pendente
+  // "online" ou "---" — cancela debounce pendente e aplica imediatamente
   if(_offlineTimer){ clearTimeout(_offlineTimer); _offlineTimer=null; }
   _aplicarStatus(s);
 }
