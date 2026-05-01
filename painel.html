@@ -680,7 +680,26 @@ function updateResumo() {
 // ════════════════════════════════════════════════
 var _esp32Online = false;
 
+var _offlineTimer = null;
+
 function setESP32Status(s) {
+  // Debounce no offline — aguarda 3s antes de aceitar
+  // Evita race condition quando broker entrega LWT antes do "online"
+  if(s==='offline'){
+    if(_offlineTimer) return; // já está aguardando, ignora duplicata
+    _offlineTimer = setTimeout(function(){
+      _offlineTimer = null;
+      // Só aplica offline se ainda não recebemos "online" neste período
+      if(!_esp32Online) _aplicarStatus('offline');
+    }, 3000);
+    return;
+  }
+  // online ou --- cancela o timer de offline pendente
+  if(_offlineTimer){ clearTimeout(_offlineTimer); _offlineTimer=null; }
+  _aplicarStatus(s);
+}
+
+function _aplicarStatus(s){
   _esp32Online = (s==='online');
   var cores = {
     online:  {bg:'#3fb950',tx:'#3fb950',shadow:'0 0 6px #3fb950',txt:'ONLINE', p:true},
@@ -703,11 +722,12 @@ function setESP32Status(s) {
     if(lu) lu.textContent=new Date().toLocaleTimeString('pt-BR');
   }
   if(s==='offline'){
-    // Mantém último estado conhecido — NÃO zera coils/SPs
-    // Apenas limpa métricas de conexão
-    ['hdr-rssi','hdr-uptime','hdr-ip'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=''; });
+    ['hdr-rssi','hdr-uptime','hdr-ip'].forEach(function(id){
+      var e=document.getElementById(id); if(e) e.textContent='';
+    });
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
   }
+  addLog('clog','<b>STATUS ESP32:</b> '+s,'sub');
 }
 
 // ════════════════════════════════════════════════
@@ -1004,16 +1024,16 @@ function addCoil(){
 function removeCoil(i){ if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; } coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); saveLocal(); }
 
 function allCoils(s){
-  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
   if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
+  if(!_esp32Online) syncSt('⚠️ ESP32 parece offline — publicando mesmo assim...','#ef9f27');
   coils.forEach(function(_,i){ _setCoilInterno(i,s); });
 }
 
 function setCoil(i,s){
   if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado! Va em Config.','#e24b4a'); return; }
-  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
-  // Bloqueia comando duplicado
-  if(coils[i].estado===s){ syncSt('Coil ja esta '+(s?'ACIONADO':'DESACIONADO'),'#8b949e'); return; }
+  if(!_esp32Online) syncSt('⚠️ ESP32 parece offline — publicando mesmo assim...','#ef9f27');
+  // Bloqueia comando duplicado apenas se status for confiável (online)
+  if(_esp32Online && coils[i].estado===s){ syncSt('Coil ja esta '+(s?'ACIONADO':'DESACIONADO'),'#8b949e'); return; }
   _setCoilInterno(i,s);
 }
 
@@ -1052,11 +1072,15 @@ function setCoilGeral(i,s){
     'Confirma o comando '+nomeAcao+' para o coil "'+coils[i].nome+'"?',
     nomeCor,
     function(){
-      // Publica direto sem checar duplicado — aba Geral pode estar dessincronizada
       if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
-      if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
+      // Publica mesmo se status parecer offline — pode ser dessincronizado
+      // O ESP32 vai confirmar via /estado se receber
       mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
-      syncSt('Comando enviado — aguardando confirmação ESP32...','#ef9f27');
+      if(!_esp32Online){
+        syncSt('⚠️ Comando enviado mas ESP32 parece offline — aguarde confirmação','#ef9f27');
+      } else {
+        syncSt('Comando enviado — aguardando confirmação ESP32...','#ef9f27');
+      }
       setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
     }
   );
