@@ -503,13 +503,13 @@ function resubscribirTopicos() {
   sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
   renderCoils(); renderMons(); renderSPs(); renderGeral();
   updateMetrics(); renderSPStatus();
-  // Resubscreve — broker entrega retained com estados reais do ESP32
-  subscreverTopicos();
+  // Unsubscribe + resubscribe — força broker a reenviar retained
+  subscreverTopicos(true);
   syncSt('Aguardando confirmação do ESP32...','#ef9f27');
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — zerando estados, aguardando retained...','pub');
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — forçando retained do broker...','pub');
   setTimeout(function(){
     syncSt('Refresh completo!','#3fb950');
-  }, 2000);
+  }, 2500);
 }
 
 var _saveLocalTimer = null;
@@ -972,25 +972,34 @@ function atualizaValMon(i,val){
   if(gb){ gb.style.width=pct.toFixed(1)+'%'; gb.style.background=gc; }
 }
 
-function subscreverTopicos(){
+function subscreverTopicos(forcarRetained){
   if(!mqclient||!mqclient.connected) return;
   var base=getBase();
-  // Tópicos fixos
-  mqclient.subscribe(base+'/status',             {qos:1});
-  mqclient.subscribe(base+'/telemetria',         {qos:1});
-  mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
-  mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
-  // Wildcard digitais — pega sn01, sn02, sn03... automaticamente
-  mqclient.subscribe(base+'/entradas/digital/+', {qos:1});
-  // Tópicos individuais configurados nas mons (analógicos e digitais customizados)
+  var topicos=[
+    base+'/status',
+    base+'/telemetria',
+    base+'/atuadores/+/estado',
+    base+'/setpoints/+/estado',
+    base+'/entradas/digital/+'
+  ];
   var tops={};
   mons.forEach(function(m){
-    if(m.topico&&!tops[m.topico]){
-      tops[m.topico]=1;
-      mqclient.subscribe(m.topico,{qos:1});
-    }
+    if(m.topico&&!tops[m.topico]) tops[m.topico]=1;
   });
-  addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — base: '+base+' | mons: '+Object.keys(tops).length,'pub');
+  Object.keys(tops).forEach(function(t){ topicos.push(t); });
+
+  if(forcarRetained){
+    // Unsubscribe de todos primeiro — broker reentrega retained na próxima subscrição
+    topicos.forEach(function(t){ try{ mqclient.unsubscribe(t); }catch(e){} });
+    // Aguarda unsubscribe processar antes de resubscrever
+    setTimeout(function(){
+      topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
+      addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — unsub+resub forçado, retained chegando...','pub');
+    }, 300);
+  } else {
+    topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
+    addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — base: '+base+' | mons: '+Object.keys(tops).length,'pub');
+  }
 }
 
 // MQTT — conexão automática ao abrir
