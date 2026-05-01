@@ -453,8 +453,9 @@ function fecharModal() {
   _modalCb = null;
 }
 function confirmarModal() {
+  var cb = _modalCb; // salva referência ANTES de fechar (fechar zera _modalCb)
   fecharModal();
-  if (_modalCb) _modalCb();
+  if (cb) cb();
 }
 
 // ════════════════════════════════════════════════
@@ -498,11 +499,16 @@ function refreshPainel() {
 function resubscribirTopicos() {
   if (!mqclient || !mqclient.connected) { syncSt('MQTT desconectado','#e24b4a'); return; }
   subscreverTopicos();
-  // Força renderização completa de todas as abas para sincronizar smartphones
-  renderCoils(); renderMons(); renderSPs(); renderGeral();
-  updateMetrics(); renderSPStatus();
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — subscritos + todas as abas sincronizadas','pub');
-  syncSt('Refresh completo!','#3fb950');
+  syncSt('Aguardando estados do broker...','#ef9f27');
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — subscritos, aguardando retained...','pub');
+  // Aguarda 1.5s para os retained chegarem antes de renderizar
+  // Evita mostrar estados errados (false) antes da confirmação do broker
+  setTimeout(function(){
+    renderCoils(); renderMons(); renderSPs(); renderGeral();
+    updateMetrics(); renderSPStatus();
+    syncSt('Refresh completo!','#3fb950');
+    addLog('clog','<b style="color:#3fb950;">REFRESH</b> — todas as abas sincronizadas','pub');
+  }, 1500);
 }
 
 var _saveLocalTimer = null;
@@ -889,6 +895,7 @@ function processarMsg(topic, msg) {
       }
       // Usa valT e valF configurados pelo usuário — permite inverter lógica
       // Ex: valT='0', valF='1' → LOW ativa, HIGH desativa
+      m._ultimoValorBruto = valorRecebido; // salva para recalcular ao mudar valT/valF
       var novoEstado=(valorRecebido===m.valT.toLowerCase());
       if(novoEstado!==m.estado){
         m.estado=novoEstado;
@@ -910,6 +917,7 @@ function processarMsg(topic, msg) {
       return;
     }
     // Usa valT e valF configurados — permite inverter lógica
+    m._ultimoValorBruto = valorRecebido; // salva para recalcular ao mudar valT/valF
     var novoEstado=(valorRecebido===m.valT.toLowerCase());
     if(novoEstado!==m.estado){
       m.estado=novoEstado;
@@ -1166,6 +1174,19 @@ function renderCoils(){
 // ════════════════════════════════════════════════
 // MONITORAMENTO
 // ════════════════════════════════════════════════
+
+function recalcularEstadoDigital(i) {
+  var m = mons[i];
+  if (!m || m.tipo !== 'digital') return;
+  // Usa o último valor bruto recebido para recalcular com o novo valT
+  var ultimoValor = m._ultimoValorBruto;
+  if (ultimoValor === undefined) return; // ainda não recebeu nenhum valor
+  var novoEstado = (ultimoValor === m.valT.toLowerCase());
+  m.estado = novoEstado;
+  renderMons();
+  renderGeral();
+  checkSPs();
+}
 var UNIDS=['V','C','F','bar','psi','%','A','W','Hz','rpm','lux','pH'];
 var mons=[];
 
@@ -1271,8 +1292,8 @@ function renderMons(){
             +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
           +'</div>'
           +'<div class="row">'
-            +'<div class="col"><label class="lbl">Valor HIGH</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Valor HIGH</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;recalcularEstadoDigital('+i+');saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;recalcularEstadoDigital('+i+');saveLocal();"></div>'
           +'</div>'
         +'</div>';
     }
