@@ -778,15 +778,32 @@ function processarMsg(topic, msg) {
         var gr=document.getElementById('g-rssi');
         if(gr) gr.textContent='RSSI: '+d.rssi+' dBm';
       }
-      // Analógicos — atualiza todas as mons analógicas cujo tópico é telemetria
+      // Analógicos — varre todas as mons analógicas
       var _atualizouAlgum=false;
-      mons.forEach(function(m,i){
-        if(m.tipo!=='analog') return;
-        // Aceita se o tópico bate OU se a chave existe no payload
-        if((topic===m.topico||topic.endsWith('/telemetria')) && d[m.jsonKey]!==undefined){
-          m.val=parseFloat(d[m.jsonKey]);
-          atualizaValMon(i,m.val);
+      // Também varre as chaves do payload para logar o que chegou
+      var _chavesPayload=Object.keys(d).filter(function(k){ return k.startsWith('an'); });
+      if(_chavesPayload.length>0){
+        addLog('mlog','<b style="color:#ef9f27;">TELEM analógicos:</b> '+_chavesPayload.map(function(k){ return k+'='+d[k]; }).join(', '),'sub');
+      }
+      mons.forEach(function(mi,idx){
+        if(mi.tipo!=='analog') return;
+        // Log de debug por mon
+        var temChave=(d[mi.jsonKey]!==undefined);
+        var topicoBate=(topic===mi.topico)||(mi.topico.indexOf('/telemetria')!==-1);
+        if(!temChave){
+          addLog('mlog','<b style="color:#5a6478;">MON '+idx+' ('+mi.nome+') chave "'+mi.jsonKey+'" não encontrada no payload</b>','sub');
+          return;
+        }
+        if(!topicoBate){
+          addLog('mlog','<b style="color:#5a6478;">MON '+idx+' ('+mi.nome+') tópico não bate: mon='+mi.topico+' msg='+topic+'</b>','sub');
+          return;
+        }
+        var novoVal=parseFloat(d[mi.jsonKey]);
+        if(!isNaN(novoVal)){
+          mi.val=novoVal;
+          atualizaValMon(idx,novoVal);
           _atualizouAlgum=true;
+          addLog('mlog','<b style="color:#3fb950;">✓ MON '+idx+' ('+mi.nome+') '+mi.jsonKey+'='+novoVal.toFixed(3)+'</b>','sub');
         }
       });
       if(_atualizouAlgum) renderGeral();
@@ -1138,7 +1155,7 @@ function addMon(tipo){
   if(tipo==='digital'&&totalD>=MAX_DIGITAL){ syncSt('Limite de '+MAX_DIGITAL+' digitais!','#e24b4a'); return; }
   var i=mons.length, base=getBase();
   mons.push(tipo==='analog'
-    ?{tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'an01', unid:'V', min:0, max:3.3, val:0, open:true}
+    ?(function(){ var an='an'+String(mons.filter(function(x){return x.tipo==='analog';}).length+1).padStart(2,'0'); return {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:an, unid:'V', min:0, max:3.3, val:0, open:true}; })()
     :(function(){var sn='sn'+String(mons.filter(function(x){return x.tipo==='digital';}).length+1).padStart(2,'0'); return {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/'+sn, jsonKey:sn, valT:'1', valF:'0', estado:false, open:true}; })()
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
