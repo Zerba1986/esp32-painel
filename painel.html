@@ -867,10 +867,12 @@ function processarMsg(topic, msg) {
         syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
         return;
       }
-      var novoEstado=(valorRecebido==='1'||valorRecebido==='true'||valorRecebido==='high'||valorRecebido===m.valT.toLowerCase());
+      // Usa valT e valF configurados pelo usuário — permite inverter lógica
+      // Ex: valT='0', valF='1' → LOW ativa, HIGH desativa
+      var novoEstado=(valorRecebido===m.valT.toLowerCase());
       if(novoEstado!==m.estado){
         m.estado=novoEstado;
-        addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> ['+snKey+'] → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH':'LOW')+'</b>','sub');
+        addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> ['+snKey+'] → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH ('+m.valT+')':'LOW ('+m.valF+')')+'</b>','sub');
         renderMons(); renderGeral(); checkSPs();
       }
     });
@@ -887,10 +889,11 @@ function processarMsg(topic, msg) {
       syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
       return;
     }
-    var novoEstado=(valorRecebido===m.valT.toLowerCase()||valorRecebido==='1'||valorRecebido==='true'||valorRecebido==='high');
+    // Usa valT e valF configurados — permite inverter lógica
+    var novoEstado=(valorRecebido===m.valT.toLowerCase());
     if(novoEstado!==m.estado){
       m.estado=novoEstado;
-      addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH':'LOW')+'</b> ('+msg+')','sub');
+      addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH ('+m.valT+')':'LOW ('+m.valF+')')+'</b>','sub');
       renderMons();
       renderGeral();
       checkSPs();
