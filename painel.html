@@ -592,6 +592,13 @@ function aplicarConfig(c) {
   _carregando = false;
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
+  // Conecta MQTT agora que config está pronta — garante que retained chegam com coils[] populado
+  if (!mqclient || !mqclient.connected) {
+    conectarMQTT();
+  } else {
+    // Já conectado — força resub para pegar retained com config nova
+    subscreverTopicos(true);
+  }
 }
 
 function salvarNuvem() {
@@ -640,7 +647,8 @@ function carregarNuvem() {
 
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
-  atualizarTodosLocks();
+  atualizarTodosLocks(); atualizarCamposConfig();
+  if (!mqclient || !mqclient.connected) conectarMQTT();
 }
 
 // ════════════════════════════════════════════════
@@ -1643,9 +1651,9 @@ function updateMetrics(){
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
+// MQTT é conectado pelo aplicarConfig/initDefault após carregar config
+// Garante que coils[] está populado antes dos retained chegarem
 carregarNuvem();
-// Conexão MQTT automática após carregar config
-setTimeout(function(){ conectarMQTT(); }, 1500);
 </script>
 </body>
 </html>
