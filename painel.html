@@ -498,8 +498,11 @@ function refreshPainel() {
 function resubscribirTopicos() {
   if (!mqclient || !mqclient.connected) { syncSt('MQTT desconectado','#e24b4a'); return; }
   subscreverTopicos();
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos','pub');
-  syncSt('Topicos atualizados!','#3fb950');
+  // Força renderização completa de todas as abas para sincronizar smartphones
+  renderCoils(); renderMons(); renderSPs(); renderGeral();
+  updateMetrics(); renderSPStatus();
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — subscritos + todas as abas sincronizadas','pub');
+  syncSt('Refresh completo!','#3fb950');
 }
 
 var _saveLocalTimer = null;
@@ -700,8 +703,8 @@ function setESP32Status(s) {
     if(lu) lu.textContent=new Date().toLocaleTimeString('pt-BR');
   }
   if(s==='offline'){
-    coils.forEach(function(c){ c.estado=false; });
-    sps.forEach(function(sp){ sp.estado=false; sp._ultimoComando=null; });
+    // Mantém último estado conhecido — NÃO zera coils/SPs
+    // Apenas limpa métricas de conexão
     ['hdr-rssi','hdr-uptime','hdr-ip'].forEach(function(id){ var e=document.getElementById(id); if(e) e.textContent=''; });
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
   }
@@ -775,27 +778,27 @@ function processarMsg(topic, msg) {
         var gr=document.getElementById('g-rssi');
         if(gr) gr.textContent='RSSI: '+d.rssi+' dBm';
       }
-      // Analógicos via monitoramento
+      // Analógicos — atualiza todas as mons analógicas cujo tópico é telemetria
+      var _atualizouAlgum=false;
       mons.forEach(function(m,i){
-        if(m.tipo==='analog' && topic===m.topico && d[m.jsonKey]!==undefined){
+        if(m.tipo!=='analog') return;
+        // Aceita se o tópico bate OU se a chave existe no payload
+        if((topic===m.topico||topic.endsWith('/telemetria')) && d[m.jsonKey]!==undefined){
           m.val=parseFloat(d[m.jsonKey]);
           atualizaValMon(i,m.val);
+          _atualizouAlgum=true;
         }
       });
-    } catch(e){}
+      if(_atualizouAlgum) renderGeral();
+    } catch(e){ addLog('mlog','<b style="color:#e24b4a;">ERRO parse telemetria: '+e.message+'</b>','sub'); }
     addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → telemetria','sub');
     checkSPs();
     return;
   }
-  // 3. Estado Coils
+  // 3. Estado Coils — aceita sempre (retained mantém último estado real)
   var cm=topic.match(/coil_(\d+)\/estado$/);
   if(cm){
     var ci=parseInt(cm[1])-1;
-    // Só ignora se ESP32 estiver offline
-    if(!_esp32Online){
-      addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
-      return;
-    }
     if(ci>=0 && ci<coils.length){
       var coil=coils[ci];
       if(msg===coil.msgA){
@@ -814,14 +817,10 @@ function processarMsg(topic, msg) {
     }
     return;
   }
-  // 4. Estado SPs
+  // 4. Estado SPs — aceita sempre (retained mantém último estado real)
   var sm=topic.match(/sp(\d+)\/estado$/);
   if(sm){
     var si=parseInt(sm[1])-1;
-    if(!_esp32Online){
-      addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
-      return;
-    }
     if(si>=0 && si<qty){
       var sp=sps[si];
       if(msg===sp.msgA){ sp.estado=true; addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">ACIONADO ✓</b>','sub'); renderSPStatus(); }
@@ -834,17 +833,53 @@ function processarMsg(topic, msg) {
     }
     return;
   }
-  // 5. Entradas digitais monitoradas
+  // 5a. Wildcard digital — entradas/digital/sn01, sn02...
+  // Chega direto como payload "0" ou "1" — atualiza a mon cujo tópico bate
+  var _valoresValidos=['0','1','true','false','high','low'];
+  if(topic.indexOf('/entradas/digital/')!==-1){
+    var snKey=topic.split('/').pop(); // ex: sn01
+    mons.forEach(function(m,i){
+      if(m.tipo!=='digital') return;
+      // Bate pelo tópico OU pela chave JSON
+      var topicoBate=(m.topico===topic);
+      var chaveBate=(m.jsonKey===snKey);
+      if(!topicoBate && !chaveBate) return;
+      var valorRecebido=msg.trim().toLowerCase();
+      if(_valoresValidos.indexOf(valorRecebido)===-1){
+        addLog('mlog','<b style="color:#e24b4a;">⚠️ DIGITAL IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" inválido','sub');
+        syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
+        return;
+      }
+      var novoEstado=(valorRecebido==='1'||valorRecebido==='true'||valorRecebido==='high'||valorRecebido===m.valT.toLowerCase());
+      if(novoEstado!==m.estado){
+        m.estado=novoEstado;
+        addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> ['+snKey+'] → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH':'LOW')+'</b>','sub');
+        renderMons(); renderGeral(); checkSPs();
+      }
+    });
+    return;
+  }
+  // 5. Entradas digitais monitoradas (tópicos customizados)
   mons.forEach(function(m,i){
     if(topic!==m.topico) return;
-    addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → '+msg.substring(0,60),'sub');
-    try {
-      var d2=JSON.parse(msg);
-      if(m.tipo==='digital' && d2[m.jsonKey]!==undefined) m.estado=(String(d2[m.jsonKey])===m.valT);
-    } catch(e){
-      if(m.tipo==='digital') m.estado=(msg===m.valT||msg==='1'||msg==='true');
+    if(m.tipo!=='digital') return;
+    var valorRecebido=msg.trim().toLowerCase();
+    // Valida valor recebido
+    if(_valoresValidos.indexOf(valorRecebido)===-1){
+      addLog('mlog','<b style="color:#e24b4a;">⚠️ DIGITAL IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → valor "'+msg+'" inválido (esperado: 0,1,true,false)','sub');
+      syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
+      return;
     }
-    checkSPs();
+    var novoEstado=(valorRecebido===m.valT.toLowerCase()||valorRecebido==='1'||valorRecebido==='true'||valorRecebido==='high');
+    if(novoEstado!==m.estado){
+      m.estado=novoEstado;
+      addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH':'LOW')+'</b> ('+msg+')','sub');
+      renderMons();
+      renderGeral();
+      checkSPs();
+    } else {
+      addLog('mlog','<b style="color:#8b949e;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → '+(novoEstado?'HIGH':'LOW')+' (sem mudança)','sub');
+    }
   });
 }
 
@@ -863,12 +898,22 @@ function atualizaValMon(i,val){
 function subscreverTopicos(){
   if(!mqclient||!mqclient.connected) return;
   var base=getBase();
+  // Tópicos fixos
   mqclient.subscribe(base+'/status',             {qos:1});
   mqclient.subscribe(base+'/telemetria',         {qos:1});
   mqclient.subscribe(base+'/atuadores/+/estado', {qos:1});
   mqclient.subscribe(base+'/setpoints/+/estado', {qos:1});
+  // Wildcard digitais — pega sn01, sn02, sn03... automaticamente
+  mqclient.subscribe(base+'/entradas/digital/+', {qos:1});
+  // Tópicos individuais configurados nas mons (analógicos e digitais customizados)
   var tops={};
-  mons.forEach(function(m){ if(m.topico&&!tops[m.topico]){ tops[m.topico]=1; mqclient.subscribe(m.topico,{qos:1}); } });
+  mons.forEach(function(m){
+    if(m.topico&&!tops[m.topico]){
+      tops[m.topico]=1;
+      mqclient.subscribe(m.topico,{qos:1});
+    }
+  });
+  addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — base: '+base+' | mons: '+Object.keys(tops).length,'pub');
 }
 
 // MQTT — conexão automática ao abrir
@@ -892,11 +937,9 @@ function conectarMQTT(){
     st.textContent='Conectado'; st.style.color='#3fb950';
     document.getElementById('dot-broker').style.background='#3fb950';
     document.getElementById('lbl-broker').style.color='#3fb950';
-    setESP32Status('---');
+    // NÃO reseta ESP32 status — retained vão restaurar o estado real
     subscreverTopicos();
-    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b>','pub');
-    // Retained aceito normalmente — só ignora estados se ESP32 offline
-    // _ignorarRetained não é mais usado: processarMsg já verifica _esp32Online
+    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO — aguardando retained...</b>','pub');
   });
 
   mqclient.on('message',function(topic,message){
@@ -988,7 +1031,14 @@ function setCoilGeral(i,s){
     nomeAcao+' '+coils[i].nome,
     'Confirma o comando '+nomeAcao+' para o coil "'+coils[i].nome+'"?',
     nomeCor,
-    function(){ setCoil(i,s); }
+    function(){
+      // Publica direto sem checar duplicado — aba Geral pode estar dessincronizada
+      if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
+      if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
+      mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
+      syncSt('Comando enviado — aguardando confirmação ESP32...','#ef9f27');
+      setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
+    }
   );
 }
 
@@ -1089,7 +1139,7 @@ function addMon(tipo){
   var i=mons.length, base=getBase();
   mons.push(tipo==='analog'
     ?{tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'an01', unid:'V', min:0, max:3.3, val:0, open:true}
-    :{tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/sn01', jsonKey:'sn01', valT:'1', valF:'0', estado:false, open:true}
+    :(function(){var sn='sn'+String(mons.filter(function(x){return x.tipo==='digital';}).length+1).padStart(2,'0'); return {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/'+sn, jsonKey:sn, valT:'1', valF:'0', estado:false, open:true}; })()
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if(mqclient&&mqclient.connected) mqclient.subscribe(mons[i].topico,{qos:1});
@@ -1163,7 +1213,7 @@ function renderMons(){
               +'<div class="row" style="margin-top:6px;">'
                 +'<span style="font-size:16px;font-weight:500;padding:2px 10px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?'HIGH':'LOW')+'</span>'
                 +'<span style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
-                +'<button class="btn-sm" onclick="mons['+i+'].estado=!mons['+i+'].estado;renderMons();checkSPs();">simular</button>'
+  
               +'</div>'
             +'</div>'
           +'</div>'
