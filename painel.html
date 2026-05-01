@@ -1213,7 +1213,7 @@ function processarMsg(topic, msg) {
     }
     return;
   }
-  }
+
   // 5a. Wildcard digital — entradas/digital/sn01, sn02...
   // Chega direto como payload "0" ou "1" — atualiza a mon cujo tópico bate
   var _valoresValidos=['0','1','true','false','high','low'];
@@ -1553,8 +1553,8 @@ function renderCoils(){
       +'<div class="slide" id="cp-'+i+'" style="max-height:'+(c.open?'180px':'0')+';overflow:hidden;">'
         +'<div class="sep"></div>'
         +'<div class="grid4">'
-          +'<div class="col"><label class="lbl">Nº Coil</label>'
-            +'<input type="number" '+(isLocked('coil')?'readonly ':'')+' value="'+(c.numero||i+1)+'" min="1" max="'+MAX_COILS+'" style="width:55px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)||nv<1){this.value=coils['+i+'].numero;return;}var dup=coils.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){syncSt('Número já existe!','#e24b4a');this.value=coils['+i+'].numero;return;}coils['+i+'].numero=nv;coils.sort(function(a,b){return a.numero-b.numero;});renderCoils();saveLocal();">'
+          +'<div class="col"><label class="lbl">Num Coil</label>'
+            +'<input type="number" '+(isLocked('coil')?'readonly ':'')+' value="'+(c.numero||i+1)+'" min="1" max="'+MAX_COILS+'" style="width:55px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)||nv<1){this.value=coils['+i+'].numero;return;}var dup=coils.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){this.value=coils['+i+'].numero;return;}coils['+i+'].numero=nv;coils.sort(function(a,b){return a.numero-b.numero;});renderCoils();saveLocal();">'
           +'</div>'
           +'<div class="col"><label class="lbl">Nome</label>'
             +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'
