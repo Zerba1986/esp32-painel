@@ -498,14 +498,15 @@ function refreshPainel() {
 
 function resubscribirTopicos() {
   if (!mqclient || !mqclient.connected) { syncSt('MQTT desconectado','#e24b4a'); return; }
-  // Restaura estados locais enquanto aguarda retained do broker
-  restaurarEstadosLocal();
+  // Zera estados visuais — retained do broker vão restaurar o estado real
+  coils.forEach(function(c){ c.estado=false; });
+  sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
   renderCoils(); renderMons(); renderSPs(); renderGeral();
   updateMetrics(); renderSPStatus();
-  // Subscreve — retained vão chegar e sobrescrever com estado real do ESP32
+  // Resubscreve — broker entrega retained com estados reais do ESP32
   subscreverTopicos();
-  syncSt('Refresh — sincronizando com ESP32...','#ef9f27');
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — estados locais + aguardando retained...','pub');
+  syncSt('Aguardando confirmação do ESP32...','#ef9f27');
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — zerando estados, aguardando retained...','pub');
   setTimeout(function(){
     syncSt('Refresh completo!','#3fb950');
   }, 2000);
@@ -589,9 +590,6 @@ function aplicarConfig(c) {
     document.getElementById('m-sp').textContent    = qty;
   }
   _carregando = false;
-  // Restaura estados confirmados pelo ESP32 (do localStorage)
-  // Serão sobrescritos pelos retained do broker quando chegarem
-  restaurarEstadosLocal();
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
 }
@@ -1016,9 +1014,14 @@ function conectarMQTT(){
     st.textContent='Conectado'; st.style.color='#3fb950';
     document.getElementById('dot-broker').style.background='#3fb950';
     document.getElementById('lbl-broker').style.color='#3fb950';
-    // NÃO reseta ESP32 status — retained vão restaurar o estado real
+    // Limpa estados locais — retained do broker são a fonte de verdade
+    localStorage.removeItem('esp32estados');
+    // Zera estados visuais antes dos retained chegarem
+    coils.forEach(function(c){ c.estado=false; });
+    sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
+    renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
     subscreverTopicos();
-    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO — aguardando retained...</b>','pub');
+    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO — aguardando retained do ESP32...</b>','pub');
   });
 
   mqclient.on('message',function(topic,message){
