@@ -218,15 +218,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab" id="btn-geral"  onclick="showTab('geral')">&#127968; <span class="tab-txt">Geral</span></button>
-  <button class="tab active" id="btn-cfg"    onclick="showTab('cfg')">&#9881; <span class="tab-txt">Config</span></button>
+  <button class="tab active" id="btn-geral"  onclick="showTab('geral')">&#127968; <span class="tab-txt">Geral</span></button>
+  <button class="tab" id="btn-cfg"    onclick="showTab('cfg')">&#9881; <span class="tab-txt">Config</span></button>
   <button class="tab" id="btn-coils"  onclick="showTab('coils')">&#128268; <span class="tab-txt">Coils</span></button>
   <button class="tab" id="btn-mon"    onclick="showTab('mon')">&#128202; <span class="tab-txt">Mon</span></button>
   <button class="tab" id="btn-sp"     onclick="showTab('sp')">&#127919; <span class="tab-txt">SPs</span></button>
 </div>
 
 <!-- PANE GERAL -->
-<div class="pane" id="pane-geral">
+<div class="pane active" id="pane-geral">
   <div class="card">
     <div class="sh">dispositivo</div>
     <div class="geral-grid" id="g-esp-box">
@@ -256,7 +256,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </div>
 
 <!-- PANE CONFIG -->
-<div class="pane active" id="pane-cfg">
+<div class="pane" id="pane-cfg">
   <div class="card">
     <div class="hdr" style="margin-bottom:10px;">
       <div class="sh" style="margin:0;">identificacao do dispositivo</div>
@@ -298,8 +298,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div class="row" style="margin-bottom:10px;">
       <span style="font-size:12px;color:#8b949e;">Broker:</span>
       <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#ef9f27;">Conectando...</span>
-      <span style="font-size:12px;color:#8b949e;margin-left:12px;">ESP32:</span>
-      <span id="cfg-esp-lbl" style="font-size:12px;font-weight:600;color:#8b949e;">---</span>
     </div>
     <div class="log-hdr" onclick="toggleLog('statuslog')" style="border-top:0.5px solid #21262d;padding-top:8px;margin-top:4px;">
       <span class="log-ttl">Log Online / Offline ESP32</span>
@@ -549,7 +547,7 @@ function refreshPainel() {
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
-        aplicarConfig(data.record.config);
+        aplicarConfig(data.record.config, true); // preserva estados em memória
         syncSt('Config atualizada da nuvem!', '#3fb950');
       } else {
         syncSt('Sem config na nuvem', '#8b949e');
@@ -561,14 +559,14 @@ function refreshPainel() {
     .catch(function(){
       syncSt('Erro na nuvem — usando local', '#e24b4a');
       var raw = localStorage.getItem('esp32cfg');
-      if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e){} }
+      if (raw) { try { aplicarConfig(JSON.parse(raw), true); } catch(e){} }
       resubscribirTopicos();
     });
   } else {
     // Sem nuvem — usa localStorage
     var raw = localStorage.getItem('esp32cfg');
     if (raw) {
-      try { aplicarConfig(JSON.parse(raw)); syncSt('Config local atualizada!', '#3fb950'); }
+      try { aplicarConfig(JSON.parse(raw), true); syncSt('Config local atualizada!', '#3fb950'); }
       catch(e) { syncSt('Erro ao carregar local', '#e24b4a'); }
     } else {
       syncSt('Nenhuma config salva', '#8b949e');
@@ -629,25 +627,33 @@ function getConfig() {
   };
 }
 
-function aplicarConfig(c) {
+function aplicarConfig(c, preservarEstado) {
   _carregando = true;
   if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
   if (c.local)   document.getElementById('cfg-l').value = c.local;
   if (c.device)  document.getElementById('cfg-d').value = c.device;
   if (Array.isArray(c.coils)) {
+    // Salva estados atuais em memória antes de sobrescrever
+    var estadosAtuais = {};
+    coils.forEach(function(cc){ estadosAtuais[cc.numero] = cc.estado; });
     coils = c.coils.map(function(cc, ci){
       if(cc.numero === undefined) cc.numero = ci+1;
       if(cc.pino === undefined) cc.pino = COIL_PINOS_PADRAO[cc.numero]||14;
+      // Se preservarEstado, mantém estado em memória; senão reseta para false
+      cc.estado = preservarEstado ? (estadosAtuais[cc.numero] || false) : false;
       return cc;
     });
   }
   if (Array.isArray(c.mons))  mons  = c.mons;
   if (Array.isArray(c.sps)) {
+    var estadosSPs = {};
+    sps.forEach(function(sp){ estadosSPs[sp.numero] = sp.estado; });
     sps = c.sps.map(function(s, si){
       if(s.escMin === undefined) s.escMin = 0;
       if(s.escMax === undefined) s.escMax = 100;
-      if(s._ultimoComando === undefined) s._ultimoComando = null;
       if(s.numero === undefined) s.numero = si+1;
+      s.estado = preservarEstado ? (estadosSPs[s.numero] || false) : false;
+      s._ultimoComando = null; // força reavaliação sempre
       return s;
     });
   }
@@ -665,13 +671,6 @@ function aplicarConfig(c) {
   updateSpSels();
   renderGeral();
   atualizarTodosLocks(); atualizarCamposConfig(); atualizarBotoesSP();
-  // Se broker não conectado, conecta agora que config está pronta
-  if(!mqclient || !mqclient.connected) {
-    setTimeout(conectarMQTT, 500);
-  } else {
-    // Já conectado — resubscreve com base correta
-    subscreverTopicos(true);
-  }
 }
 
 function salvarNuvem() {
@@ -724,7 +723,6 @@ function carregarNuvem() {
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   atualizarTodosLocks(); atualizarCamposConfig(); atualizarBotoesSP();
-  if(!mqclient || !mqclient.connected) setTimeout(conectarMQTT, 500);
 }
 
 // ════════════════════════════════════════════════
@@ -844,15 +842,22 @@ function setESP32Status(s) {
     var lu = document.getElementById('cfg-last');
     if (lu) lu.textContent = new Date().toLocaleTimeString('pt-BR');
   }
-  // Quando ESP32 volta online, libera processamento de estados
+  // Quando ESP32 volta online, libera processamento e aplica buffer de retains
   if (s === 'online') {
-    // Pequeno delay para garantir que o status foi processado antes dos estados
     setTimeout(function(){
       _ignorarRetained = false;
+      // Aplica estados retidos bufferizados (coils e SPs)
+      var buf = _bufferRetained;
+      _bufferRetained = {};
+      Object.keys(buf).forEach(function(t){
+        addLog('clog','<b style="color:#3fb950;">RETAINED APLICADO</b> <code style="color:#79c0ff;">'+t+'</code> → '+buf[t],'pub');
+        processarMsg(t, buf[t]);
+      });
     }, 500);
   }
   // Quando ESP32 vai offline, limpa estados dos coils
   if (s === 'offline') {
+    _bufferRetained = {};
     coils.forEach(function(c){ c.estado = false; });
     sps.forEach(function(sp){ sp.estado = false; sp._ultimoComando = null; });
     // Limpa métricas da aba Config
@@ -915,7 +920,8 @@ function confirmarModal(){
 // ════════════════════════════════════════════════
 var mqclient = null;
 var _esp32Online = false;
- // ignora msgs retidas logo após conectar
+var _ignorarRetained = false;
+var _bufferRetained = {}; // guarda retains de coil/sp recebidos antes do status online
 
 function mqttPub(topic, payload) {
   if (mqclient && mqclient.connected) {
@@ -935,12 +941,16 @@ function processarMsg(topic, msg) {
   var cm = topic.match(/coil_(\d+)\/estado$/);
   if (cm) {
     var cnum = parseInt(cm[1]);
-    if (!_esp32Online) { addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline)</b>','sub'); return; }
+    if (!_esp32Online) {
+      // Bufferiza o estado retido — será aplicado quando ESP32 confirmar online
+      _bufferRetained[topic] = msg;
+      addLog('clog','<b style="color:#ef9f27;">SUB (bufferizado — aguardando status)</b> <code style="color:#5a6478;">'+topic+'</code> → '+msg,'sub');
+      return;
+    }
     var ci = -1;
     for(var k=0;k<coils.length;k++){ if(coils[k].numero===cnum){ ci=k; break; } }
     if (ci >= 0) {
       var coil = coils[ci];
-      // Compara com msgA e msgD configurados pelo usuário
       if (msg === coil.msgA) {
         coil.estado = true;
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
@@ -950,7 +960,6 @@ function processarMsg(topic, msg) {
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
         renderCoils(); updateMetrics(); renderGeral();
       } else {
-        // Mensagem desconhecida — não muda estado
         addLog('clog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+coil.msgA+'") nem msgOFF("'+coil.msgD+'")','sub');
       }
     }
@@ -960,8 +969,9 @@ function processarMsg(topic, msg) {
   var sm = topic.match(/sp(\d+)\/estado$/);
   if (sm) {
     var snum = parseInt(sm[1]);
-    if (_ignorarRetained || !_esp32Online) {
-      addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
+    if (!_esp32Online) {
+      _bufferRetained[topic] = msg;
+      addLog('splog','<b style="color:#ef9f27;">SUB (bufferizado — aguardando status)</b> <code style="color:#5a6478;">'+topic+'</code> → '+msg,'sub');
       return;
     }
     var si = -1;
@@ -991,61 +1001,81 @@ function processarMsg(topic, msg) {
       if (m.jsonKey !== snKey && m.topico !== topic) return;
       var novoEstado = (msg === m.valT);
       addLog('mlog','<b style="color:#ef9f27;">SUB digital</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+msg+'</b> = '+(novoEstado?'HIGH':'LOW'),'sub');
+      m.ultimoVal = msg; // guarda valor bruto para reavaliação após inversão
       if(novoEstado !== m.estado){ m.estado = novoEstado; atualizaEstadoDigital(mi); }
     });
     return;
   }
 
-  // 5. Entradas de monitoramento (qualquer tópico configurado)
+  // 5. Telemetria do dispositivo — processa SEMPRE independente de mons configurados
+  if (topic === getBase()+'/telemetria') {
+    try {
+      var tel = JSON.parse(msg);
+      // Uptime
+      if (tel.uptime !== undefined) {
+        var s=parseInt(tel.uptime)||0, h=Math.floor(s/3600), m2=Math.floor((s%3600)/60), sec=s%60;
+        var uptStr = (h>0?h+'h ':'')+m2+'m '+sec+'s';
+        var gu=document.getElementById('g-uptime'); if(gu) gu.textContent='Uptime: '+uptStr;
+        var hu=document.getElementById('hdr-uptime'); if(hu) hu.textContent=uptStr;
+        var cu=document.getElementById('cfg-uptime'); if(cu) cu.textContent=uptStr;
+      }
+      // RSSI
+      if (tel.rssi !== undefined) {
+        var rssiVal=tel.rssi;
+        var rssiColor=rssiVal>-60?'#3fb950':rssiVal>-75?'#ef9f27':'#e24b4a';
+        var gr=document.getElementById('g-rssi'); if(gr) gr.textContent='RSSI: '+rssiVal+' dBm';
+        var hr=document.getElementById('hdr-rssi'); if(hr){ hr.textContent=rssiVal+' dBm'; hr.style.color=rssiColor; }
+        var cr=document.getElementById('cfg-rssi'); if(cr){ cr.textContent=rssiVal; cr.style.color=rssiColor; }
+      }
+      // IP
+      if (tel.ip !== undefined) {
+        var ci=document.getElementById('cfg-ip'); if(ci) ci.textContent=tel.ip;
+        var hi=document.getElementById('hdr-ip'); if(hi) hi.textContent=tel.ip;
+      }
+      // Atualiza todos os mons analógicos cujo tópico seja telemetria
+      mons.forEach(function(m, i) {
+        if (m.tipo !== 'analog') return;
+        if (m.topico !== topic) return;
+        if (tel[m.jsonKey] !== undefined) {
+          m.val = parseFloat(tel[m.jsonKey]);
+          atualizaValMon(i, m.val);
+        }
+      });
+      // Atualiza mons digitais cujo tópico seja telemetria
+      mons.forEach(function(m, i) {
+        if (m.tipo !== 'digital') return;
+        if (m.topico !== topic) return;
+        if (tel[m.jsonKey] !== undefined) {
+          var novoEstado = (String(tel[m.jsonKey]) === m.valT);
+          m.ultimoVal = String(tel[m.jsonKey]);
+          if(novoEstado !== m.estado){ m.estado = novoEstado; atualizaEstadoDigital(i); }
+        }
+      });
+      checkSPs();
+    } catch(e) {}
+    return;
+  }
+
+  // 6. Entradas de monitoramento — tópicos customizados (não telemetria)
   mons.forEach(function(m, i) {
     if (topic !== m.topico) return;
-    var origem = _esp32Online ? 'online' : 'retido';
+    if (topic === getBase()+'/telemetria') return; // já processado acima
     addLog('mlog','<b style="color:'+(_esp32Online?'#58a6ff':'#8b949e')+';">SUB'+((!_esp32Online)?' (retido)':'')+'</b> <code style="color:#79c0ff;">'+topic+'</code> → '+msg.substring(0,60),'sub');
     try {
       var d = JSON.parse(msg);
-      // Uptime / RSSI / IP para header e aba Config
-      if (d.uptime !== undefined) {
-        var s=parseInt(d.uptime)||0, h=Math.floor(s/3600), m2=Math.floor((s%3600)/60), sec=s%60;
-        var uptStr = (h>0?h+'h ':'')+m2+'m '+sec+'s';
-        var gu = document.getElementById('g-uptime'); if(gu) gu.textContent='Uptime: '+uptStr;
-        var hu = document.getElementById('hdr-uptime'); if(hu) hu.textContent=uptStr;
-        var cu = document.getElementById('cfg-uptime'); if(cu) cu.textContent=uptStr;
-      }
-      if (d.rssi !== undefined) {
-        var rssiVal = d.rssi;
-        var rssiColor = rssiVal > -60 ? '#3fb950' : rssiVal > -75 ? '#ef9f27' : '#e24b4a';
-        var gr = document.getElementById('g-rssi'); if(gr) gr.textContent='RSSI: '+rssiVal+' dBm';
-        var hr = document.getElementById('hdr-rssi'); if(hr){ hr.textContent=rssiVal+' dBm'; hr.style.color=rssiColor; }
-        var cr = document.getElementById('cfg-rssi'); if(cr){ cr.textContent=rssiVal; cr.style.color=rssiColor; }
-      }
-      if (d.ip !== undefined) {
-        var ci = document.getElementById('cfg-ip'); if(ci) ci.textContent=d.ip;
-        var hi = document.getElementById('hdr-ip'); if(hi) hi.textContent=d.ip;
-      }
       if (m.tipo === 'analog' && d[m.jsonKey] !== undefined) {
         m.val = parseFloat(d[m.jsonKey]);
         atualizaValMon(i, m.val);
       }
-      // digital via JSON (tópico configurado)
       if (m.tipo === 'digital' && d[m.jsonKey] !== undefined) {
         var novoEstado = (String(d[m.jsonKey]) === m.valT);
+        m.ultimoVal = String(d[m.jsonKey]);
         if(novoEstado !== m.estado){ m.estado = novoEstado; atualizaEstadoDigital(i); }
-      }
-      // também atualiza todas as chaves sn* para mons digitais neste tópico
-      if (m.tipo === 'digital' && d[m.jsonKey] === undefined) {
-        // tenta match direto da chave no JSON
-        var keys = Object.keys(d);
-        for(var ki=0;ki<keys.length;ki++){
-          if(keys[ki]===m.jsonKey){
-            var ne2 = (String(d[keys[ki]]) === m.valT);
-            if(ne2 !== m.estado){ m.estado = ne2; atualizaEstadoDigital(i); }
-            break;
-          }
-        }
       }
     } catch(e) {
       if (m.tipo === 'digital') {
         var novoEstado2 = (msg === m.valT);
+        m.ultimoVal = msg;
         if(novoEstado2 !== m.estado){ m.estado = novoEstado2; atualizaEstadoDigital(i); }
       }
     }
@@ -1071,19 +1101,26 @@ function atualizaValMon(i, val) {
 function inverterLogicaDigital(i) {
   var m = mons[i];
   if (!m || m.tipo !== 'digital') return;
+  // Troca valT e valF
   var tmp = m.valT; m.valT = m.valF; m.valF = tmp;
-  // Atualiza badge HIGH/LOW
+  // Reavalia estado com o último valor recebido (sem esperar nova msg MQTT)
+  if(m.ultimoVal !== undefined) {
+    m.estado = (m.ultimoVal === m.valT);
+  }
+  // Atualiza badge HIGH/LOW e dval
   atualizaEstadoDigital(i);
+  // Atualiza inputs por ID fixo
+  var inpT = document.getElementById('inp-valt-'+i);
+  var inpF = document.getElementById('inp-valf-'+i);
+  if(inpT) inpT.value = m.valT;
+  if(inpF) inpF.value = m.valF;
   // Atualiza linha de status textual
   var stLine = document.getElementById('dstline-'+i);
   if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
-  // Atualiza inputs de valT/valF visíveis
-  var inpT = document.querySelector('#mp-'+i+' input[placeholder="ex: 1"]');
-  var inpF = document.querySelector('#mp-'+i+' input[placeholder="ex: 0"]');
-  if(inpT) inpT.value = m.valT;
-  if(inpF) inpF.value = m.valF;
   saveLocal();
 }
+
+function atualizaEstadoDigital(i) {
   var m = mons[i];
   if (!m || m.tipo !== 'digital') return;
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
@@ -1166,6 +1203,7 @@ function conectarMQTT() {
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b> — base: <code style="color:#ef9f27;">'+base+'</code>','pub');
     
     setESP32Status('---');
+    _bufferRetained = {};
     subscreverTopicos();
     _ignorarRetained = true;
     setTimeout(function(){ _ignorarRetained = false; }, 2000);
@@ -1178,7 +1216,7 @@ function conectarMQTT() {
   mqclient.on('reconnect', function() {
     st.textContent = 'Reconectando...'; st.style.color = '#ef9f27';
     document.getElementById('dot-broker').style.background = '#ef9f27';
-    
+    document.getElementById('lbl-broker').style.color      = '#ef9f27';
     addLog('clog','<b style="color:#ef9f27;">Reconectando automaticamente...</b>','sub');
   });
 
@@ -1209,7 +1247,7 @@ var coils = [];
 var COIL_PINOS_PADRAO = {1:2,2:26,3:27,4:4,5:5,6:13,7:14,8:15,9:16,10:17,11:18,12:19,13:21,14:22,15:23,16:25,17:32,18:33,19:12,20:15};
 
 function addCoil() {
-  if (!isLocked('coil') === false) { syncSt('Desbloqueie os Coils primeiro','#e24b4a'); return; }
+  if (isLocked('coil')) { syncSt('Desbloqueie os Coils primeiro','#e24b4a'); return; }
   if (coils.length >= MAX_COILS) { syncSt('Limite de '+MAX_COILS+' coils atingido!','#e24b4a'); return; }
   // próximo número disponível
   var usados = coils.map(function(c){ return c.numero; });
@@ -1520,12 +1558,12 @@ function renderMons() {
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
             +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
-            +'<div class="col"><label class="lbl">Unidade</label><select onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;">'+UNIDS.map(function(u){return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>'
-            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
+            +'<div class="col"><label class="lbl">Unidade</label><select '+(isLocked('mon')?'disabled ':'')+'onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'+UNIDS.map(function(u){return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>'
+            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
           +'</div>'
-          +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;"></div>'
-          +'<div class="col"><label class="lbl">Max</label><input type="number" value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div></div>'
+          +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;saveLocal();"></div>'
+          +'<div class="col"><label class="lbl">Max</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div></div>'
         +'</div>';
     } else {
       // DIGITAL
@@ -1543,7 +1581,6 @@ function renderMons() {
              +'<div class="row" style="margin-top:6px;gap:8px;">'
                +'<span id="dbadge-'+i+'" style="font-size:16px;font-weight:600;padding:3px 12px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';transition:all .2s;">'+(m.estado?'HIGH':'LOW')+'</span>'
                +'<span id="dval-'+i+'" style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
-               +'<button class="btn-sm" onclick="mons['+i+'].estado=!mons['+i+'].estado;atualizaEstadoDigital('+i+');">simular</button>'
              +'</div>'
            +'</div>'
          +'</div>'
@@ -1561,7 +1598,7 @@ function renderMons() {
             +'<div class="row" style="gap:12px;flex-wrap:wrap;">'
               +'<div class="col">'
                 +'<label class="lbl">🟢 Valor que indica HIGH</label>'
-                +'<input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valT+'" style="width:70px;" '
+                +'<input type="text" id="inp-valt-'+i+'" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valT+'" style="width:70px;" '
                   +'placeholder="ex: 1" '
                   +'oninput="'
                     +'if(this.value===mons['+i+'].valF){syncSt(\'HIGH e LOW não podem ser iguais\',\'#e24b4a\');return;}'
@@ -1571,7 +1608,7 @@ function renderMons() {
               +'</div>'
               +'<div class="col">'
                 +'<label class="lbl">⚪ Valor que indica LOW</label>'
-                +'<input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valF+'" style="width:70px;" '
+                +'<input type="text" id="inp-valf-'+i+'" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valF+'" style="width:70px;" '
                   +'placeholder="ex: 0" '
                   +'oninput="'
                     +'if(this.value===mons['+i+'].valT){syncSt(\'HIGH e LOW não podem ser iguais\',\'#e24b4a\');return;}'
@@ -1676,13 +1713,16 @@ function updateSpSels() {
     if (!s) continue;
     var cur = sps[i].monIdx;
     s.innerHTML = '<option value="-1">-- escolher --</option>'
-      + mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===cur?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
+      + mons.map(function(m,mi){
+          if(m.tipo !== 'analog') return '';
+          return '<option value="'+mi+'"'+(mi===cur?' selected':'')+'>'+m.nome+'</option>';
+        }).join('');
   }
 }
 function toggleSP(i) {
   sps[i].open = !sps[i].open;
   var p=document.getElementById('spp-'+i), a=document.getElementById('spa-'+i);
-  if(p) p.style.maxHeight = sps[i].open ? '420px' : '0';
+  if(p) p.style.maxHeight = sps[i].open ? '900px' : '0';
   if(a) a.style.transform = sps[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
 function toggleSPBlocks(i) {
@@ -1711,9 +1751,13 @@ function updateSPSum(i) {
     ? TIPOS[sps[i].tipo]+' · '+m.nome+' · esc:['+escStr+'] · sp:['+spStr+']'
     : 'sem entrada';
   if(ml) ml.textContent = sps[i].acao>0 ? 'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"' : '';
-  // atualiza label da escala se visível
-  var er = document.getElementById('escrange-'+i);
-  if(er) er.textContent = sps[i].escMin+' → '+sps[i].escMax;
+  // Atualiza labels de unidade nos sliders
+  var lmv=document.getElementById('hmv-'+i);
+  var lxv=document.getElementById('hxv-'+i);
+  var ler=document.getElementById('escrange-'+i);
+  if(lmv) lmv.textContent=sps[i].min.toFixed(1)+(un?' '+un:'');
+  if(lxv) lxv.textContent=sps[i].max.toFixed(1)+(un?' '+un:'');
+  if(ler) ler.textContent=sps[i].escMin+' → '+sps[i].escMax+(un?' '+un:'');
 }
 
 function renderSPs() {
@@ -1750,7 +1794,8 @@ function renderSPs() {
     var mOpts =
       '<option value="-1">-- escolher --</option>' +
       mons.map(function(m,mi){
-        return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>';
+        if(m.tipo !== 'analog') return ''; // somente analógicos
+        return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+'</option>';
       }).join('');
 
     var d = document.createElement('div');
@@ -1792,7 +1837,7 @@ function renderSPs() {
   	+'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
       +'</div>'
 
-      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'520px':'0')+';overflow:hidden;">'
+      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'900px':'0')+';overflow:hidden;">'
 
         +'<div class="sep"></div>'
 
@@ -1816,7 +1861,17 @@ function renderSPs() {
 
           +'<div class="col">'
             +'<label class="lbl">Entrada</label>'
-            +'<select '+(isLocked('sp')?'disabled ':'')+'id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'
+            +'<select '+(isLocked('sp')?'disabled ':'')+'id="msel-'+i+'" onchange="'
+              +'sps['+i+'].monIdx=parseInt(this.value);'
+              +'var selM=mons[sps['+i+'].monIdx];'
+              +'var selUn=selM?(selM.unid||\'\'): \'\';'
+              +'var lmv=document.getElementById(\'hmv-'+i+'\');'
+              +'var lxv=document.getElementById(\'hxv-'+i+'\');'
+              +'var ler=document.getElementById(\'escrange-'+i+'\');'
+              +'if(lmv)lmv.textContent=sps['+i+'].min.toFixed(1)+\' \'+selUn;'
+              +'if(lxv)lxv.textContent=sps['+i+'].max.toFixed(1)+\' \'+selUn;'
+              +'if(ler)ler.textContent=sps['+i+'].escMin+\' → \'+sps['+i+'].escMax+\' \'+selUn;'
+              +'updateSPSum('+i+');checkSPs();saveLocal();">'
               +mOpts+
             '</select>'
           +'</div>'
@@ -2152,7 +2207,10 @@ function updateMetrics() {
 // INIT
 // ════════════════════════════════════════════════
 carregarNuvem();
-// conexão MQTT é iniciada automaticamente por aplicarConfig após carregar
+// Conecta MQTT uma única vez após config carregar (1.5s = tempo para fetch JSONBin)
+setTimeout(function(){
+  if (!mqclient) conectarMQTT();
+}, 1500);
 </script>
 </body>
 </html>
