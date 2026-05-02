@@ -307,10 +307,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
   <div class="card">
     <div class="sh">conexao mqtt</div>
-    <div class="row">
-      <span style="font-size:12px;color:#8b949e;">Status:</span>
+    <div class="row" style="margin-bottom:10px;">
+      <span style="font-size:12px;color:#8b949e;">Broker:</span>
       <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#ef9f27;">Conectando...</span>
-      <button class="btn-g" onclick="reconectarMQTT()" style="font-size:11px;padding:4px 10px;">&#9654; Reconectar</button>
+      <span style="font-size:12px;color:#8b949e;margin-left:12px;">ESP32:</span>
+      <span id="cfg-esp-lbl" style="font-size:12px;font-weight:600;color:#8b949e;">---</span>
+    </div>
+    <div class="log-hdr" onclick="toggleLog('statuslog')" style="border-top:0.5px solid #21262d;padding-top:8px;margin-top:4px;">
+      <span class="log-ttl">Log Online / Offline ESP32</span>
+      <span class="log-arr" id="statuslog-arr">&#9654;</span>
+    </div>
+    <div class="log-bdy" id="statuslog-bdy" style="max-height:0;">
+      <div class="ll">Aguardando conexão...</div>
     </div>
   </div>
   <div class="card" style="border-color:#238636;">
@@ -629,9 +637,23 @@ function aplicarConfig(c) {
   if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
   if (c.local)   document.getElementById('cfg-l').value = c.local;
   if (c.device)  document.getElementById('cfg-d').value = c.device;
-  if (Array.isArray(c.coils)) coils = c.coils;
+  if (Array.isArray(c.coils)) {
+    coils = c.coils.map(function(cc, ci){
+      if(cc.numero === undefined) cc.numero = ci+1;
+      if(cc.pino === undefined) cc.pino = COIL_PINOS_PADRAO[cc.numero]||14;
+      return cc;
+    });
+  }
   if (Array.isArray(c.mons))  mons  = c.mons;
-  if (Array.isArray(c.sps))   sps   = c.sps;
+  if (Array.isArray(c.sps)) {
+    sps = c.sps.map(function(s, si){
+      if(s.escMin === undefined) s.escMin = 0;
+      if(s.escMax === undefined) s.escMax = 100;
+      if(s._ultimoComando === undefined) s._ultimoComando = null;
+      if(s.numero === undefined) s.numero = si+1;
+      return s;
+    });
+  }
   // qty sempre derivado do array sps (não mais do slider)
   qty = sps.length;
   if (c.qty && !isNaN(c.qty) && sps.length === 0) qty = parseInt(c.qty);
@@ -738,8 +760,8 @@ function getBase() {
         +(document.getElementById('cfg-l').value||'l')+'/'
         +(document.getElementById('cfg-d').value||'d');
 }
-function gct(i,t){ return getBase()+'/atuadores/coil_'+String(i+1).padStart(2,'0')+'/'+t; }
-function gst(i,t){ return getBase()+'/setpoints/sp'+String(i+1).padStart(2,'00')+'/'+t; }
+function gct(i,t){ return getBase()+'/atuadores/coil_'+String(coils[i]?coils[i].numero:i+1).padStart(2,'0')+'/'+t; }
+function gst(i,t){ return getBase()+'/setpoints/sp'+String(sps[i]?sps[i].numero:i+1).padStart(2,'0')+'/'+t; }
 
 function updateBase() {
   var b = getBase();
@@ -796,6 +818,24 @@ function setESP32Status(s) {
   var cl = document.getElementById('cfg-esp-lbl');
   if (cd) { cd.style.background=c.bg; cd.style.boxShadow=c.shadow; }
   if (cl) { cl.textContent=c.txt; cl.style.color=c.tx; }
+  // Log de status na aba Config
+  if (s !== '---') {
+    var ts = new Date().toLocaleTimeString('pt-BR');
+    var isOnline = (s === 'online');
+    addLog('statuslog',
+      '<b style="color:'+(isOnline?'#3fb950':'#e24b4a')+';font-size:12px;">'+(isOnline?'🟢 ONLINE':'🔴 OFFLINE')+'</b>'
+      +'<span style="color:#8b949e;margin-left:8px;">'+ts+'</span>'
+      +(isOnline?'<span style="color:#5a6478;margin-left:8px;font-size:10px;">RSSI: <span id="slog-rssi">---</span> dBm · IP: <span id="slog-ip">---</span></span>':''),
+      isOnline?'pub':'sub'
+    );
+    // Atualiza rssi/ip no log assim que chegar telemetria
+    if(isOnline) setTimeout(function(){
+      var sr=document.getElementById('slog-rssi'), si=document.getElementById('slog-ip');
+      var cr2=document.getElementById('cfg-rssi'), ci2=document.getElementById('cfg-ip');
+      if(sr&&cr2) sr.textContent=cr2.textContent;
+      if(si&&ci2) si.textContent=ci2.textContent;
+    }, 6000);
+  }
   // geral card
   var gd = document.getElementById('g-dot-esp');
   var gl = document.getElementById('g-lbl-esp');
@@ -896,10 +936,11 @@ function processarMsg(topic, msg) {
   // 2. Estado Coils
   var cm = topic.match(/coil_(\d+)\/estado$/);
   if (cm) {
-    var ci = parseInt(cm[1])-1;
-    // Ignora retained logo após conectar ou se ESP32 offline
+    var cnum = parseInt(cm[1]);
     if (!_esp32Online) { addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline)</b>','sub'); return; }
-    if (ci >= 0 && ci < coils.length) {
+    var ci = -1;
+    for(var k=0;k<coils.length;k++){ if(coils[k].numero===cnum){ ci=k; break; } }
+    if (ci >= 0) {
       var coil = coils[ci];
       // Compara com msgA e msgD configurados pelo usuário
       if (msg === coil.msgA) {
@@ -920,12 +961,14 @@ function processarMsg(topic, msg) {
   // 3. Estado SPs
   var sm = topic.match(/sp(\d+)\/estado$/);
   if (sm) {
-    var si = parseInt(sm[1])-1;
+    var snum = parseInt(sm[1]);
     if (_ignorarRetained || !_esp32Online) {
       addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
       return;
     }
-    if (si >= 0 && si < qty) {
+    var si = -1;
+    for(var k=0;k<sps.length;k++){ if(sps[k].numero===snum && k<qty){ si=k; break; } }
+    if (si >= 0) {
       var sp = sps[si];
       if (msg === sp.msgA) {
         sp.estado = true;
@@ -941,7 +984,21 @@ function processarMsg(topic, msg) {
     }
     return;
   }
-  // 4. Entradas de monitoramento (qualquer tópico)
+  // 4. Entradas digitais diretas (base/entradas/digital/sn01, sn02...)
+  var snm = topic.match(/\/entradas\/digital\/(sn\d+)$/);
+  if (snm) {
+    var snKey = snm[1]; // ex: "sn01"
+    mons.forEach(function(m, mi) {
+      if (m.tipo !== 'digital') return;
+      if (m.jsonKey !== snKey && m.topico !== topic) return;
+      var novoEstado = (msg === m.valT);
+      addLog('mlog','<b style="color:#ef9f27;">SUB digital</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+msg+'</b> = '+(novoEstado?'HIGH':'LOW'),'sub');
+      if(novoEstado !== m.estado){ m.estado = novoEstado; atualizaEstadoDigital(mi); }
+    });
+    return;
+  }
+
+  // 5. Entradas de monitoramento (qualquer tópico configurado)
   mons.forEach(function(m, i) {
     if (topic !== m.topico) return;
     var origem = _esp32Online ? 'online' : 'retido';
@@ -971,9 +1028,22 @@ function processarMsg(topic, msg) {
         m.val = parseFloat(d[m.jsonKey]);
         atualizaValMon(i, m.val);
       }
+      // digital via JSON (tópico configurado)
       if (m.tipo === 'digital' && d[m.jsonKey] !== undefined) {
         var novoEstado = (String(d[m.jsonKey]) === m.valT);
         if(novoEstado !== m.estado){ m.estado = novoEstado; atualizaEstadoDigital(i); }
+      }
+      // também atualiza todas as chaves sn* para mons digitais neste tópico
+      if (m.tipo === 'digital' && d[m.jsonKey] === undefined) {
+        // tenta match direto da chave no JSON
+        var keys = Object.keys(d);
+        for(var ki=0;ki<keys.length;ki++){
+          if(keys[ki]===m.jsonKey){
+            var ne2 = (String(d[keys[ki]]) === m.valT);
+            if(ne2 !== m.estado){ m.estado = ne2; atualizaEstadoDigital(i); }
+            break;
+          }
+        }
       }
     } catch(e) {
       if (m.tipo === 'digital') {
@@ -1122,11 +1192,20 @@ var MAX_ANALOG = 20;  // máximo de entradas analógicas
 var MAX_DIGITAL = 10; // máximo de entradas digitais
 var coils = [];
 
+// Mapa de pinos padrão por número de coil (igual ao firmware)
+var COIL_PINOS_PADRAO = {1:2,2:26,3:27,4:4,5:5,6:13,7:14,8:15,9:16,10:17,11:18,12:19,13:21,14:22,15:23,16:25,17:32,18:33,19:12,20:15};
+
 function addCoil() {
+  if (!isLocked('coil') === false) { syncSt('Desbloqueie os Coils primeiro','#e24b4a'); return; }
   if (coils.length >= MAX_COILS) { syncSt('Limite de '+MAX_COILS+' coils atingido!','#e24b4a'); return; }
-  var pins = [2,26,27];
-  coils.push({ nome:'Coil '+String(coils.length+1).padStart(2,'0'), pino:pins[coils.length]||14, estado:false, open:true, msgA:'1', msgD:'0' });
-  renderCoils(); updateMetrics(); renderGeral();
+  // próximo número disponível
+  var usados = coils.map(function(c){ return c.numero; });
+  var num = 1;
+  while(usados.indexOf(num) !== -1) num++;
+  if(num > MAX_COILS) { syncSt('Sem números de coil disponíveis!','#e24b4a'); return; }
+  coils.push({ numero:num, nome:'Coil '+String(num).padStart(2,'0'), pino:COIL_PINOS_PADRAO[num]||14, estado:false, open:true, msgA:'1', msgD:'0' });
+  coils.sort(function(a,b){ return a.numero-b.numero; });
+  renderCoils(); updateMetrics(); renderGeral(); saveLocal();
 }
 function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); }
 function allCoils(s) {
@@ -1250,43 +1329,24 @@ function renderCoils() {
         +'<div class="grid4">'
 
           +'<div class="col">'
-
-            +'<label class="lbl">Nome</label>'
-
-            +'<input type="text" '
-
-              +(isLocked('coil')?'readonly ':'')+
-
-              'value="'+c.nome+'" '
-
-              +'oninput="'
-                +'coils['+i+'].nome=this.value;'
-                +'var e=document.getElementById(\'cn-'+i+'\');'
-                +'if(e)e.textContent=this.value;'
-              +'">'
-
+            +'<label class="lbl">Nº Coil</label>'
+            +'<input type="number" '+(isLocked('coil')?'readonly ':'')+
+              'min="1" max="'+MAX_COILS+'" style="width:60px;" value="'+c.numero+'" '+
+              'oninput="'+
+                'var v=parseInt(this.value);'+
+                'if(isNaN(v)||v<1||v>'+MAX_COILS+') return;'+
+                'var dup=coils.some(function(cc,ii){ return ii!=='+i+' && cc.numero===v; });'+
+                'if(dup){ syncSt(\'Coil \'+v+\' já existe!\',\'#e24b4a\'); this.value=coils['+i+'].numero; return; }'+
+                'coils['+i+'].numero=v;'+
+                'coils['+i+'].nome=\'Coil \'+String(v).padStart(2,\'0\');'+
+                'coils['+i+'].pino=COIL_PINOS_PADRAO[v]||14;'+
+                'coils.sort(function(a,b){return a.numero-b.numero;});'+
+                'renderCoils();saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
-
-            +'<label class="lbl">Pino ESP32</label>'
-
-            +(function(){
-              var PINOS_OUTPUT = [2,4,5,13,14,15,16,17,18,19,21,22,23,25,26,27,32,33];
-              var usados = coils.map(function(cc){ return cc.pino; });
-              var opts = PINOS_OUTPUT.map(function(p){
-                var emUso = usados.indexOf(p) !== -1 && usados.indexOf(p) !== i;
-                return '<option value="'+p+'"'+(p===c.pino?' selected':'')+
-                  (emUso?' style="color:#e24b4a;"':'')+'>'+
-                  'GPIO '+p+(emUso?' (em uso)':'')+
-                  (p===2?' ★':'')+'</option>';
-              }).join('');
-              return '<select '+(isLocked('coil')?'disabled ':'')+
-                'style="width:100px;" '+
-                'onchange="coils['+i+'].pino=parseInt(this.value);renderCoils();saveLocal();">'+
-                opts+'</select>';
-            }())
-
+            +'<label class="lbl">Pino (firmware)</label>'
+            +'<div style="font-size:13px;font-weight:600;color:#79c0ff;padding:5px 0;">GPIO '+(COIL_PINOS_PADRAO[c.numero]||14)+'</div>'
           +'</div>'
 
           +'<div class="col">'
@@ -1532,7 +1592,7 @@ var TIPOS = ['Histerese','Janela'];
 var ACOES = ['Dashboard','MQTT','Dashboard+MQTT'];
 var qty = 2;
 var sps = Array.from({length:10}, function(_,i){
-  return {nome:'SP'+String(i+1).padStart(2,'0'), tipo:0, monIdx:-1, min:0.5+i*0.3, max:1.0+i*0.3, cor:i%CORES.length, acao:1, msgA:'1', msgD:'0', estado:false, open:false};
+  return {nome:'SP'+String(i+1).padStart(2,'0'), tipo:0, monIdx:-1, escMin:0, escMax:100, min:20, max:80, cor:i%CORES.length, acao:1, msgA:'1', msgD:'0', estado:false, open:false};
 });
 
 var MAX_SPS = 10;
@@ -1553,8 +1613,12 @@ function atualizarQtyLabel(){
 function addSP(){
   if(isLocked('sp')){ syncSt('Desbloqueie os SPs primeiro (🔒 LOCKED)','#e24b4a'); return; }
   if(sps.length>=MAX_SPS){ syncSt('Limite de '+MAX_SPS+' set points atingido!','#e24b4a'); return; }
-  var num = sps.length + 1;
-  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,min:0.5,max:1.0,cor:sps.length%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:true,_ultimoComando:null});
+  var usados = sps.map(function(s){ return s.numero; });
+  var num = 1;
+  while(usados.indexOf(num) !== -1) num++;
+  if(num > MAX_SPS) { syncSt('Sem números de SP disponíveis!','#e24b4a'); return; }
+  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:true,_ultimoComando:null});
+  sps.sort(function(a,b){ return a.numero-b.numero; });
   qty=sps.length; atualizarQtyLabel(); atualizarBotoesSP(); renderSPs(); saveLocal();
   syncSt('SP'+String(num).padStart(2,'0')+' adicionado!','#3fb950');
 }
@@ -1602,9 +1666,12 @@ function toggleSP(i) {
   if(a) a.style.transform = sps[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
 function toggleSPBlocks(i) {
-  var h=document.getElementById('hist-'+i), j=document.getElementById('jan-'+i);
-  if(h) h.style.display = sps[i].tipo===0 ? 'flex' : 'none';
-  if(j) j.style.display = sps[i].tipo===1 ? 'flex' : 'none';
+  // hist contém ambos os modos (histerese e janela) com labels adequados
+  // só atualiza os labels Min/Max conforme o tipo
+  var lMin = document.querySelector('#hist-'+i+' label[data-lbl="min"]');
+  var lMax = document.querySelector('#hist-'+i+' label[data-lbl="max"]');
+  if(lMin) lMin.textContent = sps[i].tipo===0 ? 'Min — desaciona' : 'Min — limite inferior';
+  if(lMax) lMax.textContent = sps[i].tipo===0 ? 'Max — aciona'    : 'Max — limite superior';
 }
 function toggleSPMqtt(i) {
   var m=document.getElementById('smqtt-'+i);
@@ -1617,8 +1684,16 @@ function refreshSPBadge(i) {
 }
 function updateSPSum(i) {
   var m=mons[sps[i].monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
-  if(sl) sl.textContent = m ? TIPOS[sps[i].tipo]+' · '+m.nome+' · '+sps[i].min.toFixed(2)+'-'+sps[i].max.toFixed(2)+' '+(m.unid||'') : 'sem entrada';
+  var un = m ? (m.unid||'') : '';
+  var escStr = sps[i].escMin+' – '+sps[i].escMax+(un?' '+un:'');
+  var spStr  = sps[i].min.toFixed(1)+' / '+sps[i].max.toFixed(1)+(un?' '+un:'');
+  if(sl) sl.textContent = m
+    ? TIPOS[sps[i].tipo]+' · '+m.nome+' · esc:['+escStr+'] · sp:['+spStr+']'
+    : 'sem entrada';
   if(ml) ml.textContent = sps[i].acao>0 ? 'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"' : '';
+  // atualiza label da escala se visível
+  var er = document.getElementById('escrange-'+i);
+  if(er) er.textContent = sps[i].escMin+' → '+sps[i].escMax;
 }
 
 function renderSPs() {
@@ -1694,25 +1769,29 @@ function renderSPs() {
         +'</div>'
 
 	+'<div class="row" style="gap:6px;">'
-
   	+'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
-
-  	+(!isLocked('sp')
-    ? '<button onclick="removeSP('+i+')" style="width:22px;height:22px;border-radius:6px;border:0.5px solid #3d1a1a;background:#1a0d0d;color:#ffa0a0;cursor:pointer;font-size:12px;font-weight:700;outline:none;display:inline-flex;align-items:center;justify-content:center;">✕</button>'
-    : ''
-  )
-
       +'</div>'
 
-      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'420px':'0')+';overflow:hidden;">'
+      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'520px':'0')+';overflow:hidden;">'
 
         +'<div class="sep"></div>'
 
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
 
           +'<div class="col">'
-            +'<label class="lbl">Nome</label>'
-            +'<input type="text" '+(isLocked('sp')?'readonly ':'')+'value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;">'
+            +'<label class="lbl">Nº SP</label>'
+            +'<input type="number" '+(isLocked('sp')?'readonly ':'')+
+              'min="1" max="'+MAX_SPS+'" style="width:55px;" value="'+sps[i].numero+'" '+
+              'oninput="'+
+                'var v=parseInt(this.value);'+
+                'if(isNaN(v)||v<1||v>'+MAX_SPS+') return;'+
+                'var dup=sps.some(function(ss,ii){ return ii!=='+i+' && ss.numero===v; });'+
+                'if(dup){ syncSt(\'SP\'+v+\' já existe!\',\'#e24b4a\'); this.value=sps['+i+'].numero; return; }'+
+                'sps['+i+'].numero=v;'+
+                'sps['+i+'].nome=\'SP\'+String(v).padStart(2,\'0\');'+
+                'var en=document.getElementById(\'spn-'+i+'\');if(en)en.textContent=sps['+i+'].nome;'+
+                'sps.sort(function(a,b){return a.numero-b.numero;});'+
+                'renderSPs();saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
@@ -1745,28 +1824,117 @@ function renderSPs() {
 
         +'</div>'
 
-        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
+        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'block':'none')+';margin-bottom:8px;">'
 
-          +'<div class="col">'
-            +'<label class="lbl">Min — desaciona</label>'
-            +'<div class="row" style="gap:6px;">'
-
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
-
+          // ── Escala ────────────────────────────────────
+          +'<div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+            +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Escala do Slider</div>'
+            +'<div class="row" style="gap:12px;flex-wrap:wrap;">'
+              +'<div class="col">'
+                +'<label class="lbl">Dig Min</label>'
+                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                  +'id="escmin-'+i+'" '
+                  +'value="'+sps[i].escMin+'" '
+                  +'min="-999" max="9999" step="1" style="width:75px;" '
+                  +'oninput="'
+                    +'var v=parseFloat(this.value);'
+                    +'if(isNaN(v))return;'
+                    +'sps['+i+'].escMin=v;'
+                    +'var sl=document.getElementById(\'slmin-'+i+'\');'
+                    +'var sx=document.getElementById(\'slmax-'+i+'\');'
+                    +'if(sl){sl.min=v;}'
+                    +'if(sx){sx.min=v;}'
+                    +'updateSPSum('+i+');saveLocal();">'
+              +'</div>'
+              +'<div class="col">'
+                +'<label class="lbl">Dig Max</label>'
+                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                  +'id="escmax-'+i+'" '
+                  +'value="'+sps[i].escMax+'" '
+                  +'min="-999" max="9999" step="1" style="width:75px;" '
+                  +'oninput="'
+                    +'var v=parseFloat(this.value);'
+                    +'if(isNaN(v))return;'
+                    +'sps['+i+'].escMax=v;'
+                    +'var sl=document.getElementById(\'slmin-'+i+'\');'
+                    +'var sx=document.getElementById(\'slmax-'+i+'\');'
+                    +'if(sl){sl.max=v;}'
+                    +'if(sx){sx.max=v;}'
+                    +'updateSPSum('+i+');saveLocal();">'
+              +'</div>'
+              +'<div style="font-size:10px;color:#8b949e;align-self:flex-end;padding-bottom:6px;">'
+                +'Slider vai de <b style="color:#e8eaf0;" id="escrange-'+i+'">'+sps[i].escMin+' → '+sps[i].escMax+'</b> '+(un||'')
+              +'</div>'
             +'</div>'
           +'</div>'
 
-          +'<div class="col">'
-            +'<label class="lbl">Max — aciona</label>'
-            +'<div class="row" style="gap:6px;">'
+          // ── Setpoints ────────────────────────────────
+          +'<div class="row" style="gap:16px;flex-wrap:wrap;align-items:flex-end;">'
 
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
-
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
-
+            +'<div class="col">'
+              +'<label class="lbl" data-lbl="min">'+(sps[i].tipo===0?'Min — desaciona':'Min — limite inferior')+'</label>'
+              +'<div class="row" style="gap:8px;">'
+                +'<input type="range" '+(isLocked('sp')?'disabled ':'')
+                  +'id="slmin-'+i+'" '
+                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
+                  +'value="'+Math.min(Math.max(sps[i].min,sps[i].escMin),sps[i].escMax)+'" '
+                  +'style="width:110px;" '
+                  +'oninput="'
+                    +'sps['+i+'].min=parseFloat(this.value);'
+                    +'var e=document.getElementById(\'hmv-'+i+'\');'
+                    +'if(e)e.textContent=parseFloat(this.value).toFixed(1)+\' \'+\''+un+'\';'
+                    +'var r=document.getElementById(\'escrange-'+i+'\');'
+                    +'if(r)r.textContent=sps['+i+'].escMin+\' → \'+sps['+i+'].escMax;'
+                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
+                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                  +'style="width:65px;" '
+                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
+                  +'value="'+sps[i].min.toFixed(1)+'" '
+                  +'id="hmv-num-'+i+'" '
+                  +'oninput="'
+                    +'var v=parseFloat(this.value);'
+                    +'if(isNaN(v))return;'
+                    +'sps['+i+'].min=v;'
+                    +'var sl=document.getElementById(\'slmin-'+i+'\');'
+                    +'if(sl)sl.value=v;'
+                    +'var e=document.getElementById(\'hmv-'+i+'\');'
+                    +'if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
+                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
+                +'<span style="font-size:11px;color:#8b949e;" id="hmv-'+i+'">'+sps[i].min.toFixed(1)+' '+un+'</span>'
+              +'</div>'
             +'</div>'
+
+            +'<div class="col">'
+              +'<label class="lbl" data-lbl="max">'+(sps[i].tipo===0?'Max — aciona':'Max — limite superior')+'</label>'
+              +'<div class="row" style="gap:8px;">'
+                +'<input type="range" '+(isLocked('sp')?'disabled ':'')
+                  +'id="slmax-'+i+'" '
+                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
+                  +'value="'+Math.min(Math.max(sps[i].max,sps[i].escMin),sps[i].escMax)+'" '
+                  +'style="width:110px;" '
+                  +'oninput="'
+                    +'sps['+i+'].max=parseFloat(this.value);'
+                    +'var e=document.getElementById(\'hxv-'+i+'\');'
+                    +'if(e)e.textContent=parseFloat(this.value).toFixed(1)+\' \'+\''+un+'\';'
+                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
+                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                  +'style="width:65px;" '
+                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
+                  +'value="'+sps[i].max.toFixed(1)+'" '
+                  +'id="hxv-num-'+i+'" '
+                  +'oninput="'
+                    +'var v=parseFloat(this.value);'
+                    +'if(isNaN(v))return;'
+                    +'sps['+i+'].max=v;'
+                    +'var sx=document.getElementById(\'slmax-'+i+'\');'
+                    +'if(sx)sx.value=v;'
+                    +'var e=document.getElementById(\'hxv-'+i+'\');'
+                    +'if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
+                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
+                +'<span style="font-size:11px;color:#8b949e;" id="hxv-'+i+'">'+sps[i].max.toFixed(1)+' '+un+'</span>'
+              +'</div>'
+            +'</div>'
+
           +'</div>'
 
         +'</div>'
@@ -1936,8 +2104,9 @@ function renderGeral() {
         d.className='gcard'; if(sp.estado) d.style.cssText='border:0.5px solid '+c.bd+';box-shadow:0 0 10px '+c.bd+'30;';
         d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">'+TIPOS[sp.tipo].toUpperCase()+'</div>'
           +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:2px;">'+sp.nome+'</div>'
-          +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+(m?m.nome:'sem entrada')+'</div>'
-          +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+sp.min.toFixed(2)+' – '+sp.max.toFixed(2)+' '+(m?m.unid:'')+'</div>'
+          +'<div style="font-size:11px;color:#8b949e;margin-bottom:2px;">'+(m?m.nome:'sem entrada')+'</div>'
+          +'<div style="font-size:10px;color:#5a6478;margin-bottom:2px;">Escala: '+sp.escMin+' – '+sp.escMax+(m&&m.unid?' '+m.unid:'')+'</div>'
+          +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">SP: '+sp.min.toFixed(1)+' / '+sp.max.toFixed(1)+(m&&m.unid?' '+m.unid:'')+'</div>'
           +'<span class="sp-badge" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';">'+(sp.estado?'ACIONADO':'AGUARDANDO')+'</span>';
         gs.appendChild(d);
       }
