@@ -735,27 +735,29 @@ function toggleVerCampo(id) {
 
 function salvarConexaoLocal() {
   atualizarUrlsBroker();
-  // Atualiza senha salva se checkbox marcado
-  var cb = document.getElementById('cfg-lembrar-senha');
-  var passEl = document.getElementById('cfg-mqtt-pass');
-  if (cb && cb.checked && passEl && passEl.value) {
-    localStorage.setItem('esp32_mqtt_pass', passEl.value);
-  }
   var dados = {
-    provedor: _provedor,
-    binId:    (document.getElementById('cfg-bin-id')      ||{}).value || '',
-    urlGet:   (document.getElementById('cfg-url-get')     ||{}).value || '',
-    urlPut:   (document.getElementById('cfg-url-put')     ||{}).value || '',
-    authH:    (document.getElementById('cfg-auth-header') ||{}).value || '',
-    mqttProto:(document.getElementById('cfg-mqtt-proto')  ||{}).value || 'wss',
-    mqttUrl:  (document.getElementById('cfg-mqtt-url')    ||{}).value || '',
-    mqttPorta:(document.getElementById('cfg-mqtt-porta')  ||{}).value || '8884',
-    mqttUser: (document.getElementById('cfg-mqtt-user')   ||{}).value || '',
-    mqttKA:   (document.getElementById('cfg-mqtt-keepalive')||{}).value || '15'
-    // ⚠️ Senhas NÃO são salvas — re-digitadas a cada sessão
+    provedor:  _provedor,
+    binId:     _getVal('cfg-bin-id'),
+    masterKey: _getVal('cfg-master-key'),
+    urlGet:    _getVal('cfg-url-get'),
+    urlPut:    _getVal('cfg-url-put'),
+    authH:     _getVal('cfg-auth-header'),
+    authV:     _getVal('cfg-auth-value'),
+    mqttProto: _getVal('cfg-mqtt-proto') || 'wss',
+    mqttUrl:   _getVal('cfg-mqtt-url'),
+    mqttPorta: _getVal('cfg-mqtt-porta') || '8884',
+    mqttUser:  _getVal('cfg-mqtt-user'),
+    mqttPass:  _getVal('cfg-mqtt-pass'),
+    mqttKA:    _getVal('cfg-mqtt-keepalive') || '15'
   };
   localStorage.setItem('esp32conexao', JSON.stringify(dados));
+  _mascararCamposSensiveis();
   atualizarCamposConfig();
+}
+
+function _getVal(id) {
+  var el = document.getElementById(id);
+  return el ? el.value : '';
 }
 
 // Restaura config de conexão (sem senhas)
@@ -959,6 +961,8 @@ function aplicarConfig(c) {
 
 function salvarNuvem() {
   if (_carregando) return;
+  // Salva credenciais localmente primeiro
+  salvarConexaoLocal();
   var arq = getCfgArmazenamento();
   if (!arq.valido) { syncSt('Configure o armazenamento na aba Config!','#e24b4a'); return; }
   syncSt('Salvando...','#ef9f27');
@@ -1103,19 +1107,17 @@ var _esp32Online = false;
 var _offlineTimer = null;
 
 function setESP32Status(s) {
-  if(s==='offline'){
-    // Debounce 3s — se chegar "online" neste período cancela
-    // Evita race condition do broker entregar LWT antes do "online"
-    if(_offlineTimer) return; // já está no debounce
+  var status = s.trim().toLowerCase();
+  if(status==='offline'){
+    if(_offlineTimer) return;
     _offlineTimer = setTimeout(function(){
       _offlineTimer = null;
-      _aplicarStatus('offline'); // aplica offline após debounce
+      _aplicarStatus('offline');
     }, 3000);
     return;
   }
-  // "online" ou "---" — cancela debounce pendente e aplica imediatamente
   if(_offlineTimer){ clearTimeout(_offlineTimer); _offlineTimer=null; }
-  _aplicarStatus(s);
+  _aplicarStatus(status);
 }
 
 function _aplicarStatus(s){
@@ -1195,10 +1197,13 @@ function mqttPub(topic, payload) {
 }
 
 function processarMsg(topic, msg) {
+  // Log de todas as mensagens recebidas para debug
+  addLog('clog','<b style="color:#3a4458;">MSG</b> <code style="color:#5a6478;">'+topic+'</code> → '+msg.substring(0,40),'sub');
+
   // 1. Status LWT
   if(topic.endsWith('/status')){
-    setESP32Status(msg);
-    addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='online'?'#7ee787':'#ffa0a0')+';">'+msg+'</b>','sub');
+    setESP32Status(msg.trim().toLowerCase());
+    addLog('clog','<b style="color:#58a6ff;">STATUS</b> → <b style="color:'+(msg.trim()==='online'?'#7ee787':'#ffa0a0')+';">'+msg+'</b>','sub');
     return;
   }
   // 2. Telemetria — RSSI, Uptime, IP, analógicos
@@ -1416,7 +1421,7 @@ function subscreverTopicos(forcarRetained){
     addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> base: <code style="color:#79c0ff;">'+base+'</code> | '+topicos.length+' tópicos','pub');
   }
   // Log para debug — mostra os tópicos subscritos
-  addLog('clog','Tópicos: '+topicos.slice(0,4).join(', ')+'...','pub');
+  addLog('clog','Base: <b style="color:#ef9f27;">'+base+'</b> | Status: <code style="color:#79c0ff;">'+base+'/status</code>','pub');
 }
 
 function desconectarMQTT(){
