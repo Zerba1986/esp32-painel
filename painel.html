@@ -5,25 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ESP32 Painel</title>
 <style>
-/* ── LOCK STYLES ── */
-input[readonly]{opacity:0.55;pointer-events:none;background:#0d1117!important;color:#5a6478!important;}
-select[disabled]{opacity:0.55;pointer-events:none;background:#0d1117!important;color:#5a6478!important;}
-input[type=range][disabled]{opacity:0.4;pointer-events:none;}
-.locked-panel{border:1px solid #e24b4a!important;}
-.unlocked-panel{border:1px solid #3fb950!important;}
-.btn-lock{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;gap:5px;}
-.btn-lock.locked{background:#3d1a1a;color:#ffa0a0;border:1px solid #e24b4a;}
-.btn-lock.locked:hover{background:#e24b4a;color:#fff;}
-.btn-lock.unlocked{background:#0f2d1a;color:#7ee787;border:1px solid #3fb950;}
-.btn-lock.unlocked:hover{background:#3fb950;color:#0d1117;}
 
-/* ── BASE ── */
+input[readonly]{
+  opacity:0.6;
+  pointer-events:none;
+  background:#161b22 !important;
+  color:#8b949e !important;
+}
+
+.locked-panel{
+  border:1px solid #e24b4a !important;
+}
+
+.unlocked-panel{
+  border:1px solid #3fb950 !important;
+}
 html,body{margin:0;padding:0;background:#0d1117;color:#e8eaf0;font-family:sans-serif;font-size:14px;}
 *{box-sizing:border-box;}
 .wrap{padding:14px;max-width:1400px;}
+/* CARDS */
 .card{background:#161b22;border:0.5px solid #30363d;border-radius:10px;padding:12px 14px;margin-bottom:8px;}
 .icard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:7px;transition:border .2s,box-shadow .2s;}
 .icard.gon{border-color:#3fb950!important;box-shadow:0 0 10px #3fb95020;}
+/* LAYOUT */
 .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 .sh{font-size:10px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 .lbl{font-size:11px;color:#8b949e;margin-bottom:3px;display:block;}
@@ -54,9 +58,6 @@ html,body{margin:0;padding:0;background:#0d1117;color:#e8eaf0;font-family:sans-s
 .btn-save{font-size:12px;font-weight:600;padding:6px 16px;border-radius:8px;border:none;background:#238636;color:#fff;cursor:pointer;outline:none;}
 .btn-save:hover{background:#2ea043;}
 .btn-exit{font-size:12px;font-weight:600;padding:6px 14px;border-radius:8px;border:0.5px solid #30363d;background:#21262d;color:#8b949e;cursor:pointer;outline:none;}
-.btn-qty{width:28px;height:28px;border-radius:6px;border:0.5px solid #30363d;background:#21262d;color:#e8eaf0;cursor:pointer;font-size:16px;font-weight:700;outline:none;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
-.btn-qty:hover{background:#30363d;}
-.btn-qty:disabled{opacity:0.35;cursor:not-allowed;}
 /* INPUTS */
 input[type=text],input[type=number],select{font-size:12px;padding:4px 8px;border-radius:6px;border:0.5px solid #30363d;background:#0d1117;color:#e8eaf0;outline:none;}
 input:focus,select:focus{border-color:#58a6ff;}
@@ -66,8 +67,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .chip{font-size:10px;padding:1px 8px;border-radius:4px;font-weight:500;}
 .tag{font-size:11px;font-weight:500;padding:2px 10px;border-radius:6px;white-space:nowrap;}
 .pill{font-size:12px;font-weight:500;padding:4px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;margin:2px;}
+.btn-lock{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-lock.locked{background:#3d1a1a;color:#ffa0a0;border:1px solid #e24b4a;}
+.btn-lock.locked:hover{background:#e24b4a;color:#fff;}
+.btn-lock.unlocked{background:#0f2d1a;color:#7ee787;border:1px solid #3fb950;}
+.btn-lock.unlocked:hover{background:#3fb950;color:#0d1117;}
 .arr{font-size:10px;color:#8b949e;cursor:pointer;transition:transform .2s;display:inline-block;margin-right:4px;user-select:none;}
 .slide{overflow:hidden;transition:max-height .25s ease;}
+.ib{font-size:11px;color:#8b949e;line-height:1.6;background:#0d1117;border-radius:6px;padding:5px 9px;}
 .gb{height:5px;background:#21262d;border-radius:3px;overflow:hidden;margin-top:5px;}
 .gf{height:100%;border-radius:3px;transition:width .3s,background .3s;}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
@@ -90,50 +97,75 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 .geral-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;}
 .gcard{background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:12px;text-align:center;transition:border .2s,box-shadow .2s;}
 .gcard.gon{border-color:#3fb950;box-shadow:0 0 10px #3fb95020;}
-/* MODAL CONFIRMAÇÃO */
-#modal-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;align-items:center;justify-content:center;}
-#modal-confirm.show{display:flex;}
-.modal-box{background:#161b22;border:0.5px solid #30363d;border-radius:12px;padding:20px 24px;min-width:260px;max-width:340px;text-align:center;}
-.modal-box h3{font-size:14px;font-weight:600;margin-bottom:8px;}
-.modal-box p{font-size:12px;color:#8b949e;margin-bottom:16px;line-height:1.5;}
-.modal-btns{display:flex;gap:8px;justify-content:center;}
 
-/* RESPONSIVE */
-@media (max-width:600px){
-  .wrap{padding:8px;}
-  .hdr{flex-direction:column;align-items:flex-start;gap:6px;}
-  .hdr>div:last-child{width:100%;justify-content:space-between;flex-wrap:wrap;gap:6px;}
-  .mbox{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
-  .mt{min-width:unset;padding:7px 8px;}
-  .mv{font-size:15px;}
-  .tabs{gap:2px;padding:3px;}
-  .tab{font-size:10px;padding:6px 4px;}
-  .grid2{grid-template-columns:1fr;}
-  .grid3{grid-template-columns:1fr;}
-  .grid4{grid-template-columns:1fr 1fr;gap:6px;}
-  .btn-g,.btn-r{padding:5px 10px;font-size:11px;}
-  .btn-b,.btn-a{padding:5px 10px;font-size:11px;}
-  .btn-save{font-size:11px;padding:5px 12px;}
-  .btn-exit{font-size:11px;padding:5px 10px;}
-  .chip{font-size:9px;padding:1px 5px;}
-  .tag{font-size:10px;padding:2px 7px;}
-  .geral-grid{grid-template-columns:1fr 1fr;gap:6px;}
-  .gcard{padding:8px;}
-  input[type=range]{width:100%!important;}
-  code{font-size:9px;word-break:break-all;}
-  .ll{font-size:10px;}
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — SMARTPHONE (max 600px)
+═══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .wrap { padding: 8px; }
+
+  /* Header — empilha em duas linhas */
+  .hdr { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .hdr > div:last-child { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+
+  /* Métricas — 3 por linha */
+  .mbox { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+  .mt { min-width: unset; padding: 7px 8px; }
+  .mv { font-size: 15px; }
+
+  /* Tabs — ícones menores, sem texto longo */
+  .tabs { gap: 2px; padding: 3px; }
+  .tab { font-size: 10px; padding: 6px 4px; }
+
+  /* Grids — 1 coluna no mobile */
+  .grid2 { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr; }
+  .grid4 { grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  /* Coil — empilha botões */
+  .icard .row { flex-wrap: wrap; }
+  .icard .row > div[style*="flex:1"] { width: 100%; }
+  .icard .row > .row { margin-top: 6px; width: 100%; justify-content: flex-end; }
+
+  /* Botões LIGA/DESLIGA — menores */
+  .btn-g, .btn-r { padding: 5px 10px; font-size: 11px; }
+  .btn-b, .btn-a { padding: 5px 10px; font-size: 11px; }
+  .btn-save { font-size: 11px; padding: 5px 12px; }
+  .btn-exit { font-size: 11px; padding: 5px 10px; }
+
+  /* Cards de coil — tag acionado menor */
+  .chip { font-size: 9px; padding: 1px 5px; }
+  .tag { font-size: 10px; padding: 2px 7px; }
+
+  /* Geral grid — 2 colunas */
+  .geral-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .gcard { padding: 8px; }
+
+  /* SP sliders — full width */
+  input[type=range] { width: 100% !important; }
+
+  /* Config — tópicos menores */
+  code { font-size: 9px; word-break: break-all; }
+
+  /* Log — menor */
+  .ll { font-size: 10px; }
 }
-@media (min-width:601px) and (max-width:900px){
-  .grid4{grid-template-columns:1fr 1fr;}
-  .grid3{grid-template-columns:1fr 1fr;}
-  .geral-grid{grid-template-columns:repeat(3,1fr);}
-  .mbox{flex-wrap:wrap;}
-  .mt{min-width:80px;}
+
+/* TABLET (601px - 900px) */
+@media (min-width: 601px) and (max-width: 900px) {
+  .grid4 { grid-template-columns: 1fr 1fr; }
+  .grid3 { grid-template-columns: 1fr 1fr; }
+  .geral-grid { grid-template-columns: repeat(3, 1fr); }
+  .mbox { flex-wrap: wrap; }
+  .mt { min-width: 80px; }
 }
-@media (max-width:380px){
-  .tab-txt{display:none;}
-  .tab{font-size:16px;padding:6px 8px;}
+
+
+@media (max-width: 380px) {
+  .tab-txt { display: none; }
+  .tab { font-size: 16px; padding: 6px 8px; }
 }
+
 </style>
 </head>
 <body>
@@ -151,19 +183,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <span class="dot pulse" id="dot-broker" style="background:#8b949e;"></span>
       <span style="font-size:11px;color:#8b949e;" id="lbl-broker">broker</span>
     </div>
-    <!-- Badge ESP32 com status + RSSI + Uptime -->
     <div style="display:flex;align-items:center;gap:5px;background:#161b22;border:0.5px solid #30363d;border-radius:6px;padding:3px 10px;">
       <span class="dot" id="dot-esp" style="background:#8b949e;"></span>
       <span style="font-size:11px;color:#8b949e;">ESP32</span>
       <span style="font-size:11px;font-weight:600;color:#8b949e;" id="lbl-esp">---</span>
       <span style="font-size:10px;color:#8b949e;margin-left:4px;border-left:0.5px solid #30363d;padding-left:6px;" id="hdr-rssi" title="Sinal WiFi"></span>
       <span style="font-size:10px;color:#8b949e;" id="hdr-uptime" title="Tempo ligado"></span>
-      <span style="font-size:10px;color:#7ee787;margin-left:2px;" id="hdr-ip" title="IP Local"></span>
     </div>
     <button class="btn-b" onclick="refreshPainel()" style="font-size:12px;padding:6px 14px;" title="Recarregar config e re-subscrever topicos">&#128260; Refresh</button>
     <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
     <button class="btn-exit" onclick="logout()">&#128682; Sair</button>
   </div>
+</div>
+
+<div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+
 </div>
 
 <!-- METRICS -->
@@ -177,15 +211,29 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab active" id="btn-geral" onclick="showTab('geral')">&#127968; <span class="tab-txt">Geral</span></button>
-  <button class="tab" id="btn-cfg"   onclick="showTab('cfg')">&#9881; <span class="tab-txt">Config</span></button>
-  <button class="tab" id="btn-coils" onclick="showTab('coils')">&#128268; <span class="tab-txt">Coils</span></button>
-  <button class="tab" id="btn-mon"   onclick="showTab('mon')">&#128202; <span class="tab-txt">Mon</span></button>
-  <button class="tab" id="btn-sp"    onclick="showTab('sp')">&#127919; <span class="tab-txt">SPs</span></button>
+  <button class="tab" id="btn-geral"  onclick="showTab('geral')">&#127968; <span class="tab-txt">Geral</span></button>
+  <button class="tab active" id="btn-cfg"    onclick="showTab('cfg')">&#9881; <span class="tab-txt">Config</span></button>
+  <button class="tab" id="btn-coils"  onclick="showTab('coils')">&#128268; <span class="tab-txt">Coils</span></button>
+  <button class="tab" id="btn-mon"    onclick="showTab('mon')">&#128202; <span class="tab-txt">Mon</span></button>
+  <button class="tab" id="btn-sp"     onclick="showTab('sp')">&#127919; <span class="tab-txt">SPs</span></button>
 </div>
 
 <!-- PANE GERAL -->
-<div class="pane active" id="pane-geral">
+<div class="pane" id="pane-geral">
+  <div class="card">
+    <div class="sh">dispositivo</div>
+    <div class="geral-grid" id="g-esp-box">
+      <div class="gcard" id="g-esp-card">
+        <div style="font-size:10px;color:#8b949e;margin-bottom:6px;">ESP32</div>
+        <div class="row" style="justify-content:center;gap:6px;margin-bottom:4px;">
+          <span class="dot" id="g-dot-esp" style="background:#8b949e;"></span>
+          <span style="font-size:18px;font-weight:700;color:#8b949e;" id="g-lbl-esp">---</span>
+        </div>
+        <div style="font-size:11px;color:#8b949e;" id="g-uptime">Uptime: ---</div>
+        <div style="font-size:11px;color:#8b949e;" id="g-rssi">RSSI: ---</div>
+      </div>
+    </div>
+  </div>
   <div class="card">
     <div class="sh">coils</div>
     <div class="geral-grid" id="g-coils"><p style="font-size:12px;color:#8b949e;">Nenhum coil.</p></div>
@@ -201,9 +249,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 </div>
 
 <!-- PANE CONFIG -->
-<div class="pane" id="pane-cfg">
-
-  <!-- IDENTIFICAÇÃO -->
+<div class="pane active" id="pane-cfg">
   <div class="card">
     <div class="hdr" style="margin-bottom:10px;">
       <div class="sh" style="margin:0;">identificacao do dispositivo</div>
@@ -219,130 +265,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div id="topic-list" style="font-size:11px;color:#8b949e;line-height:1.8;"></div>
     </div>
   </div>
-
-  <!-- ARMAZENAMENTO -->
   <div class="card">
-    <div class="hdr" style="margin-bottom:12px;">
-      <div class="row" style="gap:8px;align-items:center;">
-        <div class="sh" style="margin:0;">&#128190; armazenamento</div>
-        <span id="sync-st" style="font-size:11px;color:#8b949e;">pronto</span>
-      </div>
-      <button class="btn-lock locked" id="btn-lock-arq" onclick="toggleLock('arq')">&#128274; LOCKED</button>
-    </div>
-    <div class="col" style="margin-bottom:12px;">
-      <label class="lbl">Provedor</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="prov-jsonbin" class="btn-b" style="font-size:11px;padding:4px 12px;" onclick="setProvedor('jsonbin')">JSONBin</button>
-        <button id="prov-custom" class="btn-sm" style="font-size:11px;padding:4px 12px;" onclick="setProvedor('custom')">URL Própria</button>
-      </div>
-    </div>
-    <div id="bloco-jsonbin">
-      <div class="grid2" style="margin-bottom:8px;">
-        <div class="col">
-          <label class="lbl">Bin ID</label>
-          <div class="row" style="gap:4px;">
-            <input type="text" id="cfg-bin-id" style="flex:1;font-family:monospace;font-size:11px;" placeholder="69ee74c6..." oninput="salvarConexaoLocal()">
-            <button class="btn-sm" onclick="toggleVerCampo('cfg-bin-id')" title="Mostrar/Ocultar">&#128065;</button>
-          </div>
-        </div>
-        <div class="col">
-          <label class="lbl">Master Key</label>
-          <div class="row" style="gap:4px;">
-            <input type="text" id="cfg-master-key" style="flex:1;font-family:monospace;font-size:11px;" placeholder="$2a$10$..." oninput="salvarConexaoLocal()">
-            <button class="btn-sm" onclick="toggleVerCampo('cfg-master-key')" title="Mostrar/Ocultar">&#128065;</button>
-          </div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#8b949e;margin-bottom:6px;">
-        URL: <code style="color:#79c0ff;" id="cfg-bin-url">https://api.jsonbin.io/v3/b/...</code>
-      </div>
-    </div>
-    <div id="bloco-custom" style="display:none;">
-      <div class="grid2" style="margin-bottom:8px;">
-        <div class="col">
-          <label class="lbl">URL GET</label>
-          <input type="text" id="cfg-url-get" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
-        </div>
-        <div class="col">
-          <label class="lbl">URL PUT</label>
-          <input type="text" id="cfg-url-put" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
-        </div>
-        <div class="col">
-          <label class="lbl">Header Auth</label>
-          <input type="text" id="cfg-auth-header" placeholder="Authorization" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
-        </div>
-        <div class="col">
-          <label class="lbl">Token/Senha</label>
-          <div class="row" style="gap:4px;">
-            <input type="text" id="cfg-auth-value" placeholder="Bearer eyJ..." style="flex:1;font-size:11px;" oninput="salvarConexaoLocal()">
-            <button class="btn-sm" onclick="toggleVerCampo('cfg-auth-value')" title="Mostrar/Ocultar">&#128065;</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;">
-      <button class="btn-b" onclick="testarArmazenamento()" style="font-size:11px;">&#128268; Testar</button>
-      <button class="btn-b" onclick="carregarNuvem()" style="font-size:11px;">&#8595; Carregar</button>
-      <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
-    </div>
+    <div class="sh">resumo</div>
+    <div id="cfg-resumo" style="font-size:12px;color:#8b949e;line-height:2;"></div>
   </div>
-
-  <!-- BROKER MQTT -->
-  <div class="card">
-    <div class="hdr" style="margin-bottom:12px;">
-      <div class="row" style="gap:8px;align-items:center;">
-        <div class="sh" style="margin:0;">&#128268; broker mqtt</div>
-        <span class="dot pulse" id="dot-broker" style="background:#8b949e;"></span>
-        <span style="font-size:12px;font-weight:600;" id="mqtt-st">Desconectado</span>
-      </div>
-      <button class="btn-lock locked" id="btn-lock-broker" onclick="toggleLock('broker')">&#128274; LOCKED</button>
-    </div>
-    <div class="grid2" style="margin-bottom:8px;">
-      <div class="col">
-        <label class="lbl">Protocolo</label>
-        <select id="cfg-mqtt-proto" onchange="salvarConexaoLocal()">
-          <option value="wss">wss:// (TLS — recomendado)</option>
-          <option value="ws">ws:// (sem TLS)</option>
-        </select>
-      </div>
-      <div class="col">
-        <label class="lbl">Porta WebSocket</label>
-        <input type="number" id="cfg-mqtt-porta" value="8884" style="width:80px;" oninput="salvarConexaoLocal()">
-      </div>
-      <div class="col" style="grid-column:1/-1;">
-        <label class="lbl">URL do Broker</label>
-        <input type="text" id="cfg-mqtt-url" style="width:100%;font-family:monospace;font-size:11px;" placeholder="broker.exemplo.com" oninput="salvarConexaoLocal()">
-      </div>
-      <div class="col">
-        <label class="lbl">Usuário</label>
-        <input type="text" id="cfg-mqtt-user" style="width:100%;" oninput="salvarConexaoLocal()">
-      </div>
-      <div class="col">
-        <label class="lbl">Senha</label>
-        <div class="row" style="gap:4px;">
-          <input type="text" id="cfg-mqtt-pass" style="flex:1;" placeholder="digite a senha" oninput="salvarConexaoLocal()">
-          <button class="btn-sm" onclick="toggleVerCampo('cfg-mqtt-pass')" title="Mostrar/Ocultar">&#128065;</button>
-        </div>
-      </div>
-      <div class="col">
-        <label class="lbl">Keepalive (s)</label>
-        <input type="number" id="cfg-mqtt-keepalive" value="15" min="5" max="120" style="width:70px;" oninput="salvarConexaoLocal()">
-      </div>
-      <div class="col">
-        <label class="lbl">Client ID <span style="color:#8b949e;font-size:10px;">(opcional)</span></label>
-        <input type="text" id="cfg-mqtt-clientid" placeholder="auto" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
-      </div>
-    </div>
-    <div style="font-size:11px;color:#8b949e;margin-bottom:10px;">
-      URL: <code style="color:#79c0ff;" id="cfg-mqtt-fullurl">wss://...</code>
-    </div>
-    <div class="row" style="justify-content:flex-end;gap:8px;">
-      <button class="btn-r" onclick="desconectarMQTT()" style="font-size:11px;">&#9632; Desconectar</button>
-      <button class="btn-g" onclick="reconectarMQTT()" style="font-size:11px;">&#9654; Conectar</button>
-    </div>
-  </div>
-
-  <!-- STATUS ESP32 -->
   <div class="card">
     <div class="sh">status esp32</div>
     <div class="row" style="justify-content:space-between;margin-bottom:10px;">
@@ -355,14 +281,44 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <span style="font-size:15px;font-weight:700;color:#8b949e;" id="cfg-esp-lbl">Aguardando...</span>
       </div>
     </div>
+    <!-- Métricas do dispositivo -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">RSSI</div>
+        <div style="font-size:20px;font-weight:600;" id="cfg-rssi" style="color:#8b949e;">---</div>
+        <div style="font-size:10px;color:#8b949e;">dBm</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">UPTIME</div>
+        <div style="font-size:18px;font-weight:600;color:#79c0ff;" id="cfg-uptime">---</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">IP LOCAL</div>
+        <div style="font-size:13px;font-weight:600;color:#7ee787;" id="cfg-ip">---</div>
+      </div>
+      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
+        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">PACOTES</div>
+        <div style="font-size:20px;font-weight:600;color:#ffc060;" id="cfg-pkts">0</div>
+      </div>
+    </div>
   </div>
-
-  <!-- RESUMO -->
   <div class="card">
-    <div class="sh">resumo</div>
-    <div id="cfg-resumo" style="font-size:12px;color:#8b949e;line-height:2;"></div>
+    <div class="sh">conexao mqtt</div>
+    <div class="row">
+      <span style="font-size:12px;color:#8b949e;">Status:</span>
+      <span id="mqtt-st" style="font-size:12px;font-weight:600;color:#ef9f27;">Conectando...</span>
+      <button class="btn-r" onclick="desconectarMQTT()" style="font-size:11px;padding:4px 10px;">&#9632; Desconectar</button>
+      <button class="btn-g" onclick="reconectarMQTT()" style="font-size:11px;padding:4px 10px;">&#9654; Reconectar</button>
+    </div>
   </div>
-
+  <div class="card" style="border-color:#238636;">
+    <div class="sh">salvar na nuvem (jsonbin)</div>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:10px;">Salva todas as configuracoes e carrega automaticamente em qualquer dispositivo.</p>
+    <div class="row" style="justify-content:space-between;">
+      <span id="sync-st" style="font-size:12px;color:#8b949e;">pronto</span>
+      <button class="btn-save" onclick="salvarNuvem()" style="font-size:13px;padding:8px 24px;">&#128190; Salvar na Nuvem</button>
+    </div>
+  </div>
 </div>
 
 <!-- PANE COILS -->
@@ -370,7 +326,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <div class="card">
     <div class="hdr" style="margin-bottom:10px;">
       <div>
-        <div class="sh" style="margin:0;">saidas digitais — coils (max 20)</div>
+        <div class="sh" style="margin:0;">saidas digitais — coils (max 3)</div>
         <div style="font-size:11px;color:#8b949e;margin-top:2px;">
           Estado <span style="color:#3fb950;">ACIONADO</span>/<span style="color:#ffa0a0;">DESACIONADO</span> = confirmacao real do ESP32
         </div>
@@ -382,7 +338,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <button class="btn-lock locked" id="btn-lock-coil" onclick="toggleLock('coil')">&#128274; LOCKED</button>
       </div>
     </div>
-    <div id="coils-list"><p style="color:#8b949e;font-size:12px;">Nenhum coil. Desbloqueie e clique em + Coil.</p></div>
+    <div id="coils-list"><p style="color:#8b949e;font-size:12px;">Nenhum coil. Clique em + Coil.</p></div>
     <div class="log-hdr" onclick="toggleLog('clog')">
       <span class="log-ttl">Log MQTT</span>
       <span class="log-arr" id="clog-arr">&#9654;</span>
@@ -436,27 +392,101 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
 </div>
 
-</div><!-- /wrap -->
-
-<!-- TOAST -->
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#161b22;border:0.5px solid #30363d;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;color:#e8eaf0;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;">
-  <span id="toast-msg">...</span>
 </div>
 
-<!-- MODAL CONFIRMAÇÃO (LIGA/DESLIGA aba Geral) -->
-<div id="modal-confirm">
-  <div class="modal-box">
-    <h3 id="modal-title">Confirmar ação</h3>
-    <p id="modal-desc">Deseja continuar?</p>
-    <div class="modal-btns">
-      <button class="btn-r" id="modal-cancel" onclick="fecharModal()">Cancelar</button>
+<!-- MODAL CONFIRMAÇÃO -->
+<div id="modal-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:#161b22;border:0.5px solid #30363d;border-radius:12px;padding:20px 24px;min-width:260px;max-width:340px;text-align:center;">
+    <h3 id="modal-title" style="font-size:14px;font-weight:600;margin-bottom:8px;"></h3>
+    <p id="modal-desc" style="font-size:12px;color:#8b949e;margin-bottom:16px;line-height:1.5;"></p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn-r" onclick="fecharModal()">Cancelar</button>
       <button class="btn-g" id="modal-ok" onclick="confirmarModal()">Confirmar</button>
     </div>
   </div>
 </div>
 
+<!-- TOAST — visível em qualquer aba -->
+<div id="toast" style="
+  display:none;
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#161b22;
+  border:0.5px solid #30363d;
+  border-radius:8px;
+  padding:10px 20px;
+  font-size:13px;
+  font-weight:500;
+  color:#e8eaf0;
+  z-index:9999;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+  transition:opacity .3s;
+  white-space:nowrap;
+">
+  <span id="toast-msg">...</span>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 <script>
+// Lock individual por aba
+var ADMIN_PASS = '1234';
+var LOCKS = { cfg: true, coil: true, mon: true, sp: true };
+var CONFIG_LOCKED = true; // compatibilidade
+
+function isLocked(aba){ return LOCKS[aba] !== false; }
+
+function toggleLock(aba){
+  if(isLocked(aba)){
+    var s = prompt('Senha para liberar '+aba.toUpperCase()+':');
+    if(s !== ADMIN_PASS){ alert('Senha incorreta'); return; }
+    LOCKS[aba] = false;
+  } else {
+    LOCKS[aba] = true;
+    saveLocal();
+  }
+  CONFIG_LOCKED = Object.keys(LOCKS).some(function(k){ return LOCKS[k]; });
+  atualizarBotaoLock(aba);
+  if(aba==='cfg')  { atualizarCamposConfig(); }
+  if(aba==='coil') { renderCoils(); }
+  if(aba==='mon')  { renderMons(); }
+  if(aba==='sp')   { renderSPs(); }
+}
+
+function atualizarBotaoLock(aba){
+  var b = document.getElementById('btn-lock-'+aba);
+  if(!b) return;
+  var bl = isLocked(aba);
+  b.className = 'btn-lock '+(bl?'locked':'unlocked');
+  b.innerHTML = bl ? '&#128274; LOCKED' : '&#128275; UNLOCKED';
+  var ids = {
+    coil: ['btn-add-coil'],
+    mon:  ['btn-add-analog','btn-add-digital'],
+    sp:   ['btn-sp-plus'],
+    cfg:  []
+  };
+  (ids[aba]||[]).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){ el.disabled=isLocked(aba); el.style.opacity=isLocked(aba)?'0.4':'1'; }
+  });
+}
+
+function atualizarTodosLocks(){
+  Object.keys(LOCKS).forEach(function(aba){ atualizarBotaoLock(aba); });
+  atualizarCamposConfig();
+}
+
+function atualizarCamposConfig(){
+  var bl = isLocked('cfg');
+  ['cfg-p','cfg-l','cfg-d'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.readOnly = bl;
+  });
+}
+
+// Compatibilidade com código antigo que chama toggleConfig
+function toggleConfig(){ toggleLock('coil'); }
 // ════════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════════
@@ -478,457 +508,97 @@ function logout() {
 }
 
 // ════════════════════════════════════════════════
-// LOCK/UNLOCK — individual por aba
-// ════════════════════════════════════════════════
-var ADMIN_PASS = '1234';
-
-// Estado de cada aba — todos começam bloqueados
-var LOCKS = { cfg: true, coil: true, mon: true, sp: true, arq: true, broker: true };
-
-// Atalho para compatibilidade com código que usa CONFIG_LOCKED
-// Retorna true se QUALQUER aba ainda estiver bloqueada
-// (usado apenas nas funções que não têm contexto de aba)
-// Para verificação por aba use LOCKS[aba] diretamente
-var CONFIG_LOCKED = true; // mantido por compatibilidade — veja isLocked()
-
-function isLocked(aba) {
-  return LOCKS[aba] !== false;
-}
-
-function toggleLock(aba) {
-  if (isLocked(aba)) {
-    var s = prompt('Senha para liberar ' + aba.toUpperCase() + ':');
-    if (s !== ADMIN_PASS) { syncSt('Senha incorreta!','#e24b4a'); return; }
-    LOCKS[aba] = false;
-    syncSt('Aba ' + aba.toUpperCase() + ' LIBERADA','#3fb950');
-  } else {
-    LOCKS[aba] = true;
-    saveLocal();
-    salvarNuvem();
-    syncSt('Aba ' + aba.toUpperCase() + ' SALVA e BLOQUEADA','#58a6ff');
-  }
-  // Atualiza CONFIG_LOCKED global (true se qualquer aba bloqueada)
-  CONFIG_LOCKED = Object.keys(LOCKS).some(function(k){ return LOCKS[k]; });
-  atualizarBotaoLock(aba);
-  atualizarCamposConfig();
-  if(aba==='coil')   renderCoils();
-  if(aba==='mon')    renderMons();
-  if(aba==='sp')     renderSPs();
-  if(aba==='arq'||aba==='broker'){
-    atualizarUrlsBroker();
-    if(isLocked(aba)) _mascararCamposSensiveis();
-    else _desmascararCamposSensiveis();
-  }
-}
-
-function atualizarBotaoLock(aba) {
-  var b = document.getElementById('btn-lock-'+aba);
-  if (!b) return;
-  var bloqueado = isLocked(aba);
-  b.className = 'btn-lock ' + (bloqueado ? 'locked' : 'unlocked');
-  b.innerHTML = bloqueado ? '&#128274; LOCKED' : '&#128275; UNLOCKED';
-
-  // Controla botões de adicionar/remover da aba correspondente
-  var ids = {
-    coil:   ['btn-add-coil'],
-    mon:    ['btn-add-analog','btn-add-digital'],
-    sp:     ['btn-sp-plus'],
-    cfg:    [],
-    arq:    ['prov-jsonbin','prov-custom'],
-    broker: []
-  };
-  (ids[aba]||[]).forEach(function(id){
-    var el = document.getElementById(id);
-    if(el){ el.disabled = bloqueado; el.style.opacity = bloqueado?'0.4':'1'; }
-  });
-}
-
-function atualizarTodosLocks() {
-  Object.keys(LOCKS).forEach(function(aba){ atualizarBotaoLock(aba); });
-  atualizarCamposConfig();
-  atualizarUrlsBroker();
-}
-
-function atualizarCamposConfig() {
-  // Identificação
-  var bloqCfg = isLocked('cfg');
-  ['cfg-p','cfg-l','cfg-d'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.readOnly = bloqCfg;
-  });
-
-  // Armazenamento
-  var bloqArq = isLocked('arq');
-  ['cfg-bin-id','cfg-master-key','cfg-url-get','cfg-url-put','cfg-auth-header','cfg-auth-value'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.readOnly = bloqArq;
-    el.style.opacity = bloqArq ? '0.5' : '1';
-    el.style.cursor  = bloqArq ? 'not-allowed' : '';
-  });
-  // Botões provedor
-  ['prov-jsonbin','prov-custom'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.disabled = bloqArq;
-    el.style.opacity = bloqArq ? '0.4' : '1';
-  });
-  // Botões olho armazenamento — desabilitar se locked
-  ['cfg-master-key','cfg-auth-value'].forEach(function(id){
-    var btn = document.querySelector('button[onclick="toggleVerCampo(\''+id+'\')"]');
-    if (btn) { btn.disabled = bloqArq; btn.style.opacity = bloqArq ? '0.4' : '1'; }
-  });
-
-  // Broker
-  var bloqBroker = isLocked('broker');
-  ['cfg-mqtt-url','cfg-mqtt-porta','cfg-mqtt-user','cfg-mqtt-pass','cfg-mqtt-keepalive','cfg-mqtt-clientid'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.readOnly = bloqBroker;
-    el.style.opacity = bloqBroker ? '0.5' : '1';
-    el.style.cursor  = bloqBroker ? 'not-allowed' : '';
-  });
-  var protoEl = document.getElementById('cfg-mqtt-proto');
-  if (protoEl) { protoEl.disabled = bloqBroker; protoEl.style.opacity = bloqBroker ? '0.5' : '1'; }
-  // Botão olho senha broker
-  var btnOlho = document.querySelector('button[onclick="toggleVerCampo(\'cfg-mqtt-pass\')"]');
-  if (btnOlho) { btnOlho.disabled = bloqBroker; btnOlho.style.opacity = bloqBroker ? '0.4' : '1'; }
-  // Botões Conectar/Desconectar — sempre disponíveis
-}
-
-// ════════════════════════════════════════════════
-// MODAL CONFIRMAÇÃO
-// ════════════════════════════════════════════════
-var _modalCb = null;
-function abrirModal(titulo, desc, corBtn, cb) {
-  document.getElementById('modal-title').textContent = titulo;
-  document.getElementById('modal-desc').textContent  = desc;
-  var ok = document.getElementById('modal-ok');
-  ok.className = corBtn === 'red' ? 'btn-r' : 'btn-g';
-  ok.textContent = 'Confirmar';
-  _modalCb = cb;
-  document.getElementById('modal-confirm').classList.add('show');
-}
-function fecharModal() {
-  document.getElementById('modal-confirm').classList.remove('show');
-  _modalCb = null;
-}
-function confirmarModal() {
-  var cb = _modalCb; // salva referência ANTES de fechar (fechar zera _modalCb)
-  fecharModal();
-  if (cb) cb();
-}
-
-// ════════════════════════════════════════════════
 // JSONBIN
 // ════════════════════════════════════════════════
-// ════════════════════════════════════════════════
-// CONFIG DE CONEXÃO — lida dos campos da aba Config
-// Tudo dinâmico — sem credenciais hardcoded
-// ════════════════════════════════════════════════
+var JSONBIN_ID  = '69ee74c6856a68218976161c';
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
+// ╔══════════════════════════════════════════════════════╗
+// ║           CONFIGURAÇÃO — EDITE AQUI                  ║
+// ║  Cole sua X-MASTER-KEY do JSONBin abaixo             ║
+// ╚══════════════════════════════════════════════════════╝
+var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
+// ════════════════════════════════════════════════════════
 var _carregando = false;
+
 var _toastTimer = null;
-var _provedor = 'jsonbin'; // 'jsonbin' ou 'custom'
-
-// Provedor ativo — lido dos campos da aba Config
-function getCfgArmazenamento() {
-  // Fallback para localStorage quando campos readonly/mascarados
-  function _getArqVal(id, fallbackKey) {
-    var el = document.getElementById(id);
-    var v = el ? el.value : '';
-    if (!v && fallbackKey) {
-      try {
-        var raw = localStorage.getItem('esp32conexao');
-        if (raw) { var d = JSON.parse(raw); v = d[fallbackKey] || ''; }
-      } catch(e) {}
-    }
-    return v;
-  }
-  if (_provedor === 'jsonbin') {
-    var binId  = _getArqVal('cfg-bin-id',     'binId');
-    var mKey   = _getArqVal('cfg-master-key', 'masterKey');
-    return {
-      tipo:    'jsonbin',
-      urlGet:  'https://api.jsonbin.io/v3/b/' + binId,
-      urlPut:  'https://api.jsonbin.io/v3/b/' + binId,
-      headers: { 'X-Master-Key': mKey, 'Content-Type': 'application/json' },
-      valido:  binId.length > 0 && mKey.length > 0
-    };
-  } else {
-    var urlGet   = (document.getElementById('cfg-url-get')    ||{}).value || '';
-    var urlPut   = (document.getElementById('cfg-url-put')    ||{}).value || '';
-    var authH    = (document.getElementById('cfg-auth-header')||{}).value || 'Authorization';
-    var authV    = (document.getElementById('cfg-auth-value') ||{}).value || '';
-    var headers  = { 'Content-Type': 'application/json' };
-    if (authH && authV) headers[authH] = authV;
-    return {
-      tipo:    'custom',
-      urlGet:  urlGet,
-      urlPut:  urlPut,
-      headers: headers,
-      valido:  urlGet.length > 0
-    };
-  }
-}
-
-// Config broker MQTT — lida dos campos
-function getCfgBroker() {
-  // Lê campos do DOM — se vazio, tenta do localStorage (quando campo readonly/mascarado)
-  function _getBrokerVal(id, fallbackKey) {
-    var el = document.getElementById(id);
-    var v = el ? el.value : '';
-    if (!v && fallbackKey) {
-      try {
-        var raw = localStorage.getItem('esp32conexao');
-        if (raw) { var d = JSON.parse(raw); v = d[fallbackKey] || ''; }
-      } catch(e) {}
-    }
-    return v;
-  }
-  var proto    = _getBrokerVal('cfg-mqtt-proto',     'mqttProto') || 'wss';
-  var url      = _getBrokerVal('cfg-mqtt-url',       'mqttUrl')   || '';
-  var porta    = _getBrokerVal('cfg-mqtt-porta',     'mqttPorta') || '8884';
-  var user     = _getBrokerVal('cfg-mqtt-user',      'mqttUser')  || '';
-  var pass     = _getBrokerVal('cfg-mqtt-pass',      'mqttPass')  || '';
-  var keepalive= parseInt(_getBrokerVal('cfg-mqtt-keepalive','mqttKA') || '15');
-  var clientId = _getBrokerVal('cfg-mqtt-clientid',  '') || ('painel-' + Math.random().toString(16).substr(2,8));
-  return {
-    urlCompleta: proto + '://' + url + ':' + porta + '/mqtt',
-    user:        user,
-    pass:        pass,
-    keepalive:   keepalive,
-    clientId:    clientId,
-    valido:      url.length > 0
-  };
-}
-
-function setProvedor(prov) {
-  _provedor = prov;
-  document.getElementById('bloco-jsonbin').style.display = prov==='jsonbin' ? 'block' : 'none';
-  document.getElementById('bloco-custom').style.display  = prov==='custom'  ? 'block' : 'none';
-  document.getElementById('prov-jsonbin').className = prov==='jsonbin' ? 'btn-b' : 'btn-sm';
-  document.getElementById('prov-custom').className  = prov==='custom'  ? 'btn-b' : 'btn-sm';
-  atualizarUrlsBroker();
-  salvarConexaoLocal();
-}
-
-function atualizarUrlsBroker() {
-  var proto = (document.getElementById('cfg-mqtt-proto')||{}).value || 'wss';
-  var url   = (document.getElementById('cfg-mqtt-url')  ||{}).value || '';
-  var porta = (document.getElementById('cfg-mqtt-porta')||{}).value || '8884';
-  var full  = document.getElementById('cfg-mqtt-fullurl');
-  if (full) full.textContent = proto+'://'+url+':'+porta+'/mqtt';
-  var binId = (document.getElementById('cfg-bin-id')||{}).value || '';
-  var binUrl = document.getElementById('cfg-bin-url');
-  if (binUrl) binUrl.textContent = 'https://api.jsonbin.io/v3/b/'+(binId||'...');
-}
-
-// Salva config de conexão no sessionStorage (não no JSONBin — segurança)
-// Mascara campos sensíveis após salvar (type=password)
-// Desmascara quando UNLOCKED e usuário clica no olho
-function _mascararCamposSensiveis() {
-  ['cfg-master-key','cfg-mqtt-pass','cfg-auth-value'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el && el.value && el.value.length > 0) {
-      el.type = 'password';
-    }
-  });
-}
-
-function _desmascararCamposSensiveis() {
-  ['cfg-master-key','cfg-mqtt-pass','cfg-auth-value'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.type = 'text';
-  });
-}
-
-// Mostrar/ocultar campo de senha com botão olho
-function toggleVerCampo(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var aba = id.startsWith('cfg-mqtt') ? 'broker' : 'arq';
-  if (isLocked(aba)) {
-    syncSt('Desbloqueie primeiro para revelar o campo','#e24b4a');
-    return;
-  }
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
-
-// Senha e Master Key agora salvas junto com o resto da config em localStorage
-
-function salvarConexaoLocal() {
-  atualizarUrlsBroker();
-  var dados = {
-    provedor:  _provedor,
-    binId:     _getVal('cfg-bin-id'),
-    masterKey: _getVal('cfg-master-key'),
-    urlGet:    _getVal('cfg-url-get'),
-    urlPut:    _getVal('cfg-url-put'),
-    authH:     _getVal('cfg-auth-header'),
-    authV:     _getVal('cfg-auth-value'),
-    mqttProto: _getVal('cfg-mqtt-proto') || 'wss',
-    mqttUrl:   _getVal('cfg-mqtt-url'),
-    mqttPorta: _getVal('cfg-mqtt-porta') || '8884',
-    mqttUser:  _getVal('cfg-mqtt-user'),
-    mqttPass:  _getVal('cfg-mqtt-pass'),
-    mqttKA:    _getVal('cfg-mqtt-keepalive') || '15'
-  };
-  localStorage.setItem('esp32conexao', JSON.stringify(dados));
-  _mascararCamposSensiveis();
-  atualizarCamposConfig();
-}
-
-function _getVal(id) {
-  var el = document.getElementById(id);
-  return el ? el.value : '';
-}
-
-// Restaura config de conexão (sem senhas)
-function restaurarConexaoLocal() {
-  try {
-    var raw = localStorage.getItem('esp32conexao');
-    if (!raw) return;
-    var d = JSON.parse(raw);
-    if (d.provedor)  { _provedor = d.provedor; setProvedor(d.provedor); }
-    if (d.binId)     _setCampo('cfg-bin-id',        d.binId);
-    if (d.masterKey) _setCampo('cfg-master-key',    d.masterKey);
-    if (d.urlGet)    _setCampo('cfg-url-get',        d.urlGet);
-    if (d.urlPut)    _setCampo('cfg-url-put',        d.urlPut);
-    if (d.authH)     _setCampo('cfg-auth-header',    d.authH);
-    if (d.authV)     _setCampo('cfg-auth-value',     d.authV);
-    if (d.mqttProto) _setCampo('cfg-mqtt-proto',     d.mqttProto);
-    if (d.mqttUrl)   _setCampo('cfg-mqtt-url',       d.mqttUrl);
-    if (d.mqttPorta) _setCampo('cfg-mqtt-porta',     d.mqttPorta);
-    if (d.mqttUser)  _setCampo('cfg-mqtt-user',      d.mqttUser);
-    if (d.mqttPass)  _setCampo('cfg-mqtt-pass',      d.mqttPass);
-    if (d.mqttKA)    _setCampo('cfg-mqtt-keepalive', d.mqttKA);
-    atualizarUrlsBroker();
-    // Mascara campos sensíveis após restaurar
-    _mascararCamposSensiveis();
-    // Aplica readonly após restaurar
-    atualizarCamposConfig();
-  } catch(e) {}
-}
-
-function _setCampo(id, val) {
-  var el = document.getElementById(id);
-  if (el) el.value = val;
-}
-
-function testarArmazenamento() {
-  var cfg = getCfgArmazenamento();
-  if (!cfg.valido) { syncSt('Preencha os campos de armazenamento!','#e24b4a'); return; }
-  syncSt('Testando conexão...','#ef9f27');
-  fetch(cfg.urlGet, { headers: cfg.headers })
-  .then(function(r){ return r.json(); })
-  .then(function(d){
-    if (d.record || d.config || d.data || Object.keys(d).length > 0) {
-      syncSt('✅ Conexão OK! Dados encontrados.','#3fb950');
-    } else {
-      syncSt('⚠️ Conectou mas sem dados ainda.','#ef9f27');
-    }
-  })
-  .catch(function(e){ syncSt('❌ Erro: '+e.message,'#e24b4a'); });
-}
 
 function refreshPainel() {
-  syncSt('Atualizando...','#ef9f27');
+  syncSt('Atualizando...', '#ef9f27');
+
+  // Passo 1: Recarrega config da nuvem (sem perder conexão MQTT)
   if (JSONBIN_KEY !== 'SUA_MASTER_KEY_AQUI') {
-    var _arqR = getCfgArmazenamento();
-    fetch(_arqR.urlGet, { headers: _arqR.headers })
+    fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
         aplicarConfig(data.record.config);
-        syncSt('Config atualizada da nuvem!','#3fb950');
+        syncSt('Config atualizada da nuvem!', '#3fb950');
       } else {
-        syncSt('Sem config na nuvem','#8b949e');
+        syncSt('Sem config na nuvem', '#8b949e');
       }
+      // Passo 2: Re-subscreve tópicos e atualiza aba Geral
       resubscribirTopicos();
       renderGeral();
     })
     .catch(function(){
-      syncSt('Erro na nuvem — usando local','#e24b4a');
+      syncSt('Erro na nuvem — usando local', '#e24b4a');
       var raw = localStorage.getItem('esp32cfg');
       if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e){} }
       resubscribirTopicos();
     });
   } else {
+    // Sem nuvem — usa localStorage
     var raw = localStorage.getItem('esp32cfg');
-    if (raw) { try { aplicarConfig(JSON.parse(raw)); syncSt('Config local atualizada!','#3fb950'); } catch(e){ syncSt('Erro ao carregar local','#e24b4a'); } }
-    else { syncSt('Nenhuma config salva','#8b949e'); }
+    if (raw) {
+      try { aplicarConfig(JSON.parse(raw)); syncSt('Config local atualizada!', '#3fb950'); }
+      catch(e) { syncSt('Erro ao carregar local', '#e24b4a'); }
+    } else {
+      syncSt('Nenhuma config salva', '#8b949e');
+    }
     resubscribirTopicos();
   }
 }
 
 function resubscribirTopicos() {
-  if (!mqclient || !mqclient.connected) { syncSt('MQTT desconectado','#e24b4a'); return; }
-  // Zera estados visuais — retained do broker vão restaurar o estado real
-  coils.forEach(function(c){ c.estado=false; });
-  sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
-  renderCoils(); renderMons(); renderSPs(); renderGeral();
-  updateMetrics(); renderSPStatus();
-  // Unsubscribe + resubscribe — força broker a reenviar retained
-  subscreverTopicos(true);
-  syncSt('Aguardando confirmação do ESP32...','#ef9f27');
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — forçando retained do broker...','pub');
-  setTimeout(function(){
-    syncSt('Refresh completo!','#3fb950');
-  }, 2500);
+  if (!mqclient || !mqclient.connected) {
+    syncSt('MQTT desconectado — conecte primeiro', '#e24b4a');
+    return;
+  }
+  subscreverTopicos();
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos','pub');
+  syncSt('Topicos atualizados!','#3fb950');
 }
-
 var _saveLocalTimer = null;
+
 function saveLocal() {
+  // Salva no localStorage com debounce de 1s (não usa nuvem, não mostra toast)
   clearTimeout(_saveLocalTimer);
   _saveLocalTimer = setTimeout(function() {
     localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
-  }, 800);
-}
-
-// Salva só os estados dos coils e SPs no localStorage — rápido, sem debounce
-// Chamado sempre que ESP32 confirma estado via retained
-function salvarEstadosLocal() {
-  var estados = {
-    coils: coils.map(function(c){ return c.estado; }),
-    sps:   sps.map(function(s){ return s.estado; })
-  };
-  localStorage.setItem('esp32estados', JSON.stringify(estados));
-}
-
-// Restaura estados do localStorage — chamado ao carregar config
-function restaurarEstadosLocal() {
-  try {
-    var raw = localStorage.getItem('esp32estados');
-    if (!raw) return;
-    var estados = JSON.parse(raw);
-    if (Array.isArray(estados.coils)) {
-      estados.coils.forEach(function(e, i){
-        if (coils[i]) coils[i].estado = e;
-      });
-    }
-    if (Array.isArray(estados.sps)) {
-      estados.sps.forEach(function(e, i){
-        if (sps[i]) sps[i].estado = e;
-      });
-    }
-  } catch(e) {}
+  }, 1000);
 }
 
 function syncSt(msg, cor) {
+  // Atualiza elemento inline da aba Config (se existir)
   var el = document.getElementById('sync-st');
-  if (el) { el.textContent = msg; el.style.color = cor||'#8b949e'; }
+  if (el) { el.textContent = msg; el.style.color = cor || '#8b949e'; }
+
+  // Mostra toast visível em qualquer aba
   var toast = document.getElementById('toast');
-  var tm    = document.getElementById('toast-msg');
-  if (!toast||!tm) return;
-  tm.textContent = msg;
-  toast.style.borderColor = cor||'#30363d';
-  toast.style.color = cor||'#e8eaf0';
+  var toastMsg = document.getElementById('toast-msg');
+  if (!toast || !toastMsg) return;
+
+  toastMsg.textContent = msg;
+  toast.style.borderColor = cor || '#30363d';
+  toast.style.color = cor || '#e8eaf0';
   toast.style.display = 'block';
   toast.style.animation = 'toastIn .3s ease';
+
+  // Auto-esconde após 3 segundos
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(function(){
+  _toastTimer = setTimeout(function() {
     toast.style.animation = 'toastOut .3s ease';
-    setTimeout(function(){ toast.style.display='none'; }, 300);
+    setTimeout(function() { toast.style.display = 'none'; }, 300);
   }, 3000);
 }
 
@@ -937,7 +607,7 @@ function getConfig() {
     projeto: document.getElementById('cfg-p').value,
     local:   document.getElementById('cfg-l').value,
     device:  document.getElementById('cfg-d').value,
-    coils: coils, mons: mons, sps: sps
+    coils: coils, mons: mons, qty: qty, sps: sps
   };
 }
 
@@ -946,94 +616,75 @@ function aplicarConfig(c) {
   if (c.projeto) document.getElementById('cfg-p').value = c.projeto;
   if (c.local)   document.getElementById('cfg-l').value = c.local;
   if (c.device)  document.getElementById('cfg-d').value = c.device;
-  if (Array.isArray(c.coils)) {
-    coils = c.coils.map(function(coil, idx){
-      // Compatibilidade: coils antigos sem .numero recebem número pelo índice
-      if(!coil.numero) coil.numero = idx+1;
-      return coil;
-    });
-    coils.sort(function(a,b){ return a.numero-b.numero; });
-  }
+  if (Array.isArray(c.coils)) coils = c.coils;
   if (Array.isArray(c.mons))  mons  = c.mons;
-  if (Array.isArray(c.sps)) {
-    sps = c.sps.map(function(sp, idx){
-      if(!sp.numero) sp.numero = idx+1;
-      return sp;
-    });
-    sps.sort(function(a,b){ return a.numero-b.numero; });
+  if (Array.isArray(c.sps))   sps   = c.sps;
+  if (c.qty && !isNaN(c.qty)) {
+    qty = parseInt(c.qty);
+    document.getElementById('qty-lbl').textContent = qty;
+    document.getElementById('m-sp').textContent = qty;
   }
-  qty = sps.length;
-  atualizarQtyLabel();
   _carregando = false;
-  updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
-  renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
-  // Conecta MQTT agora que config está pronta
-  var _pass2 = _getBrokerVal ? _getBrokerVal('cfg-mqtt-pass','mqttPass') : (document.getElementById('cfg-mqtt-pass')||{}).value || '';
-  if (!mqclient || !mqclient.connected) {
-    if (_pass2) {
-      conectarMQTT();
-    } else {
-      syncSt('Config carregada! Preencha a senha do broker e clique Conectar','#ef9f27');
-    }
+  updateBase();
+  updateMetrics();
+  renderCoils();
+  renderMons();
+  renderSPs();
+  updateSpSels();
+  renderGeral();
+  atualizarTodosLocks(); atualizarCamposConfig();
+  // Se broker não conectado, conecta agora que config está pronta
+  if(!mqclient || !mqclient.connected) {
+    setTimeout(conectarMQTT, 500);
   } else {
-    // Já conectado — resubscreve com a base correta agora que config carregou
-    var base = getBase();
-    addLog('clog','<b style="color:#3fb950;">Config carregada — resubscrevendo com base:</b> <code style="color:#79c0ff;">'+base+'</code>','pub');
+    // Já conectado — resubscreve com base correta
     subscreverTopicos(true);
-    setTimeout(processarFilaPendente, 1500);
   }
 }
 
 function salvarNuvem() {
   if (_carregando) return;
-  // Salva credenciais localmente primeiro
-  salvarConexaoLocal();
-  var arq = getCfgArmazenamento();
-  if (!arq.valido) { syncSt('Configure o armazenamento na aba Config!','#e24b4a'); return; }
+  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') { syncSt('Insira a Master Key!','#e24b4a'); return; }
   syncSt('Salvando...','#ef9f27');
   var cfg = getConfig();
   localStorage.setItem('esp32cfg', JSON.stringify(cfg));
-  // Formato adaptado por provedor
-  var body = arq.tipo === 'jsonbin'
-    ? JSON.stringify({ config: cfg })
-    : JSON.stringify(cfg);
-  fetch(arq.urlPut, { method:'PUT', headers: arq.headers, body: body })
+  fetch(JSONBIN_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+    body: JSON.stringify({ config: cfg })
+  })
   .then(function(r){ return r.json(); })
   .then(function(){ syncSt('Salvo!','#3fb950'); })
-  .catch(function(e){ syncSt('Erro ao salvar: '+e.message,'#e24b4a'); });
+  .catch(function(){ syncSt('Erro — salvo local','#e24b4a'); });
 }
 
 function carregarNuvem() {
+  // Garante que _carregando volta a false mesmo se algo der errado
   setTimeout(function(){ _carregando = false; }, 10000);
-  var arq = getCfgArmazenamento();
-  if (!arq.valido) {
-    syncSt('Configure o armazenamento na aba Config!','#ef9f27');
+
+  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
+    syncSt('Sem Master Key — usando local','#ef9f27');
     var raw = localStorage.getItem('esp32cfg');
-    if (raw) { try { aplicarConfig(JSON.parse(raw)); syncSt('Config local','#8b949e'); } catch(e){ initDefault(); } }
+    if (raw) { try { aplicarConfig(JSON.parse(raw)); syncSt('Config local','#8b949e'); } catch(e) { initDefault(); } }
     else initDefault();
     return;
   }
   syncSt('Carregando...','#ef9f27');
-  fetch(arq.urlGet, { headers: arq.headers })
+  fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
   .then(function(r){ return r.json(); })
   .then(function(data){
-    // Suporta formato JSONBin {record:{config:{}}} ou direto {config:{}} ou {}
-    var cfg = (data.record && data.record.config) ? data.record.config
-            : (data.config) ? data.config
-            : (data.coils || data.projeto) ? data
-            : null;
-    if (cfg && Object.keys(cfg).length > 0) {
-      aplicarConfig(cfg);
+    if (data.record && data.record.config && Object.keys(data.record.config).length > 0) {
+      aplicarConfig(data.record.config);
       syncSt('Config carregada!','#3fb950');
     } else {
-      syncSt('Sem config — usando padrão','#8b949e');
+      syncSt('Sem config — padrao','#8b949e');
       initDefault();
     }
   })
-  .catch(function(e){
-    syncSt('Erro rede: '+e.message+' — usando local','#e24b4a');
+  .catch(function(){
+    syncSt('Erro rede — usando local','#e24b4a');
     var raw = localStorage.getItem('esp32cfg');
-    if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e2){ initDefault(); } }
+    if (raw) { try { aplicarConfig(JSON.parse(raw)); } catch(e) { initDefault(); } }
     else initDefault();
   });
 }
@@ -1041,35 +692,29 @@ function carregarNuvem() {
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   atualizarTodosLocks(); atualizarCamposConfig();
-  var _pass = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
-  if (_pass && (!mqclient || !mqclient.connected)) {
-    conectarMQTT();
-  } else if (!_pass) {
-    syncSt('Preencha a senha do broker na aba Config e clique Conectar','#ef9f27');
-  }
 }
 
 // ════════════════════════════════════════════════
 // CLOCK
 // ════════════════════════════════════════════════
 function tick() {
-  var n=new Date(), p=function(v){ return String(v).padStart(2,'0'); };
+  var n = new Date(), p = function(v){ return String(v).padStart(2,'0'); };
   document.getElementById('clk-t').textContent = p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
 }
-setInterval(tick,1000); tick();
+setInterval(tick, 1000); tick();
 
 // ════════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════════
 function showTab(id) {
-  ['geral','cfg','coils','mon','sp'].forEach(function(t){
+  ['geral','cfg','coils','mon','sp'].forEach(function(t) {
     document.getElementById('pane-'+t).classList.remove('active');
     document.getElementById('btn-'+t).classList.remove('active');
   });
   document.getElementById('pane-'+id).classList.add('active');
   document.getElementById('btn-'+id).classList.add('active');
-  if (id==='cfg')   { updateTopics(); updateResumo(); atualizarUrlsBroker(); atualizarCamposConfig(); }
-  if (id==='geral') { renderGeral(); }
+  if (id === 'cfg')   { updateTopics(); updateResumo(); }
+  if (id === 'geral') { renderGeral(); }
 }
 
 // ════════════════════════════════════════════════
@@ -1080,15 +725,8 @@ function getBase() {
         +(document.getElementById('cfg-l').value||'l')+'/'
         +(document.getElementById('cfg-d').value||'d');
 }
-function gct(i,t){
-  // Usa o número definido pelo usuário, não o índice do array
-  var num = (coils[i] && coils[i].numero) ? coils[i].numero : (i+1);
-  return getBase()+'/atuadores/coil_'+String(num).padStart(2,'0')+'/'+t;
-}
-function gst(i,t){
-  var num = (sps[i] && sps[i].numero) ? sps[i].numero : (i+1);
-  return getBase()+'/setpoints/sp'+String(num).padStart(2,'0')+'/'+t;
-}
+function gct(i,t){ return getBase()+'/atuadores/coil_'+String(i+1).padStart(2,'0')+'/'+t; }
+function gst(i,t){ return getBase()+'/setpoints/sp'+String(i+1).padStart(2,'00')+'/'+t; }
 
 function updateBase() {
   var b = getBase();
@@ -1103,12 +741,12 @@ function updateBase() {
 function updateTopics() {
   var b = getBase();
   var items = [
-    ['telemetria',  b+'/telemetria'],
-    ['status',      b+'/status'],
-    ['coil_01/cmd', b+'/atuadores/coil_01/comando'],
-    ['coil_01/est', b+'/atuadores/coil_01/estado'],
-    ['sp01/cmd',    b+'/setpoints/sp01/comando'],
-    ['sp01/est',    b+'/setpoints/sp01/estado'],
+    ['telemetria',   b+'/telemetria'],
+    ['status',       b+'/status'],
+    ['coil_01/cmd',  b+'/atuadores/coil_01/comando'],
+    ['coil_01/est',  b+'/atuadores/coil_01/estado'],
+    ['sp01/cmd',     b+'/setpoints/sp01/comando'],
+    ['sp01/est',     b+'/setpoints/sp01/estado'],
   ];
   document.getElementById('topic-list').innerHTML = items.map(function(x){
     return '<div><span style="color:#3a4458;display:inline-block;min-width:110px;">'+x[0]+':</span><code style="color:#79c0ff;">'+x[1]+'</code></div>';
@@ -1118,318 +756,236 @@ function updateTopics() {
 function updateResumo() {
   document.getElementById('cfg-resumo').innerHTML = [
     '<b style="color:#e8eaf0;">Base:</b> '+getBase(),
-    '<b style="color:#e8eaf0;">Coils ('+coils.length+'):</b> '+(coils.map(function(c){ return 'coil_'+String(c.numero||1).padStart(2,'0')+' '+c.nome; }).join(', ')||'nenhum'),
+    '<b style="color:#e8eaf0;">Coils ('+coils.length+'):</b> '+(coils.map(function(c,i){ return 'coil_'+String(i+1).padStart(2,'0')+' '+c.nome; }).join(', ')||'nenhum'),
     '<b style="color:#e8eaf0;">Monitoramento ('+mons.length+'):</b> '+(mons.map(function(m){ return m.nome+'['+m.tipo+']'; }).join(', ')||'nenhum'),
-    '<b style="color:#e8eaf0;">Set Points ('+sps.length+'):</b> '+sps.map(function(s){ return 'SP'+String(s.numero||1).padStart(2,'0')+'['+TIPOS[s.tipo]+']'; }).join(', '),
+    '<b style="color:#e8eaf0;">Set Points ('+qty+'):</b> '+Array.from({length:qty},function(_,i){ return 'SP'+String(i+1).padStart(2,'0')+'['+TIPOS[sps[i].tipo]+']'; }).join(', '),
   ].join('<br>');
 }
 
 // ════════════════════════════════════════════════
 // STATUS ESP32
 // ════════════════════════════════════════════════
-var _esp32Online = false;
-
-var _offlineTimer = null;
-
 function setESP32Status(s) {
-  var status = s.trim().toLowerCase();
-  if(status==='offline'){
-    if(_offlineTimer) return;
-    _offlineTimer = setTimeout(function(){
-      _offlineTimer = null;
-      _aplicarStatus('offline');
-    }, 3000);
-    return;
-  }
-  if(_offlineTimer){ clearTimeout(_offlineTimer); _offlineTimer=null; }
-  _aplicarStatus(status);
-}
-
-function _aplicarStatus(s){
-  _esp32Online = (s==='online');
+  _esp32Online = (s === 'online');
   var cores = {
-    online:  {bg:'#3fb950',tx:'#3fb950',shadow:'0 0 6px #3fb950',txt:'ONLINE', p:true},
-    offline: {bg:'#e24b4a',tx:'#e24b4a',shadow:'0 0 6px #e24b4a',txt:'OFFLINE',p:false},
-    '---':   {bg:'#8b949e',tx:'#8b949e',shadow:'none',            txt:'---',   p:false}
+    online:  { bg:'#3fb950', tx:'#3fb950', shadow:'0 0 6px #3fb950', txt:'ONLINE',  p:true  },
+    offline: { bg:'#e24b4a', tx:'#e24b4a', shadow:'0 0 6px #e24b4a', txt:'OFFLINE', p:false },
+    '---':   { bg:'#8b949e', tx:'#8b949e', shadow:'none',             txt:'---',     p:false }
   };
-  var c = cores[s]||cores['---'];
-  ['dot-esp','g-dot-esp','cfg-dot'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el){ el.style.background=c.bg; el.style.boxShadow=c.shadow; c.p?el.classList.add('pulse'):el.classList.remove('pulse'); }
-  });
-  ['lbl-esp','g-lbl-esp'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el){ el.textContent=c.txt; el.style.color=c.tx; }
-  });
-  var cl=document.getElementById('cfg-esp-lbl');
-  if(cl){ cl.textContent=c.txt; cl.style.color=c.tx; }
-  if(s!=='---'){
-    var lu=document.getElementById('cfg-last');
-    if(lu) lu.textContent=new Date().toLocaleTimeString('pt-BR');
+  var c = cores[s] || cores['---'];
+  // header
+  var de = document.getElementById('dot-esp');
+  var le = document.getElementById('lbl-esp');
+  if (de) { de.style.background=c.bg; de.style.boxShadow=c.shadow; c.p?de.classList.add('pulse'):de.classList.remove('pulse'); }
+  if (le) { le.textContent=c.txt; le.style.color=c.tx; }
+  // config card
+  var cd = document.getElementById('cfg-dot');
+  var cl = document.getElementById('cfg-esp-lbl');
+  if (cd) { cd.style.background=c.bg; cd.style.boxShadow=c.shadow; }
+  if (cl) { cl.textContent=c.txt; cl.style.color=c.tx; }
+  // geral card
+  var gd = document.getElementById('g-dot-esp');
+  var gl = document.getElementById('g-lbl-esp');
+  if (gd) { gd.style.background=c.bg; gd.style.boxShadow=c.shadow; }
+  if (gl) { gl.textContent=c.txt; gl.style.color=c.tx; }
+  // ultima att
+  if (s !== '---') {
+    var lu = document.getElementById('cfg-last');
+    if (lu) lu.textContent = new Date().toLocaleTimeString('pt-BR');
   }
-  if(s==='offline'){
-    ['hdr-rssi','hdr-uptime','hdr-ip'].forEach(function(id){
-      var e=document.getElementById(id); if(e) e.textContent='';
-    });
+  // Quando ESP32 volta online, libera processamento de estados
+  if (s === 'online') {
+    // Pequeno delay para garantir que o status foi processado antes dos estados
+    setTimeout(function(){
+      _ignorarRetained = false;
+    }, 500);
+  }
+  // Quando ESP32 vai offline, limpa estados dos coils
+  if (s === 'offline') {
+    coils.forEach(function(c){ c.estado = false; });
+    sps.forEach(function(sp){ sp.estado = false; sp._ultimoComando = null; });
+    // Limpa métricas da aba Config
+    var cr = document.getElementById('cfg-rssi'); if(cr){ cr.textContent='---'; cr.style.color='#8b949e'; }
+    var cu = document.getElementById('cfg-uptime'); if(cu) cu.textContent='---';
+    var ci = document.getElementById('cfg-ip'); if(ci) ci.textContent='---';
+    // Limpa header
+    var hr = document.getElementById('hdr-rssi'); if(hr){ hr.textContent=''; }
+    var hu = document.getElementById('hdr-uptime'); if(hu){ hu.textContent=''; }
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
   }
-  addLog('clog','<b>STATUS ESP32:</b> '+s,'sub');
 }
 
 // ════════════════════════════════════════════════
 // LOG
 // ════════════════════════════════════════════════
 function toggleLog(id) {
-  var b=document.getElementById(id+'-bdy'), a=document.getElementById(id+'-arr');
-  if(!b) return;
-  var open = b.style.maxHeight && b.style.maxHeight!=='0px';
+  var b = document.getElementById(id+'-bdy');
+  var a = document.getElementById(id+'-arr');
+  if (!b) return;
+  var open = b.style.maxHeight && b.style.maxHeight !== '0px';
   b.style.maxHeight = open ? '0' : '200px';
-  if(a) a.style.transform = open ? 'rotate(0)' : 'rotate(90deg)';
+  if (a) a.style.transform = open ? 'rotate(0)' : 'rotate(90deg)';
 }
+
 function addLog(id, msg, tipo) {
-  var b=document.getElementById(id+'-bdy');
-  if(!b) return;
-  var d=document.createElement('div');
-  d.className='ll '+(tipo||'');
-  var ts=new Date().toLocaleTimeString('pt-BR');
-  d.innerHTML='<span style="color:#5a6478;">['+ts+']</span> '+msg;
-  b.insertBefore(d,b.firstChild);
-  if(b.children.length>30) b.removeChild(b.lastChild);
+  var b = document.getElementById(id+'-bdy');
+  if (!b) return;
+  var d = document.createElement('div');
+  d.className = 'll ' + (tipo||'');
+  var ts = new Date().toLocaleTimeString('pt-BR');
+  d.innerHTML = '<span style="color:#5a6478;">['+ts+']</span> '+msg;
+  b.insertBefore(d, b.firstChild);
+  if (b.children.length > 25) b.removeChild(b.lastChild);
+}
+
+// ════════════════════════════════════════════════
+// MODAL CONFIRMAÇÃO
+// ════════════════════════════════════════════════
+var _modalCb = null;
+function abrirModal(titulo,desc,cor,cb){
+  document.getElementById('modal-title').textContent=titulo;
+  document.getElementById('modal-desc').textContent=desc;
+  var ok=document.getElementById('modal-ok');
+  ok.className=cor==='red'?'btn-r':'btn-g';
+  _modalCb=cb;
+  document.getElementById('modal-confirm').style.display='flex';
+}
+function fecharModal(){
+  document.getElementById('modal-confirm').style.display='none';
+  _modalCb=null;
+}
+function confirmarModal(){
+  var cb=_modalCb; fecharModal(); if(cb) cb();
 }
 
 // ════════════════════════════════════════════════
 // MQTT
 // ════════════════════════════════════════════════
 var mqclient = null;
-var _ignorarRetained = false;
-
-// Fila de mensagens que chegaram antes do coils[] estar populado
-var _filaMsgs = [];
-
-function processarFilaPendente() {
-  if (_filaMsgs.length === 0) return;
-  addLog('clog','<b style="color:#ef9f27;">Processando '+_filaMsgs.length+' mensagens pendentes...</b>','pub');
-  var fila = _filaMsgs.slice();
-  _filaMsgs = [];
-  fila.forEach(function(m){ processarMsg(m.topic, m.msg); });
-}
+var _esp32Online = false;
+ // ignora msgs retidas logo após conectar
 
 function mqttPub(topic, payload) {
-  if(mqclient && mqclient.connected){
-    mqclient.publish(topic, String(payload), {qos:1, retain:false});
+  if (mqclient && mqclient.connected) {
+    mqclient.publish(topic, String(payload), {qos:1});
     addLog('clog','<b style="color:#3fb950;">PUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b>'+payload+'</b>','pub');
   }
 }
 
 function processarMsg(topic, msg) {
-  // Log de todas as mensagens recebidas para debug
-  addLog('clog','<b style="color:#3a4458;">MSG</b> <code style="color:#5a6478;">'+topic+'</code> → '+msg.substring(0,40),'sub');
-
   // 1. Status LWT
-  if(topic.endsWith('/status')){
-    setESP32Status(msg.trim().toLowerCase());
-    addLog('clog','<b style="color:#58a6ff;">STATUS</b> → <b style="color:'+(msg.trim()==='online'?'#7ee787':'#ffa0a0')+';">'+msg+'</b>','sub');
+  if (topic.endsWith('/status')) {
+    setESP32Status(msg);
+    addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(msg==='online'?'#7ee787':'#ffa0a0')+';">'+msg+'</b>','sub');
     return;
   }
-  // 2. Telemetria — RSSI, Uptime, IP, analógicos
-  if(topic.endsWith('/telemetria')){
+  // 2. Estado Coils
+  var cm = topic.match(/coil_(\d+)\/estado$/);
+  if (cm) {
+    var ci = parseInt(cm[1])-1;
+    // Ignora retained logo após conectar ou se ESP32 offline
+    if (!_esp32Online) { addLog('clog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline)</b>','sub'); return; }
+    if (ci >= 0 && ci < coils.length) {
+      var coil = coils[ci];
+      // Compara com msgA e msgD configurados pelo usuário
+      if (msg === coil.msgA) {
+        coil.estado = true;
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
+        renderCoils(); updateMetrics(); renderGeral();
+      } else if (msg === coil.msgD) {
+        coil.estado = false;
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
+        renderCoils(); updateMetrics(); renderGeral();
+      } else {
+        // Mensagem desconhecida — não muda estado
+        addLog('clog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+coil.msgA+'") nem msgOFF("'+coil.msgD+'")','sub');
+      }
+    }
+    return;
+  }
+  // 3. Estado SPs
+  var sm = topic.match(/sp(\d+)\/estado$/);
+  if (sm) {
+    var si = parseInt(sm[1])-1;
+    if (_ignorarRetained || !_esp32Online) {
+      addLog('splog','<b style="color:#5a6478;">SUB (ignorado — ESP32 offline/retido)</b> <code style="color:#5a6478;">'+topic+'</code>','sub');
+      return;
+    }
+    if (si >= 0 && si < qty) {
+      var sp = sps[si];
+      if (msg === sp.msgA) {
+        sp.estado = true;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓ (ESP32 confirmou)','sub');
+        renderSPStatus();
+      } else if (msg === sp.msgD) {
+        sp.estado = false;
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓ (ESP32 confirmou)','sub');
+        renderSPStatus();
+      } else {
+        addLog('splog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
+      }
+    }
+    return;
+  }
+  // 4. Entradas de monitoramento (qualquer tópico)
+  mons.forEach(function(m, i) {
+    if (topic !== m.topico) return;
+    var origem = _esp32Online ? 'online' : 'retido';
+    addLog('mlog','<b style="color:'+(_esp32Online?'#58a6ff':'#8b949e')+';">SUB'+((!_esp32Online)?' (retido)':'')+'</b> <code style="color:#79c0ff;">'+topic+'</code> → '+msg.substring(0,60),'sub');
     try {
       var d = JSON.parse(msg);
-      // Header: RSSI
-      if(d.rssi!==undefined){
-        var rssiEl=document.getElementById('hdr-rssi');
-        if(rssiEl){ var rssiV=parseInt(d.rssi); var rssiC=rssiV>-60?'#3fb950':rssiV>-75?'#ef9f27':'#e24b4a'; rssiEl.textContent='📶 '+d.rssi+'dBm'; rssiEl.style.color=rssiC; }
+      // Uptime / RSSI para aba Geral
+      if (d.uptime !== undefined) {
+        var s=parseInt(d.uptime)||0, h=Math.floor(s/3600), m2=Math.floor((s%3600)/60), sec=s%60;
+        var gu = document.getElementById('g-uptime');
+        if (gu) gu.textContent = 'Uptime: '+h+'h '+m2+'m '+sec+'s';
       }
-      // Header: Uptime
-      if(d.uptime!==undefined){
-        var s2=parseInt(d.uptime)||0, h2=Math.floor(s2/3600), m2=Math.floor((s2%3600)/60), sec2=s2%60;
-        var upEl=document.getElementById('hdr-uptime');
-        if(upEl) upEl.textContent=' ⏱ '+h2+'h'+m2+'m'+sec2+'s';
-        var gup=document.getElementById('g-uptime');
-        if(gup) gup.textContent='Uptime: '+h2+'h '+m2+'m '+sec2+'s';
+      if (d.rssi !== undefined) {
+        var gr = document.getElementById('g-rssi');
+        if (gr) gr.textContent = 'RSSI: '+d.rssi+' dBm';
       }
-      // Header: IP
-      if(d.ip!==undefined){
-        var ipEl=document.getElementById('hdr-ip');
-        if(ipEl) ipEl.textContent=' 🌐 '+d.ip;
+      if (m.tipo === 'analog' && d[m.jsonKey] !== undefined) {
+        m.val = parseFloat(d[m.jsonKey]);
+        atualizaValMon(i, m.val);
       }
-      // RSSI na aba Geral
-      if(d.rssi!==undefined){
-        var gr=document.getElementById('g-rssi');
-        if(gr) gr.textContent='RSSI: '+d.rssi+' dBm';
+      if (m.tipo === 'digital' && d[m.jsonKey] !== undefined) {
+        m.estado = (String(d[m.jsonKey]) === m.valT);
       }
-      // Analógicos — varre todas as mons analógicas
-      var _atualizouAlgum=false;
-      // Também varre as chaves do payload para logar o que chegou
-      var _chavesPayload=Object.keys(d).filter(function(k){ return k.startsWith('an'); });
-      if(_chavesPayload.length>0){
-        addLog('mlog','<b style="color:#ef9f27;">TELEM analógicos:</b> '+_chavesPayload.map(function(k){ return k+'='+d[k]; }).join(', '),'sub');
-      }
-      mons.forEach(function(mi,idx){
-        if(mi.tipo!=='analog') return;
-        // Log de debug por mon
-        var temChave=(d[mi.jsonKey]!==undefined);
-        var topicoBate=(topic===mi.topico)||(mi.topico.indexOf('/telemetria')!==-1);
-        if(!temChave){
-          addLog('mlog','<b style="color:#5a6478;">MON '+idx+' ('+mi.nome+') chave "'+mi.jsonKey+'" não encontrada no payload</b>','sub');
-          return;
-        }
-        if(!topicoBate){
-          addLog('mlog','<b style="color:#5a6478;">MON '+idx+' ('+mi.nome+') tópico não bate: mon='+mi.topico+' msg='+topic+'</b>','sub');
-          return;
-        }
-        var novoVal=parseFloat(d[mi.jsonKey]);
-        if(!isNaN(novoVal)){
-          mi.val=novoVal;
-          atualizaValMon(idx,novoVal);
-          _atualizouAlgum=true;
-          addLog('mlog','<b style="color:#3fb950;">✓ MON '+idx+' ('+mi.nome+') '+mi.jsonKey+'='+novoVal.toFixed(3)+'</b>','sub');
-        }
-      });
-      if(_atualizouAlgum) renderGeral();
-    } catch(e){ addLog('mlog','<b style="color:#e24b4a;">ERRO parse telemetria: '+e.message+'</b>','sub'); }
-    addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → telemetria','sub');
+    } catch(e) {
+      if (m.tipo === 'digital') m.estado = (msg===m.valT||msg==='1'||msg==='true');
+    }
     checkSPs();
-    return;
-  }
-  // 3. Estado Coils — aceita sempre (retained mantém último estado real)
-  var cm=topic.match(/coil_(\d+)\/estado$/);
-  if(cm){
-    var numCoil=parseInt(cm[1]); // número do coil do tópico
-    if(coils.length===0){
-      _filaMsgs.push({topic:topic, msg:msg});
-      addLog('clog','<b style="color:#8b949e;">SUB (fila)</b> <code style="color:#5a6478;">'+topic+'</code> → coils[] não pronto ainda','sub');
-      return;
-    }
-    // Busca coil pelo NÚMERO, não pelo índice do array
-    var ci = coils.findIndex(function(c){ return c.numero===numCoil; });
-    if(ci>=0){
-      var coil=coils[ci];
-      if(msg===coil.msgA){
-        coil.estado=true;
-        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = ACIONADO ✓','sub');
-        salvarEstadosLocal(); renderCoils(); updateMetrics(); renderGeral();
-      } else if(msg===coil.msgD){
-        coil.estado=false;
-        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = DESACIONADO ✓','sub');
-        salvarEstadosLocal(); renderCoils(); updateMetrics(); renderGeral();
-      } else {
-        addLog('clog','<b style="color:#e24b4a;">⚠️ MSG DESCONHECIDA</b> <code style="color:#79c0ff;">'+topic+'</code> → ESP32 enviou "'+msg+'" | esperado msgON="'+coil.msgA+'" ou msgOFF="'+coil.msgD+'" | estado mantido','sub');
-        syncSt('⚠️ '+coil.nome+': ESP32 enviou "'+msg+'" — não bate com msgON/OFF configurado! Verifique.','#e24b4a');
-      }
-    } else {
-      addLog('clog','<b style="color:#e24b4a;">⚠️ COIL índice '+ci+' fora do range (total: '+coils.length+')</b>','sub');
-    }
-    return;
-  }
-  // 4. Estado SPs — busca pelo número, fila se sps[] vazio
-  var sm=topic.match(/sp(\d+)\/estado$/);
-  if(sm){
-    var numSP=parseInt(sm[1]);
-    if(sps.length===0){
-      _filaMsgs.push({topic:topic, msg:msg});
-      addLog('splog','<b style="color:#8b949e;">SUB (fila)</b> <code style="color:#5a6478;">'+topic+'</code> → sps[] não pronto','sub');
-      return;
-    }
-    var si=sps.findIndex(function(s){ return s.numero===numSP; });
-    if(si>=0){
-      var sp=sps[si];
-      if(msg===sp.msgA){
-        sp.estado=true;
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">ACIONADO ✓</b>','sub');
-        salvarEstadosLocal(); renderSPStatus(); renderGeral();
-      } else if(msg===sp.msgD){
-        sp.estado=false;
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">DESACIONADO ✓</b>','sub');
-        salvarEstadosLocal(); renderSPStatus(); renderGeral();
-      } else {
-        addLog('splog','<b style="color:#e24b4a;">⚠️ MSG DESCONHECIDA</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não bate com msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
-        syncSt('⚠️ '+sp.nome+': valor "'+msg+'" não reconhecido!','#e24b4a');
-      }
-    } else {
-      addLog('splog','<b style="color:#8b949e;">SP'+String(numSP).padStart(2,'0')+' não configurado no painel</b>','sub');
-    }
-    return;
-  }
-
-  // 5a. Wildcard digital — entradas/digital/sn01, sn02...
-  // Chega direto como payload "0" ou "1" — atualiza a mon cujo tópico bate
-  var _valoresValidos=['0','1','true','false','high','low'];
-  if(topic.indexOf('/entradas/digital/')!==-1){
-    var snKey=topic.split('/').pop(); // ex: sn01
-    mons.forEach(function(m,i){
-      if(m.tipo!=='digital') return;
-      // Bate pelo tópico OU pela chave JSON
-      var topicoBate=(m.topico===topic);
-      var chaveBate=(m.jsonKey===snKey);
-      if(!topicoBate && !chaveBate) return;
-      var valorRecebido=msg.trim().toLowerCase();
-      if(_valoresValidos.indexOf(valorRecebido)===-1){
-        addLog('mlog','<b style="color:#e24b4a;">⚠️ DIGITAL IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" inválido','sub');
-        syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
-        return;
-      }
-      // Usa valT e valF configurados pelo usuário — permite inverter lógica
-      // Ex: valT='0', valF='1' → LOW ativa, HIGH desativa
-      m._ultimoValorBruto = valorRecebido; // salva para recalcular ao mudar valT/valF
-      var novoEstado=(valorRecebido===m.valT.toLowerCase());
-      if(novoEstado!==m.estado){
-        m.estado=novoEstado;
-        addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> ['+snKey+'] → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH ('+m.valT+')':'LOW ('+m.valF+')')+'</b>','sub');
-        renderMons(); renderGeral(); checkSPs();
-      }
-    });
-    return;
-  }
-  // 5. Entradas digitais monitoradas (tópicos customizados)
-  mons.forEach(function(m,i){
-    if(topic!==m.topico) return;
-    if(m.tipo!=='digital') return;
-    var valorRecebido=msg.trim().toLowerCase();
-    // Valida valor recebido
-    if(_valoresValidos.indexOf(valorRecebido)===-1){
-      addLog('mlog','<b style="color:#e24b4a;">⚠️ DIGITAL IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → valor "'+msg+'" inválido (esperado: 0,1,true,false)','sub');
-      syncSt('⚠️ '+m.nome+': valor "'+msg+'" inválido!','#e24b4a');
-      return;
-    }
-    // Usa valT e valF configurados — permite inverter lógica
-    m._ultimoValorBruto = valorRecebido; // salva para recalcular ao mudar valT/valF
-    var novoEstado=(valorRecebido===m.valT.toLowerCase());
-    if(novoEstado!==m.estado){
-      m.estado=novoEstado;
-      addLog('mlog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:'+(novoEstado?'#7ee787':'#ffa0a0')+';">'+(novoEstado?'HIGH ('+m.valT+')':'LOW ('+m.valF+')')+'</b>','sub');
-      renderMons();
-      renderGeral();
-      checkSPs();
-    } else {
-      addLog('mlog','<b style="color:#8b949e;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → '+(novoEstado?'HIGH':'LOW')+' (sem mudança)','sub');
-    }
   });
 }
 
-function atualizaValMon(i,val){
-  var m=mons[i]; if(!m) return;
-  var pct=Math.min(100,Math.max(0,((val-m.min)/(m.max-m.min||1))*100));
-  var gc=vcolor(val,m.min,m.max);
-  var vv=document.getElementById('mv-'+i), vb=document.getElementById('mb-'+i);
-  if(vv) vv.textContent=val.toFixed(2);
-  if(vb){ vb.style.width=pct.toFixed(1)+'%'; vb.style.background=gc; }
-  var gv=document.getElementById('gval-'+i), gb=document.getElementById('gbar-'+i);
-  if(gv){ gv.textContent=val.toFixed(2); gv.style.color=gc; }
-  if(gb){ gb.style.width=pct.toFixed(1)+'%'; gb.style.background=gc; }
+function atualizaValMon(i, val) {
+  var m = mons[i];
+  if (!m) return;
+  var pct = Math.min(100, Math.max(0, ((val-m.min)/(m.max-m.min||1))*100));
+  var gc  = vcolor(val, m.min, m.max);
+  // Aba Monitoramento
+  var vv = document.getElementById('mv-'+i), vb = document.getElementById('mb-'+i);
+  if (vv) vv.textContent = val.toFixed(2);
+  if (vb) { vb.style.width = pct.toFixed(1)+'%'; vb.style.background = gc; }
+  // Aba Geral
+  var gv = document.getElementById('gval-'+i), gb = document.getElementById('gbar-'+i);
+  if (gv) { gv.textContent = val.toFixed(2); gv.style.color = gc; }
+  if (gb) { gb.style.width = pct.toFixed(1)+'%'; gb.style.background = gc; }
 }
 
-function subscreverTopicos(forcarRetained){
-  if(!mqclient||!mqclient.connected) return;
-  var base=getBase();
-  var topicos=[
+// setBtnConectar removido — botão substituído por Reconectar/Desconectar
+
+function subscreverTopicos(forcarRetained) {
+  if (!mqclient || !mqclient.connected) return;
+  var base = getBase();
+  var topicos = [
     base+'/status',
     base+'/telemetria',
     base+'/atuadores/+/estado',
     base+'/setpoints/+/estado',
     base+'/entradas/digital/+'
   ];
-  var tops={};
+  var tops = {};
   mons.forEach(function(m){
     if(m.topico&&!tops[m.topico]) tops[m.topico]=1;
   });
@@ -1439,24 +995,21 @@ function subscreverTopicos(forcarRetained){
     topicos.forEach(function(t){ try{ mqclient.unsubscribe(t); }catch(e){} });
     setTimeout(function(){
       topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
-      addLog('clog','<b style="color:#3fb950;">SUBSCRITO (forçado)</b> base: <code style="color:#79c0ff;">'+base+'</code> | '+topicos.length+' tópicos','pub');
+      addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> base: <code style="color:#79c0ff;">'+base+'</code>','pub');
     }, 300);
   } else {
     topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
-    addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> base: <code style="color:#79c0ff;">'+base+'</code> | '+topicos.length+' tópicos','pub');
+    addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> base: <code style="color:#79c0ff;">'+base+'</code>','pub');
   }
-  // Log para debug — mostra os tópicos subscritos
-  addLog('clog','Base: <b style="color:#ef9f27;">'+base+'</b> | Status: <code style="color:#79c0ff;">'+base+'/status</code>','pub');
 }
 
 function desconectarMQTT(){
   if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
   var st=document.getElementById('mqtt-st');
   if(st){ st.textContent='Desconectado'; st.style.color='#e24b4a'; }
-  document.getElementById('dot-broker').style.background='#8b949e';
-  document.getElementById('lbl-broker').style.color='#8b949e';
+  var db=document.getElementById('dot-broker');
+  if(db){ db.style.background='#8b949e'; }
   setESP32Status('---');
-  syncSt('MQTT desconectado','#8b949e');
 }
 
 function reconectarMQTT(){
@@ -1464,388 +1017,421 @@ function reconectarMQTT(){
   setTimeout(function(){ conectarMQTT(); }, 500);
 }
 
-// MQTT — conexão automática ao abrir
-function conectarMQTT(){
-  if(mqclient&&mqclient.connected){ syncSt('Ja conectado!','#3fb950'); return; }
-  var st=document.getElementById('mqtt-st');
-  st.textContent='Conectando...'; st.style.color='#ef9f27';
-  if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
-
-  var _broker = getCfgBroker();
-  if (!_broker.valido) {
-    syncSt('Configure o broker MQTT na aba Config!','#e24b4a');
+function conectarMQTT() {
+  if (mqclient && mqclient.connected) {
+    syncSt('Ja esta conectado!', '#3fb950');
     return;
   }
-  // Senha lida via getCfgBroker que tem fallback para localStorage
-  atualizarUrlsBroker();
-  mqclient=mqtt.connect(_broker.urlCompleta,{
-    clientId:       _broker.clientId,
-    username:       _broker.user,
-    password:       _broker.pass,
-    keepalive:      _broker.keepalive,
+
+  var st = document.getElementById('mqtt-st');
+  st.textContent = 'Conectando...'; st.style.color = '#ef9f27';
+
+  // Encerra conexão anterior
+  if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
+
+  mqclient = mqtt.connect('wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt', {
+    clientId:       'painel-'+Math.random().toString(16).substr(2,8),
+    username:       'joazeirofelipe',
+    password:       'Mqtt@Railway2026',
+    keepalive:      30,
     reconnectPeriod:5000,
     connectTimeout: 10000,
     clean:          true
   });
 
-  mqclient.on('connect',function(){
-    st.textContent='Conectado'; st.style.color='#3fb950';
-    document.getElementById('dot-broker').style.background='#3fb950';
-    document.getElementById('lbl-broker').style.color='#3fb950';
-    _filaMsgs = [];
-    localStorage.removeItem('esp32estados');
-    coils.forEach(function(c){ c.estado=false; });
-    sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
-    renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
-
-    // Verifica se base está correta antes de subscrever
+  mqclient.on('connect', function() {
+    st.textContent = 'Conectado'; st.style.color = '#3fb950';
+    document.getElementById('dot-broker').style.background = '#3fb950';
+    document.getElementById('lbl-broker').style.color      = '#3fb950';
     var base = getBase();
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b> — base: <code style="color:#ef9f27;">'+base+'</code>','pub');
-
-    if(base === 'p/l/d' || base === '//') {
-      // Config ainda não carregou — aguarda e tenta novamente
-      addLog('clog','<b style="color:#ef9f27;">⚠️ Base padrão detectada — aguardando config...</b>','pub');
-      setTimeout(function(){
-        var base2 = getBase();
-        addLog('clog','<b style="color:#3fb950;">Subscrevendo com base:</b> <code style="color:#79c0ff;">'+base2+'</code>','pub');
-        subscreverTopicos();
-        setTimeout(processarFilaPendente, 1500);
-      }, 3000);
-    } else {
-      subscreverTopicos();
-      setTimeout(processarFilaPendente, 2000);
-    }
-  });
-
-  mqclient.on('message',function(topic,message){
-    processarMsg(topic,message.toString());
-  });
-
-  mqclient.on('reconnect',function(){
-    st.textContent='Reconectando...'; st.style.color='#ef9f27';
-    document.getElementById('dot-broker').style.background='#ef9f27';
-    addLog('clog','<b style="color:#ef9f27;">Reconectando...</b>','sub');
-  });
-
-  mqclient.on('close',function(){
-    st.textContent='Desconectado'; st.style.color='#e24b4a';
-    document.getElementById('dot-broker').style.background='#8b949e';
-    document.getElementById('lbl-broker').style.color='#8b949e';
+    
     setESP32Status('---');
+    subscreverTopicos();
+    _ignorarRetained = true;
+    setTimeout(function(){ _ignorarRetained = false; }, 2000);
+  });
+
+  mqclient.on('message', function(topic, message) {
+    processarMsg(topic, message.toString());
+  });
+
+  mqclient.on('reconnect', function() {
+    st.textContent = 'Reconectando...'; st.style.color = '#ef9f27';
+    document.getElementById('dot-broker').style.background = '#ef9f27';
+    
+    addLog('clog','<b style="color:#ef9f27;">Reconectando automaticamente...</b>','sub');
+  });
+
+  mqclient.on('close', function() {
+    st.textContent = 'Desconectado'; st.style.color = '#e24b4a';
+    document.getElementById('dot-broker').style.background = '#8b949e';
+    document.getElementById('lbl-broker').style.color      = '#8b949e';
+    setESP32Status('---');
+    
     syncSt('Broker desconectado — reconectando em 5s...','#ef9f27');
   });
 
-  mqclient.on('error',function(e){
-    st.textContent='Erro'; st.style.color='#e24b4a';
+  mqclient.on('error', function(e) {
+    st.textContent = 'Erro'; st.style.color = '#e24b4a';
+    
     addLog('clog','<b style="color:#e24b4a;">ERRO: '+e.message+'</b>','sub');
   });
 }
-
 // ════════════════════════════════════════════════
 // COILS
 // ════════════════════════════════════════════════
-var MAX_COILS   = 20;
-var MAX_ANALOG  = 20;
-var MAX_DIGITAL = 10;
+var MAX_COILS = 20;   // máximo de coils
+var MAX_ANALOG = 20;  // máximo de entradas analógicas
+var MAX_DIGITAL = 10; // máximo de entradas digitais
 var coils = [];
 
-function addCoil(){
-  if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; }
-  if(coils.length>=MAX_COILS){ syncSt('Limite de '+MAX_COILS+' coils!','#e24b4a'); return; }
-
-  // Pede o número do coil ao usuário
-  var input = prompt('Número do Coil (1 a '+MAX_COILS+'):');
-  if(input===null) return; // cancelou
-  var num = parseInt(input);
-  if(isNaN(num)||num<1||num>MAX_COILS){
-    syncSt('⚠️ Número inválido! Use entre 1 e '+MAX_COILS,'#e24b4a');
+function addCoil() {
+  if (coils.length >= MAX_COILS) { syncSt('Limite de '+MAX_COILS+' coils atingido!','#e24b4a'); return; }
+  var pins = [2,26,27];
+  coils.push({ nome:'Coil '+String(coils.length+1).padStart(2,'0'), pino:pins[coils.length]||14, estado:false, open:true, msgA:'1', msgD:'0' });
+  renderCoils(); updateMetrics(); renderGeral();
+}
+function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); }
+function allCoils(s) {
+  if (!_esp32Online) {
+    syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
+    setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
     return;
   }
-
-  // Verifica duplicado
-  var duplicado = coils.some(function(c){ return c.numero===num; });
-  if(duplicado){
-    syncSt('⚠️ Coil '+String(num).padStart(2,'0')+' já existe!','#e24b4a');
+  coils.forEach(function(_,i){ setCoil(i,s); });
+}
+function setCoil(i, s) {
+  // Bloqueia se broker desconectado
+  if (!mqclient || !mqclient.connected) {
+    syncSt('MQTT desconectado! Va em Config e clique Conectar.','#e24b4a');
+    setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
     return;
   }
-
-  // Cria coil com número definido pelo usuário
-  coils.push({
-    numero: num,
-    nome:   'Coil '+String(num).padStart(2,'0'),
-    pino:   num,  // referência — pino real definido no firmware
-    estado: false,
-    open:   true,
-    msgA:   '1',
-    msgD:   '0'
-  });
-
-  // Ordena por número do coil
-  coils.sort(function(a,b){ return a.numero - b.numero; });
-
-  renderCoils(); updateMetrics(); renderGeral(); saveLocal();
-  syncSt('Coil '+String(num).padStart(2,'0')+' adicionado!','#3fb950');
-}
-function removeCoil(i){ if(isLocked('coil')){ syncSt('Desbloqueie o card Coils primeiro!','#e24b4a'); return; } coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); saveLocal(); }
-
-function allCoils(s){
-  if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
-  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
-  coils.forEach(function(_,i){ _setCoilInterno(i,s); });
-}
-
-function setCoil(i,s){
-  if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado! Va em Config.','#e24b4a'); return; }
-  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
-  if(coils[i].estado===s){ syncSt('Coil ja esta '+(s?'ACIONADO':'DESACIONADO'),'#8b949e'); return; }
-  _setCoilInterno(i,s);
-}
-
-// Valores que o firmware ESP32 reconhece nativamente
-var MSG_RECONHECIDAS_ON  = ['1','on','liga','true','acionado'];
-var MSG_RECONHECIDAS_OFF = ['0','off','desliga','false','desacionado'];
-
-function _setCoilInterno(i,s){
-  var msg   = s ? coils[i].msgA : coils[i].msgD;
-  var lista = s ? MSG_RECONHECIDAS_ON : MSG_RECONHECIDAS_OFF;
-
-  // Avisa se a msg configurada não é reconhecida pelo firmware padrão
-  if(lista.indexOf(msg.toLowerCase()) === -1){
-    var resp = confirm(
-      '⚠️ ATENÇÃO — Msg ' + (s?'ON':'OFF') + ' configurada: "' + msg + '"\n\n' +
-      'O firmware ESP32 padrão reconhece:\n' +
-      (s ? MSG_RECONHECIDAS_ON.join(', ') : MSG_RECONHECIDAS_OFF.join(', ')) + '\n\n' +
-      'Se o ESP32 não reconhecer esta mensagem,\n' +
-      'ele NÃO confirmará e o estado não mudará.\n\n' +
-      'Deseja publicar mesmo assim?'
-    );
-    if(!resp) return;
+  // Bloqueia se ESP32 offline — não muda estado visual
+  if (!_esp32Online) {
+    syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
+    setTimeout(function(){ syncSt('pronto','#8b949e'); }, 4000);
+    return;
   }
-
-  mqttPub(gct(i,'comando'), msg);
-  syncSt('Comando "'+msg+'" enviado — aguardando confirmacao ESP32...','#ef9f27');
-  setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
+  // ESP32 online: publica comando e aguarda confirmação via coil_XX/estado
+  // Estado visual SÓ é atualizado quando ESP32 confirmar no tópico /estado
+  mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
+  syncSt('Comando enviado — aguardando confirmacao ESP32...','#ef9f27');
+  setTimeout(function(){ syncSt('pronto','#8b949e'); }, 3000);
 }
-
-// Confirmação na aba Geral
-function setCoilGeral(i,s){
-  var nomeAcao = s ? 'LIGAR' : 'DESLIGAR';
-  var nomeCor  = s ? 'green' : 'red';
-  abrirModal(
-    nomeAcao+' '+coils[i].nome,
-    'Confirma o comando '+nomeAcao+' para o coil "'+coils[i].nome+'"?',
-    nomeCor,
-    function(){
-      if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
-      if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
-      mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
-      syncSt('Comando enviado — aguardando confirmacao ESP32...','#ef9f27');
-      setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
-    }
-  );
-}
-
-function toggleCoilPanel(i){
-  coils[i].open=!coils[i].open;
+function toggleCoilPanel(i) {
+  coils[i].open = !coils[i].open;
   var p=document.getElementById('cp-'+i), a=document.getElementById('ca-'+i);
-  if(p) p.style.maxHeight=coils[i].open?'180px':'0';
-  if(a) a.style.transform=coils[i].open?'rotate(90deg)':'rotate(0)';
+  if(p) p.style.maxHeight = coils[i].open ? '180px' : '0';
+  if(a) a.style.transform = coils[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
 
-function validarMsgCoil(idx, campo, novoVal){
-  var outro = campo==='msgA' ? coils[idx].msgD : coils[idx].msgA;
-  if(novoVal===outro){
-    syncSt('⚠️ Msg ON e OFF não podem ser iguais!','#e24b4a');
-    return false;
-  }
-  if(novoVal.trim()===''){
-    syncSt('⚠️ Mensagem não pode ser vazia!','#e24b4a');
-    return false;
-  }
-  return true;
-}
 
-function renderCoils(){
-  var el=document.getElementById('coils-list');
-  var btn=document.getElementById('btn-add-coil');
-  if(btn){ btn.disabled=isLocked('coil'); btn.style.opacity=isLocked('coil')?'0.4':'1'; }
-  if(!el) return;
-  if(!coils.length){ el.innerHTML='<p style="color:#8b949e;font-size:12px;">Nenhum coil. Desbloqueie e clique em + Coil.</p>'; return; }
-  el.innerHTML='';
-  coils.forEach(function(c,i){
-    var tc=gct(i,'comando'), te=gct(i,'estado');
-    var d=document.createElement('div');
-    d.className='icard'+(c.estado?' gon':'')+(isLocked('coil')?' locked-panel':' unlocked-panel');
-    d.innerHTML=
+function renderCoils() {
+
+  var el  = document.getElementById('coils-list');
+  var btn = document.getElementById('btn-add-coil');
+
+  if (btn){
+    btn.disabled = coils.length >= MAX_COILS || CONFIG_LOCKED;
+  }
+
+  if (!el) return;
+
+  if (!coils.length) {
+
+    el.innerHTML =
+      '<p style="color:#8b949e;font-size:12px;">Nenhum coil. Clique em + Coil.</p>';
+
+    return;
+  }
+
+  el.innerHTML = '';
+
+  coils.forEach(function(c, i) {
+
+    var tc = gct(i,'comando');
+    var te = gct(i,'estado');
+
+    var d  = document.createElement('div');
+
+    d.className =
+      'icard'+
+      (c.estado?' gon':'')+
+      (CONFIG_LOCKED?' locked-panel':' unlocked-panel');
+
+    d.innerHTML =
+
       '<div class="row" style="justify-content:space-between;">'
-        +'<div class="row" style="flex:1;">'
-          +'<span class="arr" id="ca-'+i+'" onclick="toggleCoilPanel('+i+')" style="transform:'+(c.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-          +'<div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:'+(c.estado?'#3fb950':'#2a3040')+';box-shadow:'+(c.estado?'0 0 6px #3fb950':'none')+';transition:all .3s;"></div>'
-          +'<div onclick="toggleCoilPanel('+i+')" style="cursor:pointer;flex:1;">'
-            +'<div class="row">'
-              +'<span style="font-size:13px;font-weight:500;color:'+(c.estado?'#7ee787':'#e8eaf0')+';" id="cn-'+i+'">'+c.nome+'</span>'
-              +'<span class="chip" style="background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;"> coil_'+String(c.numero||i+1).padStart(2,'0')+'</span>'
-              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
-            +'</div>'
-            +'<div style="font-size:11px;color:#8b949e;margin-top:2px;">pub: <code style="color:#79c0ff;">'+tc+'</code></div>'
-          +'</div>'
-        +'</div>'
-        +'<div class="row">'
-          +'<button class="btn-g'+(c.estado?' on':'')+'" onclick="setCoil('+i+',true)">&#11014; LIGA</button>'
-          +'<button class="btn-r'+(!c.estado?' on':'')+'" onclick="setCoil('+i+',false)">&#11015; DESLIGA</button>'
-          +(!isLocked('coil')?'<button class="btn-del" onclick="removeCoil('+i+')">&#10005;</button>':'')
-        +'</div>'
-      +'</div>'
-      +'<div class="slide" id="cp-'+i+'" style="max-height:'+(c.open?'180px':'0')+';overflow:hidden;">'
-        +'<div class="sep"></div>'
-        +'<div class="grid4">'
-          +'<div class="col"><label class="lbl">Num Coil</label>'
-            +'<input type="number" '+(isLocked('coil')?'readonly ':'')+' value="'+(c.numero||i+1)+'" min="1" max="'+MAX_COILS+'" style="width:55px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)||nv<1){this.value=coils['+i+'].numero;return;}var dup=coils.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){this.value=coils['+i+'].numero;return;}coils['+i+'].numero=nv;coils.sort(function(a,b){return a.numero-b.numero;});renderCoils();saveLocal();">'
-          +'</div>'
-          +'<div class="col"><label class="lbl">Nome</label>'
-            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'
-          +'</div>'
-          +'<div class="col"><label class="lbl">Msg ON</label>'
-            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.msgA+'" style="width:55px;" oninput="'
-              +'if(!validarMsgCoil('+i+',\'msgA\',this.value)){this.value=coils['+i+'].msgA;return;}'
-              +'coils['+i+'].msgA=this.value;saveLocal();">'
-          +'</div>'
-          +'<div class="col"><label class="lbl">Msg OFF</label>'
-            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+' value="'+c.msgD+'" style="width:55px;" oninput="'
-              +'if(!validarMsgCoil('+i+',\'msgD\',this.value)){this.value=coils['+i+'].msgD;return;}'
-              +'coils['+i+'].msgD=this.value;saveLocal();">'
-          +'</div>'
-        +'</div>'
-        +'<div style="font-size:11px;color:#8b949e;margin-top:8px;">sub estado: <code style="color:#79c0ff;">'+te+'</code></div>'
-      +'</div>';
-    el.appendChild(d);
-  });
-}
 
-// ════════════════════════════════════════════════
+        +'<div class="row" style="flex:1;">'
+
+          +'<span class="arr" id="ca-'+i+'" onclick="toggleCoilPanel('+i+')" style="transform:'+(c.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
+
+          +'<div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:'+(c.estado?'#3fb950':'#2a3040')+';box-shadow:'+(c.estado?'0 0 6px #3fb950':'none')+';transition:all .3s;"></div>'
+
+          +'<div onclick="toggleCoilPanel('+i+')" style="cursor:pointer;flex:1;">'
+
+            +'<div class="row">'
+
+              +'<span style="font-size:13px;font-weight:500;color:'+(c.estado?'#7ee787':'#e8eaf0')+';" id="cn-'+i+'">'+c.nome+'</span>'
+
+              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';"> pino '+c.pino+'</span>'
+
+              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
+
+            +'</div>'
+
+            +'<div style="font-size:11px;color:#8b949e;margin-top:2px;">'
+              +'pub: <code style="color:#79c0ff;">'+tc+'</code>'
+            +'</div>'
+
+          +'</div>'
+
+        +'</div>'
+
+        +'<div class="row">'
+
+          +'<button class="btn-g'+(c.estado?' on':'')+'" onclick="setCoil('+i+',true)">&#11014; LIGA</button>'
+
+          +'<button class="btn-r'+(!c.estado?' on':'')+'" onclick="setCoil('+i+',false)">&#11015; DESLIGA</button>'
+
+          +(
+            !CONFIG_LOCKED
+            ? '<button class="btn-del" onclick="removeCoil('+i+')">&#10005;</button>'
+            : ''
+          )
+
+        +'</div>'
+
+      +'</div>'
+
+      +'<div class="slide" id="cp-'+i+'" style="max-height:'+(c.open?'180px':'0')+';overflow:hidden;">'
+
+        +'<div class="sep"></div>'
+
+        +'<div class="grid4">'
+
+          +'<div class="col">'
+
+            +'<label class="lbl">Nome</label>'
+
+            +'<input type="text" '
+
+              +(CONFIG_LOCKED?'readonly ':'')+
+
+              'value="'+c.nome+'" '
+
+              +'oninput="'
+                +'coils['+i+'].nome=this.value;'
+                +'var e=document.getElementById(\'cn-'+i+'\');'
+                +'if(e)e.textContent=this.value;'
+              +'">'
+
+          +'</div>'
+
+          +'<div class="col">'
+
+            +'<label class="lbl">Pino</label>'
+
+            +'<input type="text" '
+
+              +(CONFIG_LOCKED?'readonly ':'')+
+
+              'value="'+c.pino+'" '
+
+              +'style="width:55px;" '
+
+              +'oninput="'
+                +'coils['+i+'].pino=parseInt(this.value)||2;'
+                +'saveLocal();'
+              +'">'
+
+          +'</div>'
+
+          +'<div class="col">'
+
+            +'<label class="lbl">Msg ON</label>'
+
+            +'<input type="text" '
+
+              +(CONFIG_LOCKED?'readonly ':'')+
+
+              'value="'+c.msgA+'" '
+
+              +'style="width:55px;" '
+
+              +'oninput="'
+
+                +'if(this.value===coils['+i+'].msgD){'
+
+                  +'alert(\'Msg ON e OFF nao podem ser iguais\');'
+
+                  +'this.value=coils['+i+'].msgA;'
+
+                  +'return;'
+
+                +'}'
+
+                +'coils['+i+'].msgA=this.value;'
+
+                +'saveLocal();'
+
+              +'">'
+
+          +'</div>'
+
+          +'<div class="col">'
+
+            +'<label class="lbl">Msg OFF</label>'
+
+            +'<input type="text" '
+
+              +(CONFIG_LOCKED?'readonly ':'')+
+
+              'value="'+c.msgD+'" '
+
+              +'style="width:55px;" '
+
+              +'oninput="'
+
+                +'if(this.value===coils['+i+'].msgA){'
+
+                  +'alert(\'Msg ON e OFF nao podem ser iguais\');'
+
+                  +'this.value=coils['+i+'].msgD;'
+
+                  +'return;'
+
+                +'}'
+
+                +'coils['+i+'].msgD=this.value;'
+
+                +'saveLocal();'
+
+              +'">'
+
+          +'</div>'
+
+        +'</div>'
+
+        +'<div style="font-size:11px;color:#8b949e;margin-top:8px;">'
+
+          +'sub estado: <code style="color:#79c0ff;">'+te+'</code>'
+
+        +'</div>'
+
+      +'</div>';
+
+    el.appendChild(d);
+
+  });
+}// ════════════════════════════════════════════════
 // MONITORAMENTO
 // ════════════════════════════════════════════════
+var UNIDS = ['V','C','F','bar','psi','%','A','W','Hz','rpm','lux','pH'];
+var mons  = [];
 
-function recalcularEstadoDigital(i) {
-  var m = mons[i];
-  if (!m || m.tipo !== 'digital') return;
-  // Usa o último valor bruto recebido para recalcular com o novo valT
-  var ultimoValor = m._ultimoValorBruto;
-  if (ultimoValor === undefined) return; // ainda não recebeu nenhum valor
-  var novoEstado = (ultimoValor === m.valT.toLowerCase());
-  m.estado = novoEstado;
-  renderMons();
-  renderGeral();
-  checkSPs();
-}
-var UNIDS=['V','C','F','bar','psi','%','A','W','Hz','rpm','lux','pH'];
-var mons=[];
-
-function vcolor(v,mi,ma){
-  var p=(v-mi)/(ma-mi||1);
-  return p<0.15||p>0.9?'#e24b4a':p<0.3||p>0.75?'#ef9f27':'#3fb950';
+function vcolor(v, mi, ma) {
+  var p = (v-mi)/(ma-mi||1);
+  return p<0.15||p>0.9 ? '#e24b4a' : p<0.3||p>0.75 ? '#ef9f27' : '#3fb950';
 }
 
-function addMon(tipo){
-  if(isLocked('mon')){ syncSt('Desbloqueie o card Mon primeiro!','#e24b4a'); return; }
-  var totalA=mons.filter(function(m){ return m.tipo==='analog'; }).length;
-  var totalD=mons.filter(function(m){ return m.tipo==='digital'; }).length;
-  if(tipo==='analog'&&totalA>=MAX_ANALOG){ syncSt('Limite de '+MAX_ANALOG+' analogicas!','#e24b4a'); return; }
-  if(tipo==='digital'&&totalD>=MAX_DIGITAL){ syncSt('Limite de '+MAX_DIGITAL+' digitais!','#e24b4a'); return; }
-  var i=mons.length, base=getBase();
+function addMon(tipo) {
+  // Verifica limites
+  var totalAnalog  = mons.filter(function(m){ return m.tipo==='analog'; }).length;
+  var totalDigital = mons.filter(function(m){ return m.tipo==='digital'; }).length;
+  if (tipo==='analog'  && totalAnalog  >= MAX_ANALOG)  { syncSt('Limite de '+MAX_ANALOG+' analogicas atingido!','#e24b4a'); return; }
+  if (tipo==='digital' && totalDigital >= MAX_DIGITAL) { syncSt('Limite de '+MAX_DIGITAL+' digitais atingido!','#e24b4a'); return; }
+  var i = mons.length, base = getBase();
   mons.push(tipo==='analog'
-    ?(function(){ var an='an'+String(mons.filter(function(x){return x.tipo==='analog';}).length+1).padStart(2,'0'); return {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:an, unid:'V', min:0, max:3.3, val:0, open:true}; })()
-    :(function(){var sn='sn'+String(mons.filter(function(x){return x.tipo==='digital';}).length+1).padStart(2,'0'); return {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/'+sn, jsonKey:sn, valT:'1', valF:'0', estado:false, open:true}; })()
+    ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
+    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true}
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
-  if(mqclient&&mqclient.connected) mqclient.subscribe(mons[i].topico,{qos:1});
-  saveLocal();
+  if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
 }
-
-function removeMon(i){
-  if(isLocked('mon')){ syncSt('Desbloqueie o card Mon primeiro!','#e24b4a'); return; }
-  mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral(); saveLocal();
-}
-
-function toggleMonPanel(i){
-  mons[i].open=!mons[i].open;
+function removeMon(i) { mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral(); }
+function toggleMonPanel(i) {
+  mons[i].open = !mons[i].open;
   var p=document.getElementById('mp-'+i), a=document.getElementById('ma-'+i);
-  if(p) p.style.maxHeight=mons[i].open?'280px':'0';
-  if(a) a.style.transform=mons[i].open?'rotate(90deg)':'rotate(0)';
+  if(p) p.style.maxHeight = mons[i].open ? '280px' : '0';
+  if(a) a.style.transform = mons[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
 
-function renderMons(){
-  document.getElementById('m-mon').textContent=mons.length;
-  var el=document.getElementById('mon-list');
-  if(!el) return;
-  if(!mons.length){ el.innerHTML='<p style="color:#8b949e;font-size:12px;">Nenhuma entrada.</p>'; return; }
-  el.innerHTML='';
-  mons.forEach(function(m,i){
-    var d=document.createElement('div');
-    d.className='icard'+(isLocked('mon')?' locked-panel':' unlocked-panel');
-    if(m.tipo==='analog'){
-      var pct=Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
-      var gc=vcolor(m.val,m.min,m.max);
-      d.innerHTML=
+function renderMons() {
+  document.getElementById('m-mon').textContent = mons.length;
+  var el = document.getElementById('mon-list');
+  if (!el) return;
+  if (!mons.length) { el.innerHTML='<p style="color:#8b949e;font-size:12px;">Nenhuma entrada.</p>'; return; }
+  el.innerHTML = '';
+  mons.forEach(function(m, i) {
+    var d = document.createElement('div');
+    d.className = 'icard';
+    if (m.tipo === 'analog') {
+      var pct = Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
+      var gc  = vcolor(m.val, m.min, m.max);
+      d.innerHTML =
         '<div class="row" style="justify-content:space-between;">'
-          +'<div class="row" style="flex:1;">'
-            +'<span class="arr" id="ma-'+i+'" onclick="toggleMonPanel('+i+')" style="transform:'+(m.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-            +'<div onclick="toggleMonPanel('+i+')" style="cursor:pointer;flex:1;">'
-              +'<div class="row"><span style="font-size:13px;font-weight:500;" id="mn-'+i+'">'+m.nome+'</span>'
-              +'<span class="chip" style="background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;">ANALOGICA</span>'
-              +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span></div>'
-              +'<div class="row" style="margin-top:4px;align-items:baseline;gap:4px;">'
-                +'<span style="font-size:26px;font-weight:500;line-height:1;" id="mv-'+i+'">'+m.val.toFixed(2)+'</span>'
-                +'<span style="font-size:13px;color:#8b949e;" id="mu-'+i+'">'+m.unid+'</span>'
-              +'</div>'
-              +'<div class="gb"><div class="gf" id="mb-'+i+'" style="width:'+pct.toFixed(1)+'%;background:'+gc+';"></div></div>'
-            +'</div>'
-          +'</div>'
-          +(!isLocked('mon')?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
+         +'<div class="row" style="flex:1;">'
+           +'<span class="arr" id="ma-'+i+'" onclick="toggleMonPanel('+i+')" style="transform:'+(m.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
+           +'<div onclick="toggleMonPanel('+i+')" style="cursor:pointer;flex:1;">'
+             +'<div class="row"><span style="font-size:13px;font-weight:500;" id="mn-'+i+'">'+m.nome+'</span>'
+             +'<span class="chip" style="background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;">ANALOGICA</span>'
+             +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span></div>'
+             +'<div class="row" style="margin-top:4px;align-items:baseline;gap:4px;">'
+               +'<span style="font-size:26px;font-weight:500;line-height:1;" id="mv-'+i+'">'+m.val.toFixed(2)+'</span>'
+               +'<span style="font-size:13px;color:#8b949e;" id="mu-'+i+'">'+m.unid+'</span>'
+             +'</div>'
+             +'<div class="gb"><div class="gf" id="mb-'+i+'" style="width:'+pct.toFixed(1)+'%;background:'+gc+';"></div></div>'
+           +'</div>'
+         +'</div>'
+         +(
+  !CONFIG_LOCKED
+  ? '<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>'
+  : ''
+)
         +'</div>'
         +'<div class="slide" id="mp-'+i+'" style="max-height:'+(m.open?'280px':'0')+';overflow:hidden;">'
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
-            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Unidade</label><select '+(isLocked('mon')?'disabled ':'')+' onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;saveLocal();">'+UNIDS.map(function(u){ return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>'; }).join('')+'</select></div>'
-            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
+            +'<div class="col"><label class="lbl">Unidade</label><select onchange="mons['+i+'].unid=this.value;var e=document.getElementById(\'mu-'+i+'\');if(e)e.textContent=this.value;">'+UNIDS.map(function(u){return '<option'+(u===m.unid?' selected':'')+'>'+u+'</option>';}).join('')+'</select></div>'
+            +'<div class="col"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
           +'</div>'
-          +'<div class="row">'
-            +'<div class="col"><label class="lbl">Min</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Max</label><input type="number" '+(isLocked('mon')?'readonly ':'')+' value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div>'
-          +'</div>'
+          +'<div class="row"><div class="col"><label class="lbl">Min</label><input type="number" '+(CONFIG_LOCKED?'readonly ':'')+' value="'+m.min+'" style="width:60px;" oninput="mons['+i+'].min=parseFloat(this.value)||0;"></div>'
+          +'<div class="col"><label class="lbl">Max</label><input type="number" value="'+m.max+'" style="width:60px;" oninput="mons['+i+'].max=parseFloat(this.value)||100;saveLocal();"></div></div>'
         +'</div>';
     } else {
-      var sc=m.estado?{bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'}:{bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
-      d.innerHTML=
+      var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
+      d.innerHTML =
         '<div class="row" style="justify-content:space-between;">'
-          +'<div class="row" style="flex:1;">'
-            +'<span class="arr" id="ma-'+i+'" onclick="toggleMonPanel('+i+')" style="transform:'+(m.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-            +'<div onclick="toggleMonPanel('+i+')" style="cursor:pointer;">'
-              +'<div class="row"><span style="font-size:13px;font-weight:500;" id="mn-'+i+'">'+m.nome+'</span>'
-              +'<span class="chip" style="background:#2d2010;color:#ffc060;border:0.5px solid #ef9f27;">DIGITAL</span>'
-              +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span></div>'
-              +'<div class="row" style="margin-top:6px;">'
-                +'<span style="font-size:16px;font-weight:500;padding:2px 10px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?'HIGH':'LOW')+'</span>'
-                +'<span style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
-  
-              +'</div>'
-            +'</div>'
-          +'</div>'
-          +(!isLocked('mon')?'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>':'')
+         +'<div class="row" style="flex:1;">'
+           +'<span class="arr" id="ma-'+i+'" onclick="toggleMonPanel('+i+')" style="transform:'+(m.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
+           +'<div onclick="toggleMonPanel('+i+')" style="cursor:pointer;">'
+             +'<div class="row"><span style="font-size:13px;font-weight:500;" id="mn-'+i+'">'+m.nome+'</span>'
+             +'<span class="chip" style="background:#2d2010;color:#ffc060;border:0.5px solid #ef9f27;">DIGITAL</span>'
+             +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span></div>'
+             +'<div class="row" style="margin-top:6px;">'
+               +'<span style="font-size:16px;font-weight:500;padding:2px 10px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?'HIGH':'LOW')+'</span>'
+               +'<span style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
+               +'<button class="btn-sm" onclick="mons['+i+'].estado=!mons['+i+'].estado;renderMons();checkSPs();">simular</button>'
+             +'</div>'
+           +'</div>'
+         +'</div>'
+         +'<button class="btn-del" onclick="removeMon('+i+')">&#10005;</button>'
         +'</div>'
         +'<div class="slide" id="mp-'+i+'" style="max-height:'+(m.open?'220px':'0')+';overflow:hidden;">'
           +'<div class="sep"></div>'
           +'<div class="grid2" style="margin-bottom:8px;">'
-            +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
-            +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
+            +'<div class="col"><label class="lbl">Nome</label><input type="text" value="'+m.nome+'" oninput="mons['+i+'].nome=this.value;var e=document.getElementById(\'mn-'+i+'\');if(e)e.textContent=this.value;updateSpSels();"></div>'
+            +'<div class="col"><label class="lbl">Chave JSON</label><input type="text" value="'+m.jsonKey+'" oninput="mons['+i+'].jsonKey=this.value;var e=document.getElementById(\'mjk-'+i+'\');if(e)e.textContent=this.value;"></div>'
+            +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Topico subscribe</label><input type="text" value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;"></div>'
           +'</div>'
-          +'<div class="row">'
-            +'<div class="col"><label class="lbl">Valor HIGH</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;recalcularEstadoDigital('+i+');saveLocal();"></div>'
-            +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" '+(isLocked('mon')?'readonly ':'')+' value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;recalcularEstadoDigital('+i+');saveLocal();"></div>'
-          +'</div>'
+          +'<div class="row"><div class="col"><label class="lbl">Valor HIGH</label><input type="text" value="'+m.valT+'" style="width:65px;" oninput="mons['+i+'].valT=this.value;"></div>'
+          +'<div class="col"><label class="lbl">Valor LOW</label><input type="text" value="'+m.valF+'" style="width:65px;" oninput="mons['+i+'].valF=this.value;saveLocal();"></div></div>'
         +'</div>';
     }
     el.appendChild(d);
@@ -1855,7 +1441,7 @@ function renderMons(){
 // ════════════════════════════════════════════════
 // SET POINTS
 // ════════════════════════════════════════════════
-var CORES=[
+var CORES = [
   {l:'Vermelho',bg:'#3d1a1a',bd:'#e24b4a',tx:'#ffa0a0'},
   {l:'Ambar',   bg:'#2d2010',bd:'#ef9f27',tx:'#ffc060'},
   {l:'Verde',   bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'},
@@ -1865,265 +1451,348 @@ var CORES=[
   {l:'Teal',    bg:'#0a2520',bd:'#1d9e75',tx:'#56d364'},
   {l:'Coral',   bg:'#2d1508',bd:'#d85a30',tx:'#ffa070'}
 ];
-var TIPOS=['Histerese','Janela'];
-var ACOES=['Dashboard','MQTT','Dashboard+MQTT'];
-var qty=0;
-var sps=[];  // dinâmico — igual aos coils
-
-
+var TIPOS = ['Histerese','Janela'];
+var ACOES = ['Dashboard','MQTT','Dashboard+MQTT'];
+var qty = 2;
+var sps = Array.from({length:10}, function(_,i){
+  return {nome:'SP'+String(i+1).padStart(2,'0'), tipo:0, monIdx:-1, min:0.5+i*0.3, max:1.0+i*0.3, cor:i%CORES.length, acao:1, msgA:'1', msgD:'0', estado:false, open:false};
+});
 
 var MAX_SPS = 10;
+
+function setQty(v) {
+  qty = parseInt(v);
+  document.getElementById('qty-lbl').textContent = qty;
+  document.getElementById('m-sp').textContent = qty;
+  renderSPs();
+}
+
+function atualizarQtyLabel(){
+  document.getElementById('qty-lbl').textContent = sps.length;
+  document.getElementById('m-sp').textContent = sps.length;
+}
 
 function addSP(){
   if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
   if(sps.length>=MAX_SPS){ syncSt('Limite de '+MAX_SPS+' set points!','#e24b4a'); return; }
-
   var input = prompt('Número do Set Point (1 a '+MAX_SPS+'):');
   if(input===null) return;
   var num = parseInt(input);
-  if(isNaN(num)||num<1||num>MAX_SPS){
-    syncSt('⚠️ Número inválido! Use entre 1 e '+MAX_SPS,'#e24b4a');
-    return;
-  }
-  var duplicado = sps.some(function(s){ return s.numero===num; });
-  if(duplicado){
-    syncSt('⚠️ SP '+String(num).padStart(2,'0')+' já existe!','#e24b4a');
-    return;
-  }
-
-  sps.push({
-    numero:  num,
-    nome:    'SP'+String(num).padStart(2,'0'),
-    tipo:    0,
-    monIdx:  -1,
-    min:     0.5,
-    max:     1.0,
-    cor:     sps.length % CORES.length,
-    acao:    1,
-    msgA:    '1',
-    msgD:    '0',
-    estado:  false,
-    open:    false,
-    _ultimoComando: null
-  });
-
+  if(isNaN(num)||num<1||num>MAX_SPS){ syncSt('Número inválido!','#e24b4a'); return; }
+  if(sps.some(function(s){ return s.numero===num; })){ syncSt('SP'+String(num).padStart(2,'0')+' já existe!','#e24b4a'); return; }
+  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,min:0.5,max:1.0,cor:sps.length%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:false,_ultimoComando:null});
   sps.sort(function(a,b){ return a.numero-b.numero; });
-  qty = sps.length;
-  atualizarQtyLabel();
-  renderSPs(); saveLocal();
-  syncSt('SP '+String(num).padStart(2,'0')+' adicionado!','#3fb950');
+  qty=sps.length; atualizarQtyLabel(); renderSPs(); saveLocal();
 }
 
 function removeSP(i){
   if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
-  sps.splice(i,1);
-  qty = sps.length;
-  atualizarQtyLabel();
-  renderSPs(); updateMetrics(); renderGeral(); saveLocal();
+  sps.splice(i,1); qty=sps.length; atualizarQtyLabel(); renderSPs(); updateMetrics(); renderGeral(); saveLocal();
 }
-
-function atualizarQtyLabel(){
-  var el = document.getElementById('qty-lbl');
-  if(el) el.textContent = qty;
-  document.getElementById('m-sp').textContent = qty;
-}
-
-function changeQty(delta){ // mantido para compatibilidade
-  if(delta>0) addSP(); else if(sps.length>0) removeSP(sps.length-1);
-}
-
-function updateSpSels(){
-  for(var i=0;i<sps.length;i++){
-    var s=document.getElementById('msel-'+i);
-    if(!s) continue;
-    var cur=spItem.monIdx;
-    s.innerHTML='<option value="-1">-- escolher --</option>'
-      +mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===cur?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
+function updateSpSels() {
+  for (var i=0; i<qty; i++) {
+    var s = document.getElementById('msel-'+i);
+    if (!s) continue;
+    var cur = sps[i].monIdx;
+    s.innerHTML = '<option value="-1">-- escolher --</option>'
+      + mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===cur?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
   }
 }
-function toggleSP(i){
-  if(!sps[i]) return;
-  sps[i].open=!sps[i].open;
+function toggleSP(i) {
+  sps[i].open = !sps[i].open;
   var p=document.getElementById('spp-'+i), a=document.getElementById('spa-'+i);
-  if(p) p.style.maxHeight=sps[i].open?'440px':'0';
-  if(a) a.style.transform=sps[i].open?'rotate(90deg)':'rotate(0)';
+  if(p) p.style.maxHeight = sps[i].open ? '420px' : '0';
+  if(a) a.style.transform = sps[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
-function refreshSPBadge(i){
-  if(!sps[i]) return;
+function toggleSPBlocks(i) {
+  var h=document.getElementById('hist-'+i), j=document.getElementById('jan-'+i);
+  if(h) h.style.display = sps[i].tipo===0 ? 'flex' : 'none';
+  if(j) j.style.display = sps[i].tipo===1 ? 'flex' : 'none';
+}
+function toggleSPMqtt(i) {
+  var m=document.getElementById('smqtt-'+i);
+  if(m) m.style.display = sps[i].acao>0 ? 'flex' : 'none';
+}
+function refreshSPBadge(i) {
   var c=CORES[sps[i].cor], b=document.getElementById('spb-'+i);
   if(b){ b.style.background=c.bg; b.style.color=c.tx; b.style.border='0.5px solid '+c.bd; }
   checkSPs();
 }
-function updateSPSum(i){
-  if(!sps[i]) return;
+function updateSPSum(i) {
   var m=mons[sps[i].monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
-  if(sl) sl.textContent=m?TIPOS[sps[i].tipo]+' · '+m.nome+' · '+sps[i].min.toFixed(2)+'-'+sps[i].max.toFixed(2)+' '+(m.unid||''):'sem entrada';
-  if(ml) ml.textContent=sps[i].acao>0?'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"':'';
+  if(sl) sl.textContent = m ? TIPOS[sps[i].tipo]+' · '+m.nome+' · '+sps[i].min.toFixed(2)+'-'+sps[i].max.toFixed(2)+' '+(m.unid||'') : 'sem entrada';
+  if(ml) ml.textContent = sps[i].acao>0 ? 'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"' : '';
 }
 
-function renderSPs(){
-  var list=document.getElementById('sp-list');
-  if(!list) return;
-  list.innerHTML='';
-  sps.forEach(function(spItem, i){
-    var c=CORES[spItem.cor], curM=mons[spItem.monIdx];
-    var mn=curM?curM.min:0, mx=curM?curM.max:3.3, un=curM?curM.unid:'';
-    var top=gst(i,'comando'), topE=gst(i,'estado');
-    var cOpts=CORES.map(function(cc,ci){ return '<option value="'+ci+'"'+(ci===spItem.cor?' selected':'')+'>'+cc.l+'</option>'; }).join('');
-    var aOpts=ACOES.map(function(a,ai){ return '<option value="'+ai+'"'+(ai===spItem.acao?' selected':'')+'>'+a+'</option>'; }).join('');
-    var tOpts=TIPOS.map(function(t,ti){ return '<option value="'+ti+'"'+(ti===spItem.tipo?' selected':'')+'>'+t+'</option>'; }).join('');
-    var mOpts='<option value="-1">-- escolher --</option>'+mons.map(function(m,mi){ return '<option value="'+mi+'"'+(mi===spItem.monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>'; }).join('');
-    var d=document.createElement('div');
-    d.className='icard'+(isLocked('mon')?' locked-panel':' unlocked-panel');
+function renderSPs() {
+
+  var list = document.getElementById('sp-list');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  for (var i=0; i<qty; i++) {
+
+    var c    = CORES[sps[i].cor];
+    var curM = mons[sps[i].monIdx];
+
+    var mn = curM ? curM.min : 0;
+    var mx = curM ? curM.max : 3.3;
+    var un = curM ? curM.unid : '';
+
+    var top  = gst(i,'comando');
+    var topE = gst(i,'estado');
+
+    var cOpts = CORES.map(function(cc,ci){
+      return '<option value="'+ci+'"'+(ci===sps[i].cor?' selected':'')+'>'+cc.l+'</option>';
+    }).join('');
+
+    var aOpts = ACOES.map(function(a,ai){
+      return '<option value="'+ai+'"'+(ai===sps[i].acao?' selected':'')+'>'+a+'</option>';
+    }).join('');
+
+    var tOpts = TIPOS.map(function(t,ti){
+      return '<option value="'+ti+'"'+(ti===sps[i].tipo?' selected':'')+'>'+t+'</option>';
+    }).join('');
+
+    var mOpts =
+      '<option value="-1">-- escolher --</option>' +
+      mons.map(function(m,mi){
+        return '<option value="'+mi+'"'+(mi===sps[i].monIdx?' selected':'')+'>'+m.nome+' ['+m.tipo+']</option>';
+      }).join('');
+
+    var d = document.createElement('div');
+
+    d.className='icard';
     d.id='spc-'+i;
-    d.innerHTML=
+
+    d.innerHTML =
+
       '<div class="row" style="justify-content:space-between;">'
+
         +'<div class="row">'
-          +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(spItem.open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
-          +'<div style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(spItem.numero||i+1)+'</div>'
+
+          +'<span class="arr" id="spa-'+i+'" onclick="toggleSP('+i+')" style="transform:'+(sps[i].open?'rotate(90deg)':'rotate(0)')+'">&#9654;</span>'
+
+          +'<div style="width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;cursor:pointer;background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';" id="spb-'+i+'" onclick="toggleSP('+i+')">'+(i+1)+'</div>'
+
           +'<div onclick="toggleSP('+i+')" style="cursor:pointer;">'
+
             +'<div class="row">'
-              +'<span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+spItem.nome+'</span>'
-              +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+(curM?TIPOS[spItem.tipo]+' · '+curM.nome:'sem entrada')+'</span>'
+
+              +'<span style="font-size:13px;font-weight:500;" id="spn-'+i+'">'+sps[i].nome+'</span>'
+
+              +'<span style="font-size:11px;color:#8b949e;" id="sps-'+i+'">'+
+                (curM ? TIPOS[sps[i].tipo]+' · '+curM.nome : 'sem entrada')+
+              '</span>'
+
             +'</div>'
-            +'<div style="font-size:11px;color:#8b949e;margin-top:1px;" id="spm-'+i+'">pub: <code style="color:#79c0ff;">'+top+'</code></div>'
+
+            +'<div style="font-size:11px;color:#8b949e;margin-top:1px;" id="spm-'+i+'">'
+              +'pub: <code style="color:#79c0ff;">'+top+'</code>'
+            +'</div>'
+
           +'</div>'
+
         +'</div>'
-        +'<div class="row" style="gap:6px;">'
-          +'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
-          +(!isLocked('sp')?'<button class="btn-del" onclick="removeSP('+i+')" title="Remover SP">&#10005;</button>':'')
-        +'</div>'
+
+	+'<div class="row" style="gap:6px;">'
+
+  	+'<span class="tag" id="sptag-'+i+'" style="background:#21262d;color:#8b949e;">aguardando</span>'
+
+  	+(i===0
+    ? '<button onclick="toggleConfig()" id="btn-unlock-sp" '
+      +'style="'
+      +'background:'+(CONFIG_LOCKED?'#e24b4a':'#238636')+';'
+      +'color:white;'
+      +'border:none;'
+      +'padding:5px 10px;'
+      +'border-radius:8px;'
+      +'cursor:pointer;'
+      +'font-size:11px;'
+      +'font-weight:600;'
+      +'">'
+      +(CONFIG_LOCKED?'🔒 LOCKED':'🔓 UNLOCKED')
+      +'</button>'
+    : ''
+  )
+
       +'</div>'
-      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(spItem.open?'440px':'0')+';overflow:hidden;">'
+
+      +'<div class="slide" id="spp-'+i+'" style="max-height:'+(sps[i].open?'420px':'0')+';overflow:hidden;">'
+
         +'<div class="sep"></div>'
+
         +'<div class="row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-          +'<div class="col"><label class="lbl">Nº SP</label><input type="number" '+(isLocked('sp')?'readonly ':'')+' value="'+(spItem.numero||i+1)+'" min="1" max="'+MAX_SPS+'" style="width:50px;" oninput="var nv=parseInt(this.value);if(isNaN(nv)){this.value=sps['+i+'].numero;return;}var dup=sps.some(function(x,xi){return xi!=='+i+' && x.numero===nv;});if(dup){syncSt(\'Já existe!\',\'#e24b4a\');this.value=sps['+i+'].numero;return;}sps['+i+'].numero=nv;sps.sort(function(a,b){return a.numero-b.numero;});renderSPs();saveLocal();"></div>'
-          +'<div class="col"><label class="lbl">Nome</label><input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
-          +'<div class="col"><label class="lbl">Entrada</label><select '+(isLocked('sp')?'disabled ':'')+' id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();saveLocal();">'+mOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Tipo</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');saveLocal();">'+tOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Cor</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');saveLocal();">'+cOpts+'</select></div>'
-          +'<div class="col"><label class="lbl">Acao</label><select '+(isLocked('sp')?'disabled ':'')+' onchange="sps['+i+'].acao=parseInt(this.value);updateSPSum('+i+');saveLocal();">'+aOpts+'</select></div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Nome</label>'
+            +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].nome+'" style="width:75px;" oninput="sps['+i+'].nome=this.value;var e=document.getElementById(\'spn-'+i+'\');if(e)e.textContent=this.value;">'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Entrada</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'id="msel-'+i+'" onchange="sps['+i+'].monIdx=parseInt(this.value);updateSPSum('+i+');checkSPs();">'
+              +mOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Tipo</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'
+              +tOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Cor</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].cor=parseInt(this.value);refreshSPBadge('+i+');">'
+              +cOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Acao</label>'
+            +'<select '+(CONFIG_LOCKED?'disabled ':'')+'onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'
+              +aOpts+
+            '</select>'
+          +'</div>'
+
         +'</div>'
-        +'<div id="hist-'+i+'" style="display:'+(spItem.tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
-          +'<div class="col"><label class="lbl">Min — desaciona</label>'
+
+        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
+
+          +'<div class="col">'
+            +'<label class="lbl">Min — desaciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+spItem.min.toFixed(2)+' '+un+'</span>'
+
+              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
+
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hmv-'+i+'">'+sps[i].min.toFixed(2)+' '+un+'</span>'
+
             +'</div>'
           +'</div>'
-          +'<div class="col"><label class="lbl">Max — aciona</label>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Max — aciona</label>'
             +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+spItem.max.toFixed(2)+' '+un+'</span>'
+
+              +'<input type="range" '+(CONFIG_LOCKED?'disabled ':'')+'min="'+mn+'" max="'+mx+'" step="0.01" value="'+sps[i].max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' \'+(mons[sps['+i+'].monIdx]?mons[sps['+i+'].monIdx].unid:\'\');updateSPSum('+i+');checkSPs();">'
+
+              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="hxv-'+i+'">'+sps[i].max.toFixed(2)+' '+un+'</span>'
+
             +'</div>'
           +'</div>'
+
         +'</div>'
-        +'<div id="jan-'+i+'" style="display:'+(spItem.tipo===1?'flex':'none')+';gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">'
-          +'<div class="col"><label class="lbl">Limite Inferior</label>'
-            +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'jmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jmv-'+i+'">'+spItem.min.toFixed(2)+'</span>'
-            +'</div>'
-          +'</div>'
-          +'<div class="col"><label class="lbl">Limite Superior</label>'
-            +'<div class="row" style="gap:6px;">'
-              +'<input type="range" '+(isLocked('sp')?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+spItem.max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'jxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2);updateSPSum('+i+');checkSPs();saveLocal();">'
-              +'<span style="font-size:12px;font-weight:500;color:#e8eaf0;" id="jxv-'+i+'">'+spItem.max.toFixed(2)+'</span>'
-            +'</div>'
-          +'</div>'
-        +'</div>'
+
         +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+
           +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagens de Acionamento</div>'
+
           +'<div class="grid2" style="gap:8px;margin-bottom:6px;">'
-            +'<div class="col"><label class="lbl">&#128308; Msg ON</label>'
-              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.msgA+'" oninput="'
-                +'if(this.value===sps['+i+'].msgD){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
-                +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgA;return;}'
-                +'sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();">'
+
+            +'<div class="col">'
+              +'<label class="lbl">&#128308; Msg ON — acionado</label>'
+              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].msgA+'" oninput="sps['+i+'].msgA=this.value;updateSPSum('+i+');saveLocal();">'
             +'</div>'
-            +'<div class="col"><label class="lbl">&#9898; Msg OFF</label>'
-              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+' value="'+spItem.msgD+'" oninput="'
-                +'if(this.value===sps['+i+'].msgA){syncSt(\'Msg ON e OFF não podem ser iguais!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
-                +'if(this.value.trim()===\'\'){syncSt(\'Mensagem não pode ser vazia!\',\'#e24b4a\');this.value=sps['+i+'].msgD;return;}'
-                +'sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
+
+            +'<div class="col">'
+              +'<label class="lbl">&#9898; Msg OFF — desacionado</label>'
+              +'<input type="text" '+(CONFIG_LOCKED?'readonly ':'')+'value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
             +'</div>'
+
           +'</div>'
-          +'<div style="font-size:11px;color:#8b949e;">sub estado: <code style="color:#79c0ff;">'+topE+'</code></div>'
+
         +'</div>'
+
       +'</div>';
+
     list.appendChild(d);
-  });
+
+  }
+
   checkSPs();
-}
 
-function toggleSPBlocks(i){
-  var h=document.getElementById('hist-'+i), j=document.getElementById('jan-'+i);
-  if(h) h.style.display=spItem.tipo===0?'flex':'none';
-  if(j) j.style.display=spItem.tipo===1?'flex':'none';
-}
+}  
 
-function checkSPs(){
-  if(!_esp32Online) return;
-  for(var i=0;i<qty;i++){
-    var m=mons[spItem.monIdx];
-    if(!m) continue;
-    var val=m.tipo==='analog'?m.val:(m.estado?1:0);
-    var deveAcionar=false;
-    if(spItem.tipo===0){
-      if(val>spItem.max) deveAcionar=true;
-      else if(val<spItem.min) deveAcionar=false;
-      else deveAcionar=spItem._ultimoComando===spItem.msgA;
+
+
+function checkSPs() {
+  // checkSPs só decide SE deve publicar o comando
+  // Estado visual (acionado/desacionado) SÓ muda via confirmação do ESP32
+  // igual ao comportamento dos coils
+  if (!_esp32Online) return; // ESP32 offline — não publica nada
+
+  for (var i=0; i<qty; i++) {
+    var m = mons[sps[i].monIdx];
+    if (!m) continue;
+
+    var val = m.tipo==='analog' ? m.val : (m.estado?1:0);
+    var deveAcionar = false;
+    if (sps[i].tipo===0) {
+      // Histerese
+      if (val > sps[i].max)      deveAcionar = true;
+      else if (val < sps[i].min) deveAcionar = false;
+      else                        deveAcionar = sps[i]._ultimoComando === sps[i].msgA;
     } else {
-      deveAcionar=(val>=spItem.min&&val<=spItem.max);
+      // Janela
+      deveAcionar = (val >= sps[i].min && val <= sps[i].max);
     }
-    var msgDesejada=deveAcionar?spItem.msgA:spItem.msgD;
-    if(msgDesejada!==spItem._ultimoComando){
-      spItem._ultimoComando=msgDesejada;
-      if(spItem.acao>0){
-        mqttPub(gst(i,'comando'),msgDesejada);
-        addLog('splog','<b>'+spItem.nome+'</b> pub → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
+
+    var msgDesejada = deveAcionar ? sps[i].msgA : sps[i].msgD;
+
+    // Só publica se mudou de comando
+    if (msgDesejada !== sps[i]._ultimoComando) {
+      sps[i]._ultimoComando = msgDesejada;
+      if (sps[i].acao > 0) {
+        mqttPub(gst(i,'comando'), msgDesejada);
+        addLog('splog',
+          '<b>'+sps[i].nome+'</b> pub: <code style="color:#79c0ff;">'+gst(i,'comando')+'</code> → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
       }
     }
   }
+
+  // Atualiza visual baseado no estado CONFIRMADO pelo ESP32 (sps[i].estado)
   renderSPStatus();
 }
 
-function renderSPStatus(){
+function renderSPStatus() {
   var ac=0, pills=[];
-  for(var i=0;i<sps.length;i++){
+  for (var i=0; i<qty; i++) {
     var tag=document.getElementById('sptag-'+i), card=document.getElementById('spc-'+i);
-    if(!tag||!card) continue;
-    var c=CORES[spItem.cor], m=mons[spItem.monIdx];
-    if(!m){
+    if (!tag||!card) continue;
+    var c=CORES[sps[i].cor], m=mons[sps[i].monIdx];
+    if (!m) {
       tag.textContent='sem entrada'; tag.style.cssText='background:#21262d;color:#8b949e;';
-      card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none';
+      card.style.border='0.5px solid #30363d'; card.style.boxShadow='none';
       continue;
     }
-    if(sps[i].estado){
+    if (sps[i].estado) {
       ac++;
       tag.textContent='acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
       card.style.border='1.5px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
-      var as=spItem.acao===0?'dash':spItem.acao===1?'MQTT':'dash+MQTT';
-      pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+spItem.nome+' — '+m.nome+' — '+as+' → <b>'+spItem.msgA+'</b></span>');
+      var as=sps[i].acao===0?'dash':sps[i].acao===1?'MQTT':'dash+MQTT';
+      pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+sps[i].nome+' — '+m.nome+' — '+as+' → <b>'+sps[i].msgA+'</b></span>');
     } else {
       tag.textContent='aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
-      if(!sps[i].estado){ card.style.border=isLocked('sp')?'1px solid #e24b4a':'1px solid #3fb950'; card.style.boxShadow='none'; }
+      card.style.border='0.5px solid #30363d'; card.style.boxShadow='none';
     }
   }
-  document.getElementById('m-spac').textContent=ac;
-  document.getElementById('m-spac').style.color=ac>0?'#3fb950':'#e8eaf0';
-  document.getElementById('sp-status').innerHTML=pills.length?pills.join(''):'<p style="font-size:12px;color:#8b949e;">Nenhum acionado</p>';
+  document.getElementById('m-spac').textContent = ac;
+  document.getElementById('m-spac').style.color = ac>0?'#3fb950':'#e8eaf0';
+  document.getElementById('sp-status').innerHTML = pills.length ? pills.join('') : '<p style="font-size:12px;color:#8b949e;">Nenhum acionado</p>';
   renderGeral();
 }
 
 // ════════════════════════════════════════════════
 // GERAL
 // ════════════════════════════════════════════════
-function renderGeral(){
+function renderGeral() {
   // Coils
-  var gc=document.getElementById('g-coils');
-  if(gc){
-    if(!coils.length){ gc.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum coil.</p>'; }
+  var gc = document.getElementById('g-coils');
+  if (gc) {
+    if (!coils.length) { gc.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum coil.</p>'; }
     else {
       gc.innerHTML='';
       coils.forEach(function(c,i){
@@ -2133,22 +1802,22 @@ function renderGeral(){
           +'<div style="font-size:14px;font-weight:600;color:'+(c.estado?'#7ee787':'#e8eaf0')+';margin-bottom:6px;">'+c.nome+'</div>'
           +'<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';">'+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
           +'<div class="row" style="justify-content:center;gap:6px;margin-top:8px;">'
-            +'<button class="btn-g'+(c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoilGeral('+i+',true)">LIGA</button>'
-            +'<button class="btn-r'+(!c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoilGeral('+i+',false)">DESLIGA</button>'
+            +'<button class="btn-g'+(c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',true)">LIGA</button>'
+            +'<button class="btn-r'+(!c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',false)">DESLIGA</button>'
           +'</div>';
         gc.appendChild(d);
       });
     }
   }
   // Mons
-  var gm=document.getElementById('g-mons');
-  if(gm){
-    if(!mons.length){ gm.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhuma entrada.</p>'; }
+  var gm = document.getElementById('g-mons');
+  if (gm) {
+    if (!mons.length) { gm.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhuma entrada.</p>'; }
     else {
       gm.innerHTML='';
       mons.forEach(function(m,i){
         var d=document.createElement('div'); d.className='gcard';
-        if(m.tipo==='analog'){
+        if (m.tipo==='analog'){
           var pct=Math.min(100,Math.max(0,((m.val-m.min)/(m.max-m.min||1))*100));
           var gc2=vcolor(m.val,m.min,m.max);
           d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">ANALOGICA</div>'
@@ -2170,48 +1839,74 @@ function renderGeral(){
     }
   }
   // SPs
-  var gs=document.getElementById('g-sps');
-  if(gs){
-    if(!sps.length){ gs.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum set point.</p>'; }
+  var gs = document.getElementById('g-sps');
+  if (gs) {
+    if (!qty) { gs.innerHTML='<p style="font-size:12px;color:#8b949e;">Nenhum set point.</p>'; }
     else {
       gs.innerHTML='';
-      for(var i=0;i<sps.length;i++){
+      for (var i=0;i<qty;i++){
         var sp=sps[i], c=CORES[sp.cor], m=mons[sp.monIdx];
-        var numStr=String(sp.numero||i+1).padStart(2,'0');
         var d=document.createElement('div');
-        d.className='gcard';
-        if(sp.estado) d.style.cssText='border:0.5px solid '+c.bd+';box-shadow:0 0 10px '+c.bd+'30;';
-        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">SP'+numStr+' — '+TIPOS[sp.tipo].toUpperCase()+'</div>'
+        d.className='gcard'; if(sp.estado) d.style.cssText='border:0.5px solid '+c.bd+';box-shadow:0 0 10px '+c.bd+'30;';
+        d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">'+TIPOS[sp.tipo].toUpperCase()+'</div>'
           +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:2px;">'+sp.nome+'</div>'
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+(m?m.nome:'sem entrada')+'</div>'
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">'+sp.min.toFixed(2)+' – '+sp.max.toFixed(2)+' '+(m?m.unid:'')+'</div>'
-          +'<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';">'+(sp.estado?'ACIONADO':'AGUARDANDO')+'</span>';
+          +'<span class="sp-badge" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';">'+(sp.estado?'ACIONADO':'AGUARDANDO')+'</span>';
         gs.appendChild(d);
       }
     }
   }
+  // Atualiza badges dos SPs na aba geral após renderizar
+  for (var j=0; j<qty; j++) {
+    var spEl = document.querySelector('#g-sps .gcard:nth-child('+(j+1)+')');
+    if (!spEl) continue;
+    var sp2 = sps[j], c2 = CORES[sp2.cor];
+    var badge = spEl.querySelector('.sp-badge');
+    if (badge) {
+      badge.textContent = sp2.estado ? 'ACIONADO' : 'AGUARDANDO';
+      badge.style.background = sp2.estado ? c2.bg : '#1c1c1a';
+      badge.style.color = sp2.estado ? c2.tx : '#8b949e';
+      badge.style.border = '0.5px solid '+(sp2.estado ? c2.bd : '#30363d');
+      spEl.style.border = sp2.estado ? '0.5px solid '+c2.bd : '0.5px solid #30363d';
+      spEl.style.boxShadow = sp2.estado ? '0 0 10px '+c2.bd+'30' : 'none';
+    }
+  }
+}
+
+function setCoilGeral(i,s){
+  var nomeAcao = s?'LIGAR':'DESLIGAR';
+  abrirModal(
+    nomeAcao+' '+coils[i].nome,
+    'Confirma o comando '+nomeAcao+' para "'+coils[i].nome+'"?',
+    s?'green':'red',
+    function(){
+      if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
+      if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
+      mqttPub(gct(i,'comando'), s?coils[i].msgA:coils[i].msgD);
+      syncSt('Comando enviado — aguardando ESP32...','#ef9f27');
+      setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
+    }
+  );
 }
 
 // ════════════════════════════════════════════════
 // METRICS
 // ════════════════════════════════════════════════
-function updateMetrics(){
-  var on=coils.filter(function(c){ return c.estado; }).length;
-  document.getElementById('m-coils').textContent=coils.length;
-  document.getElementById('m-on').textContent=on;
-  document.getElementById('m-on').style.color=on>0?'#3fb950':'#e8eaf0';
-  document.getElementById('m-mon').textContent=mons.length;
-  document.getElementById('m-sp').textContent=sps.length;
+function updateMetrics() {
+  var on = coils.filter(function(c){ return c.estado; }).length;
+  document.getElementById('m-coils').textContent = coils.length;
+  document.getElementById('m-on').textContent    = on;
+  document.getElementById('m-on').style.color    = on>0?'#3fb950':'#e8eaf0';
+  document.getElementById('m-mon').textContent   = mons.length;
 }
 
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
-// Restaura config de conexão do sessionStorage
-restaurarConexaoLocal();
-// MQTT é conectado pelo aplicarConfig/initDefault após carregar config
-// Garante que coils[] está populado antes dos retained chegarem
 carregarNuvem();
+// Conexão MQTT automática após carregar config
+setTimeout(function(){ conectarMQTT(); }, 2000);
 </script>
 </body>
 </html>
