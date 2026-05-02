@@ -842,18 +842,21 @@ function setESP32Status(s) {
     var lu = document.getElementById('cfg-last');
     if (lu) lu.textContent = new Date().toLocaleTimeString('pt-BR');
   }
-  // Quando ESP32 volta online, libera processamento e aplica buffer de retains
+  // Quando ESP32 volta online, aguarda retains chegarem e aplica buffer
   if (s === 'online') {
     setTimeout(function(){
       _ignorarRetained = false;
-      // Aplica estados retidos bufferizados (coils e SPs)
       var buf = _bufferRetained;
       _bufferRetained = {};
-      Object.keys(buf).forEach(function(t){
-        addLog('clog','<b style="color:#3fb950;">RETAINED APLICADO</b> <code style="color:#79c0ff;">'+t+'</code> → '+buf[t],'pub');
-        processarMsg(t, buf[t]);
-      });
-    }, 500);
+      var keys = Object.keys(buf);
+      if(keys.length > 0){
+        addLog('clog','<b style="color:#3fb950;">RETAINS RESTAURADOS ('+keys.length+')</b>','pub');
+        keys.forEach(function(t){
+          addLog('clog','<b style="color:#3fb950;">↳</b> <code style="color:#79c0ff;">'+t+'</code> → '+buf[t],'pub');
+          processarMsg(t, buf[t]);
+        });
+      }
+    }, 1500); // 1.5s para garantir que todos os retains chegaram antes de processar
   }
   // Quando ESP32 vai offline, limpa estados dos coils
   if (s === 'offline') {
@@ -951,6 +954,7 @@ function processarMsg(topic, msg) {
     for(var k=0;k<coils.length;k++){ if(coils[k].numero===cnum){ ci=k; break; } }
     if (ci >= 0) {
       var coil = coils[ci];
+      addLog('clog','<b style="color:#8b949e;">DBG</b> coil_'+cnum+' msg="'+msg+'" msgA="'+coil.msgA+'" msgD="'+coil.msgD+'"','sub');
       if (msg === coil.msgA) {
         coil.estado = true;
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
@@ -1207,6 +1211,20 @@ function conectarMQTT() {
     subscreverTopicos();
     _ignorarRetained = true;
     setTimeout(function(){ _ignorarRetained = false; }, 2000);
+    // Timer de segurança: aplica buffer após 3s mesmo sem receber /status
+    // Cobre o caso onde retained dos coils chegam antes do /status
+    setTimeout(function(){
+      if(Object.keys(_bufferRetained).length > 0){
+        addLog('clog','<b style="color:#ef9f27;">BUFFER FORÇADO</b> — aplicando retains sem confirmação de status','pub');
+        var buf = _bufferRetained;
+        _bufferRetained = {};
+        _esp32Online = true; // assume online para processar
+        Object.keys(buf).forEach(function(t){
+          addLog('clog','<b style="color:#3fb950;">RETAINED APLICADO</b> <code style="color:#79c0ff;">'+t+'</code> → '+buf[t],'pub');
+          processarMsg(t, buf[t]);
+        });
+      }
+    }, 3000);
   });
 
   mqclient.on('message', function(topic, message) {
