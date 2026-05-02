@@ -872,7 +872,13 @@ function setESP32Status(s) {
     _bufferRetained = {};
     var keys = Object.keys(buf);
     if(keys.length > 0){
+      var ts3 = new Date().toLocaleTimeString('pt-BR');
       addLog('clog','<b style="color:#3fb950;">RETAINS RESTAURADOS ('+keys.length+')</b>','pub');
+      addLog('statuslog',
+        '<b style="color:#3fb950;font-size:12px;">✓ SYNC OK</b>'
+        +'<span style="color:#8b949e;margin-left:8px;">'+ts3+'</span>'
+        +'<span style="color:#5a6478;margin-left:8px;font-size:10px;">'+keys.length+' estado(s) restaurado(s) do broker</span>',
+        'pub');
       keys.forEach(function(t){
         addLog('clog','<b style="color:#3fb950;">↳</b> <code style="color:#79c0ff;">'+t+'</code> → '+buf[t],'pub');
         processarMsg(t, buf[t]);
@@ -1238,7 +1244,13 @@ function conectarMQTT() {
     // Após 2s envia sync — ESP32 aplica pinos e republica estados
     setTimeout(function(){
       mqclient.publish(base+'/sync', 'sync', {qos:1, retain:false});
+      var ts = new Date().toLocaleTimeString('pt-BR');
       addLog('clog','<b style="color:#3fb950;">SYNC enviado → ESP32 aplicará pinos</b>','pub');
+      addLog('statuslog',
+        '<b style="color:#58a6ff;font-size:12px;">🔄 SYNC</b>'
+        +'<span style="color:#8b949e;margin-left:8px;">'+ts+'</span>'
+        +'<span style="color:#5a6478;margin-left:8px;font-size:10px;">painel solicitou sincronização → ESP32 aplicará pinos e republicará estados</span>',
+        'pub');
     }, 2000);
     // Timer de segurança: se /status não chegar em 5s, aplica buffer mesmo assim
     setTimeout(function(){
