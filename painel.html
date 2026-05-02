@@ -715,6 +715,7 @@ function carregarNuvem() {
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   atualizarTodosLocks(); atualizarCamposConfig(); atualizarBotoesSP();
+  if(!mqclient || !mqclient.connected) setTimeout(conectarMQTT, 500);
 }
 
 // ════════════════════════════════════════════════
@@ -2142,8 +2143,7 @@ function updateMetrics() {
 // INIT
 // ════════════════════════════════════════════════
 carregarNuvem();
-// Conexão MQTT automática após carregar config
-setTimeout(function(){ conectarMQTT(); }, 2000);
+// conexão MQTT é iniciada automaticamente por aplicarConfig após carregar
 </script>
 </body>
 </html>
