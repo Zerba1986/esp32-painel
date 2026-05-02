@@ -1744,8 +1744,7 @@ function toggleSP(i) {
   if(a) a.style.transform = sps[i].open ? 'rotate(90deg)' : 'rotate(0)';
 }
 function toggleSPBlocks(i) {
-  // hist contém ambos os modos (histerese e janela) com labels adequados
-  // só atualiza os labels Min/Max conforme o tipo
+  // Bloco sempre visível — só atualiza labels conforme o tipo
   var lMin = document.querySelector('#hist-'+i+' label[data-lbl="min"]');
   var lMax = document.querySelector('#hist-'+i+' label[data-lbl="max"]');
   if(lMin) lMin.textContent = sps[i].tipo===0 ? 'Min — desaciona' : 'Min — limite inferior';
@@ -1917,7 +1916,7 @@ function renderSPs() {
 
         +'</div>'
 
-        +'<div id="hist-'+i+'" style="display:'+(sps[i].tipo===0?'block':'none')+';margin-bottom:8px;">'
+        +'<div id="hist-'+i+'" style="display:block;margin-bottom:8px;">'
 
           // ── Escala ────────────────────────────────────
           +'<div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
