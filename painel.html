@@ -499,21 +499,30 @@ function toggleConfig(){ toggleLock('coil'); }
 // ════════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════════
+// ════════════════════════════════════════════════
+// AUTH — auto-login standalone (sem index.html)
+// ════════════════════════════════════════════════
 (function(){
   var a = sessionStorage.getItem('esp32auth');
-  if (!a) { window.location.href = 'index.html'; return; }
+  if (!a) {
+    // Cria sessão automática válida por 8h
+    sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira: Date.now() + 8*3600*1000}));
+    return;
+  }
   try {
     var d = JSON.parse(a);
     if (!d.ok || Date.now() > d.expira) {
-      sessionStorage.removeItem('esp32auth');
-      window.location.href = 'index.html';
+      // Renova automaticamente
+      sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira: Date.now() + 8*3600*1000}));
     }
-  } catch(e) { window.location.href = 'index.html'; }
+  } catch(e) {
+    sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira: Date.now() + 8*3600*1000}));
+  }
 })();
 
 function logout() {
   sessionStorage.removeItem('esp32auth');
-  window.location.href = 'index.html';
+  location.reload();
 }
 
 // ════════════════════════════════════════════════
