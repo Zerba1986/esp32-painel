@@ -223,10 +223,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <!-- ARMAZENAMENTO -->
   <div class="card">
     <div class="hdr" style="margin-bottom:12px;">
-      <div class="sh" style="margin:0;">&#128190; armazenamento de configuracao</div>
-      <span id="sync-st" style="font-size:11px;color:#8b949e;">pronto</span>
+      <div class="row" style="gap:8px;align-items:center;">
+        <div class="sh" style="margin:0;">&#128190; armazenamento</div>
+        <span id="sync-st" style="font-size:11px;color:#8b949e;">pronto</span>
+      </div>
+      <button class="btn-lock locked" id="btn-lock-arq" onclick="toggleLock('arq')">&#128274; LOCKED</button>
     </div>
-    <!-- Seletor de provedor -->
     <div class="col" style="margin-bottom:12px;">
       <label class="lbl">Provedor</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -234,47 +236,51 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <button id="prov-custom" class="btn-sm" style="font-size:11px;padding:4px 12px;" onclick="setProvedor('custom')">URL Própria</button>
       </div>
     </div>
-
-    <!-- JSONBin -->
     <div id="bloco-jsonbin">
       <div class="grid2" style="margin-bottom:8px;">
         <div class="col">
           <label class="lbl">Bin ID</label>
-          <input type="text" id="cfg-bin-id" value="69ee74c6856a68218976161c" style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+          <div class="row" style="gap:4px;">
+            <input type="text" id="cfg-bin-id" style="flex:1;font-family:monospace;font-size:11px;" placeholder="69ee74c6..." oninput="salvarConexaoLocal()">
+            <button class="btn-sm" onclick="toggleVerCampo('cfg-bin-id')" title="Mostrar/Ocultar">&#128065;</button>
+          </div>
         </div>
         <div class="col">
-          <label class="lbl">Master Key <span style="color:#8b949e;font-size:10px;">(não salva no dispositivo)</span></label>
-          <input type="password" id="cfg-master-key" placeholder="$2a$10$..." style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+          <label class="lbl">Master Key</label>
+          <div class="row" style="gap:4px;">
+            <input type="password" id="cfg-master-key" style="flex:1;font-family:monospace;font-size:11px;" placeholder="$2a$10$..." oninput="salvarConexaoLocal()">
+            <button class="btn-sm" onclick="toggleVerCampo('cfg-master-key')" title="Mostrar/Ocultar">&#128065;</button>
+          </div>
         </div>
       </div>
-      <div style="font-size:11px;color:#8b949e;margin-bottom:10px;">
+      <div style="font-size:11px;color:#8b949e;margin-bottom:6px;">
         URL: <code style="color:#79c0ff;" id="cfg-bin-url">https://api.jsonbin.io/v3/b/...</code>
       </div>
     </div>
-
-    <!-- URL Própria -->
     <div id="bloco-custom" style="display:none;">
       <div class="grid2" style="margin-bottom:8px;">
         <div class="col">
-          <label class="lbl">URL GET (carregar)</label>
+          <label class="lbl">URL GET</label>
           <input type="text" id="cfg-url-get" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
         </div>
         <div class="col">
-          <label class="lbl">URL PUT (salvar)</label>
+          <label class="lbl">URL PUT</label>
           <input type="text" id="cfg-url-put" placeholder="https://seuservidor.com/api/config" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
         </div>
         <div class="col">
-          <label class="lbl">Header de Auth</label>
+          <label class="lbl">Header Auth</label>
           <input type="text" id="cfg-auth-header" placeholder="Authorization" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
         </div>
         <div class="col">
-          <label class="lbl">Valor do Header <span style="color:#8b949e;font-size:10px;">(token/senha)</span></label>
-          <input type="password" id="cfg-auth-value" placeholder="Bearer eyJhbGc..." style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+          <label class="lbl">Token/Senha</label>
+          <div class="row" style="gap:4px;">
+            <input type="password" id="cfg-auth-value" placeholder="Bearer eyJ..." style="flex:1;font-size:11px;" oninput="salvarConexaoLocal()">
+            <button class="btn-sm" onclick="toggleVerCampo('cfg-auth-value')" title="Mostrar/Ocultar">&#128065;</button>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px;">
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;">
       <button class="btn-b" onclick="testarArmazenamento()" style="font-size:11px;">&#128268; Testar</button>
       <button class="btn-b" onclick="carregarNuvem()" style="font-size:11px;">&#8595; Carregar</button>
       <button class="btn-save" onclick="salvarNuvem()">&#128190; Salvar</button>
@@ -284,11 +290,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   <!-- BROKER MQTT -->
   <div class="card">
     <div class="hdr" style="margin-bottom:12px;">
-      <div class="sh" style="margin:0;">&#128268; broker mqtt</div>
-      <div class="row" style="gap:8px;">
+      <div class="row" style="gap:8px;align-items:center;">
+        <div class="sh" style="margin:0;">&#128268; broker mqtt</div>
         <span class="dot pulse" id="dot-broker" style="background:#8b949e;"></span>
         <span style="font-size:12px;font-weight:600;" id="mqtt-st">Desconectado</span>
       </div>
+      <button class="btn-lock locked" id="btn-lock-broker" onclick="toggleLock('broker')">&#128274; LOCKED</button>
     </div>
     <div class="grid2" style="margin-bottom:8px;">
       <div class="col">
@@ -304,27 +311,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       </div>
       <div class="col" style="grid-column:1/-1;">
         <label class="lbl">URL do Broker</label>
-        <input type="text" id="cfg-mqtt-url" value="4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud" style="width:100%;font-family:monospace;font-size:11px;" oninput="salvarConexaoLocal()">
+        <input type="text" id="cfg-mqtt-url" style="width:100%;font-family:monospace;font-size:11px;" placeholder="broker.exemplo.com" oninput="salvarConexaoLocal()">
       </div>
       <div class="col">
         <label class="lbl">Usuário</label>
-        <input type="text" id="cfg-mqtt-user" value="joazeirofelipe" style="width:100%;" oninput="salvarConexaoLocal()">
+        <input type="text" id="cfg-mqtt-user" style="width:100%;" oninput="salvarConexaoLocal()">
       </div>
       <div class="col">
         <label class="lbl">Senha</label>
-        <input type="password" id="cfg-mqtt-pass" value="Mqtt@Railway2026" style="width:100%;" oninput="salvarConexaoLocal()">
+        <div class="row" style="gap:4px;">
+          <input type="password" id="cfg-mqtt-pass" style="flex:1;" placeholder="••••••••••" oninput="salvarConexaoLocal()">
+          <button class="btn-sm" onclick="toggleVerCampo('cfg-mqtt-pass')" title="Mostrar/Ocultar">&#128065;</button>
+        </div>
       </div>
       <div class="col">
-        <label class="lbl">Keepalive (segundos)</label>
-        <input type="number" id="cfg-mqtt-keepalive" value="15" min="5" max="120" style="width:80px;" oninput="salvarConexaoLocal()">
+        <label class="lbl">Keepalive (s)</label>
+        <input type="number" id="cfg-mqtt-keepalive" value="15" min="5" max="120" style="width:70px;" oninput="salvarConexaoLocal()">
       </div>
       <div class="col">
-        <label class="lbl">Client ID</label>
-        <input type="text" id="cfg-mqtt-clientid" placeholder="gerado automaticamente" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
+        <label class="lbl">Client ID <span style="color:#8b949e;font-size:10px;">(opcional)</span></label>
+        <input type="text" id="cfg-mqtt-clientid" placeholder="auto" style="width:100%;font-size:11px;" oninput="salvarConexaoLocal()">
       </div>
     </div>
     <div style="font-size:11px;color:#8b949e;margin-bottom:10px;">
-      URL completa: <code style="color:#79c0ff;" id="cfg-mqtt-fullurl">wss://...</code>
+      URL: <code style="color:#79c0ff;" id="cfg-mqtt-fullurl">wss://...</code>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px;">
       <button class="btn-r" onclick="desconectarMQTT()" style="font-size:11px;">&#9632; Desconectar</button>
@@ -473,7 +483,7 @@ function logout() {
 var ADMIN_PASS = '1234';
 
 // Estado de cada aba — todos começam bloqueados
-var LOCKS = { cfg: true, coil: true, mon: true, sp: true };
+var LOCKS = { cfg: true, coil: true, mon: true, sp: true, arq: true, broker: true };
 
 // Atalho para compatibilidade com código que usa CONFIG_LOCKED
 // Retorna true se QUALQUER aba ainda estiver bloqueada
@@ -500,10 +510,12 @@ function toggleLock(aba) {
   // Atualiza CONFIG_LOCKED global (true se qualquer aba bloqueada)
   CONFIG_LOCKED = Object.keys(LOCKS).some(function(k){ return LOCKS[k]; });
   atualizarBotaoLock(aba);
-  if(aba==='cfg')  atualizarCamposConfig();
-  if(aba==='coil') renderCoils();
-  if(aba==='mon')  renderMons();
-  if(aba==='sp')   renderSPs();
+  atualizarCamposConfig();
+  if(aba==='coil')   renderCoils();
+  if(aba==='mon')    renderMons();
+  if(aba==='sp')     renderSPs();
+  if(aba==='arq')    atualizarUrlsBroker();
+  if(aba==='broker') atualizarUrlsBroker();
 }
 
 function atualizarBotaoLock(aba) {
@@ -515,10 +527,12 @@ function atualizarBotaoLock(aba) {
 
   // Controla botões de adicionar/remover da aba correspondente
   var ids = {
-    coil: ['btn-add-coil'],
-    mon:  ['btn-add-analog','btn-add-digital'],
-    sp:   ['btn-sp-plus'],
-    cfg:  []
+    coil:   ['btn-add-coil'],
+    mon:    ['btn-add-analog','btn-add-digital'],
+    sp:     ['btn-sp-plus'],
+    cfg:    [],
+    arq:    ['prov-jsonbin','prov-custom'],
+    broker: []
   };
   (ids[aba]||[]).forEach(function(id){
     var el = document.getElementById(id);
@@ -529,6 +543,7 @@ function atualizarBotaoLock(aba) {
 function atualizarTodosLocks() {
   Object.keys(LOCKS).forEach(function(aba){ atualizarBotaoLock(aba); });
   atualizarCamposConfig();
+  atualizarUrlsBroker();
 }
 
 function atualizarCamposConfig() {
@@ -537,15 +552,21 @@ function atualizarCamposConfig() {
     var el = document.getElementById(id);
     if (el) el.readOnly = bloqueado;
   });
-  // Campos de armazenamento e broker também bloqueados
-  ['cfg-bin-id','cfg-url-get','cfg-url-put','cfg-auth-header',
-   'cfg-mqtt-url','cfg-mqtt-porta','cfg-mqtt-user','cfg-mqtt-keepalive','cfg-mqtt-clientid'].forEach(function(id){
+  // Campos de armazenamento bloqueados
+  var bloqArq = isLocked('arq');
+  ['cfg-bin-id','cfg-master-key','cfg-url-get','cfg-url-put','cfg-auth-header','cfg-auth-value'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.readOnly = bloqueado;
+    if (el) el.readOnly = bloqArq;
+  });
+  // Campos de broker bloqueados
+  var bloqBroker = isLocked('broker');
+  ['cfg-mqtt-url','cfg-mqtt-porta','cfg-mqtt-user','cfg-mqtt-pass','cfg-mqtt-keepalive','cfg-mqtt-clientid'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.readOnly = bloqBroker;
   });
   ['cfg-mqtt-proto'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.disabled = bloqueado;
+    if (el) el.disabled = bloqBroker;
   });
 }
 
@@ -654,8 +675,29 @@ function atualizarUrlsBroker() {
 }
 
 // Salva config de conexão no sessionStorage (não no JSONBin — segurança)
+// Mostrar/ocultar campo de senha com botão olho
+function toggleVerCampo(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  // Só revela se UNLOCKED da aba correspondente
+  var aba = id.startsWith('cfg-mqtt') ? 'broker' : 'arq';
+  if (isLocked(aba)) {
+    syncSt('Desbloqueie para revelar','#e24b4a');
+    return;
+  }
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+// Senha e Master Key agora salvas junto com o resto da config em localStorage
+
 function salvarConexaoLocal() {
   atualizarUrlsBroker();
+  // Atualiza senha salva se checkbox marcado
+  var cb = document.getElementById('cfg-lembrar-senha');
+  var passEl = document.getElementById('cfg-mqtt-pass');
+  if (cb && cb.checked && passEl && passEl.value) {
+    localStorage.setItem('esp32_mqtt_pass', passEl.value);
+  }
   var dados = {
     provedor: _provedor,
     binId:    (document.getElementById('cfg-bin-id')      ||{}).value || '',
@@ -675,21 +717,29 @@ function salvarConexaoLocal() {
 // Restaura config de conexão (sem senhas)
 function restaurarConexaoLocal() {
   try {
-    var raw = sessionStorage.getItem('esp32conexao');
+    var raw = localStorage.getItem('esp32conexao');
     if (!raw) return;
     var d = JSON.parse(raw);
-    if (d.provedor) { _provedor = d.provedor; setProvedor(d.provedor); }
-    if (d.binId    && document.getElementById('cfg-bin-id'))       document.getElementById('cfg-bin-id').value       = d.binId;
-    if (d.urlGet   && document.getElementById('cfg-url-get'))      document.getElementById('cfg-url-get').value      = d.urlGet;
-    if (d.urlPut   && document.getElementById('cfg-url-put'))      document.getElementById('cfg-url-put').value      = d.urlPut;
-    if (d.authH    && document.getElementById('cfg-auth-header'))  document.getElementById('cfg-auth-header').value  = d.authH;
-    if (d.mqttProto&& document.getElementById('cfg-mqtt-proto'))   document.getElementById('cfg-mqtt-proto').value   = d.mqttProto;
-    if (d.mqttUrl  && document.getElementById('cfg-mqtt-url'))     document.getElementById('cfg-mqtt-url').value     = d.mqttUrl;
-    if (d.mqttPorta&& document.getElementById('cfg-mqtt-porta'))   document.getElementById('cfg-mqtt-porta').value   = d.mqttPorta;
-    if (d.mqttUser && document.getElementById('cfg-mqtt-user'))    document.getElementById('cfg-mqtt-user').value    = d.mqttUser;
-    if (d.mqttKA   && document.getElementById('cfg-mqtt-keepalive'))document.getElementById('cfg-mqtt-keepalive').value = d.mqttKA;
+    if (d.provedor)  { _provedor = d.provedor; setProvedor(d.provedor); }
+    if (d.binId)     _setCampo('cfg-bin-id',        d.binId);
+    if (d.masterKey) _setCampo('cfg-master-key',    d.masterKey);
+    if (d.urlGet)    _setCampo('cfg-url-get',        d.urlGet);
+    if (d.urlPut)    _setCampo('cfg-url-put',        d.urlPut);
+    if (d.authH)     _setCampo('cfg-auth-header',    d.authH);
+    if (d.authV)     _setCampo('cfg-auth-value',     d.authV);
+    if (d.mqttProto) _setCampo('cfg-mqtt-proto',     d.mqttProto);
+    if (d.mqttUrl)   _setCampo('cfg-mqtt-url',       d.mqttUrl);
+    if (d.mqttPorta) _setCampo('cfg-mqtt-porta',     d.mqttPorta);
+    if (d.mqttUser)  _setCampo('cfg-mqtt-user',      d.mqttUser);
+    if (d.mqttPass)  _setCampo('cfg-mqtt-pass',      d.mqttPass);
+    if (d.mqttKA)    _setCampo('cfg-mqtt-keepalive', d.mqttKA);
     atualizarUrlsBroker();
   } catch(e) {}
+}
+
+function _setCampo(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val;
 }
 
 function testarArmazenamento() {
@@ -844,9 +894,14 @@ function aplicarConfig(c) {
   _carregando = false;
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
-  // Conecta MQTT agora que config está pronta — garante que retained chegam com coils[] populado
+  // Conecta MQTT agora que config está pronta
+  var _pass2 = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
   if (!mqclient || !mqclient.connected) {
-    conectarMQTT();
+    if (_pass2) {
+      conectarMQTT();
+    } else {
+      syncSt('Config carregada! Preencha a senha do broker e clique Conectar','#ef9f27');
+    }
   } else {
     // Já conectado — processa fila pendente e força resub
     processarFilaPendente();
@@ -909,7 +964,12 @@ function carregarNuvem() {
 function initDefault() {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   atualizarTodosLocks(); atualizarCamposConfig();
-  if (!mqclient || !mqclient.connected) conectarMQTT();
+  var _pass = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
+  if (_pass && (!mqclient || !mqclient.connected)) {
+    conectarMQTT();
+  } else if (!_pass) {
+    syncSt('Preencha a senha do broker na aba Config e clique Conectar','#ef9f27');
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -1336,6 +1396,12 @@ function conectarMQTT(){
   var _broker = getCfgBroker();
   if (!_broker.valido) {
     syncSt('Configure o broker MQTT na aba Config!','#e24b4a');
+    return;
+  }
+  // Verifica se senha foi preenchida
+  var _pass = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
+  if (!_pass) {
+    syncSt('Digite a senha do broker na aba Config!','#ef9f27');
     return;
   }
   atualizarUrlsBroker();
@@ -2058,7 +2124,7 @@ function updateMetrics(){
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
-// Restaura config de conexão (sem senhas) do sessionStorage
+// Restaura config de conexão do sessionStorage
 restaurarConexaoLocal();
 // MQTT é conectado pelo aplicarConfig/initDefault após carregar config
 // Garante que coils[] está populado antes dos retained chegarem
