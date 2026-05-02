@@ -663,6 +663,38 @@ function aplicarConfig(c, preservarEstado) {
   updateSpSels();
   renderGeral();
   atualizarTodosLocks(); atualizarCamposConfig(); atualizarBotoesSP();
+  // Restaura últimos estados conhecidos (MQTT confirmará/corrigirá depois)
+  if (!preservarEstado) restaurarEstados();
+}
+
+function salvarEstados() {
+  var estados = {
+    coils: coils.map(function(c){ return {numero:c.numero, estado:c.estado}; }),
+    sps:   sps.map(function(s){ return {numero:s.numero, estado:s.estado}; })
+  };
+  localStorage.setItem('esp32estados', JSON.stringify(estados));
+}
+
+function restaurarEstados() {
+  try {
+    var raw = localStorage.getItem('esp32estados');
+    if (!raw) return;
+    var estados = JSON.parse(raw);
+    if (Array.isArray(estados.coils)) {
+      estados.coils.forEach(function(e){
+        var coil = coils.find(function(c){ return c.numero === e.numero; });
+        if (coil) coil.estado = e.estado;
+      });
+    }
+    if (Array.isArray(estados.sps)) {
+      estados.sps.forEach(function(e){
+        var sp = sps.find(function(s){ return s.numero === e.numero; });
+        if (sp) sp.estado = e.estado;
+      });
+    }
+    renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
+    addLog('clog','<b style="color:#8b949e;">Estados restaurados do cache local</b>','sub');
+  } catch(ex) {}
 }
 
 function salvarNuvem() {
@@ -850,6 +882,7 @@ function setESP32Status(s) {
   // Quando ESP32 vai offline, limpa estados dos coils
   if (s === 'offline') {
     _bufferRetained = {};
+    localStorage.removeItem('esp32estados'); // estados desconhecidos — limpa cache
     coils.forEach(function(c){ c.estado = false; });
     sps.forEach(function(sp){ sp.estado = false; sp._ultimoComando = null; });
     // Limpa métricas da aba Config
@@ -946,10 +979,12 @@ function processarMsg(topic, msg) {
       addLog('clog','<b style="color:#8b949e;">DBG</b> coil_'+cnum+' msg="'+msg+'" msgA="'+coil.msgA+'" msgD="'+coil.msgD+'"','sub');
       if (msg === coil.msgA) {
         coil.estado = true;
+        salvarEstados();
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
         renderCoils(); updateMetrics(); renderGeral();
       } else if (msg === coil.msgD) {
         coil.estado = false;
+        salvarEstados();
         addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
         renderCoils(); updateMetrics(); renderGeral();
       } else {
@@ -973,10 +1008,12 @@ function processarMsg(topic, msg) {
       var sp = sps[si];
       if (msg === sp.msgA) {
         sp.estado = true;
+        salvarEstados();
         addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓ (ESP32 confirmou)','sub');
         renderSPStatus();
       } else if (msg === sp.msgD) {
         sp.estado = false;
+        salvarEstados();
         addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓ (ESP32 confirmou)','sub');
         renderSPStatus();
       } else {
