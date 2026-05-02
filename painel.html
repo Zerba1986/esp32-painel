@@ -1235,6 +1235,11 @@ function conectarMQTT() {
     _bufferRetained = {};
     _esp32Online = false;
     subscreverTopicos();
+    // Após 2s envia sync — ESP32 aplica pinos e republica estados
+    setTimeout(function(){
+      mqclient.publish(base+'/sync', 'sync', {qos:1, retain:false});
+      addLog('clog','<b style="color:#3fb950;">SYNC enviado → ESP32 aplicará pinos</b>','pub');
+    }, 2000);
     // Timer de segurança: se /status não chegar em 5s, aplica buffer mesmo assim
     setTimeout(function(){
       if(Object.keys(_bufferRetained).length > 0){
