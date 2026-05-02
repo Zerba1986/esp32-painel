@@ -278,7 +278,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
   <div class="card">
     <div class="sh">status esp32</div>
-    <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+    <div class="row" style="justify-content:space-between;">
       <div>
         <div style="font-size:12px;color:#8b949e;margin-bottom:4px;">Topico LWT: <code style="color:#79c0ff;" id="cfg-lwt">---</code></div>
         <div style="font-size:12px;color:#8b949e;">Ultima atualizacao: <span id="cfg-last">---</span></div>
@@ -288,22 +288,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <span style="font-size:15px;font-weight:700;color:#8b949e;" id="cfg-esp-lbl">Aguardando...</span>
       </div>
     </div>
-    <!-- Métricas do dispositivo -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
-      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
-        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">RSSI</div>
-        <div style="font-size:20px;font-weight:600;" id="cfg-rssi" style="color:#8b949e;">---</div>
-        <div style="font-size:10px;color:#8b949e;">dBm</div>
-      </div>
-      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
-        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">UPTIME</div>
-        <div style="font-size:18px;font-weight:600;color:#79c0ff;" id="cfg-uptime">---</div>
-      </div>
-      <div style="background:#0d1117;border:0.5px solid #30363d;border-radius:8px;padding:10px 12px;text-align:center;">
-        <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:4px;">IP LOCAL</div>
-        <div style="font-size:13px;font-weight:600;color:#7ee787;" id="cfg-ip">---</div>
-      </div>
-    </div>
+    <!-- spans ocultos mantidos para compatibilidade JS -->
+    <span id="cfg-rssi" style="display:none;"></span>
+    <span id="cfg-uptime" style="display:none;"></span>
+    <span id="cfg-ip" style="display:none;"></span>
   </div>
   <div class="card">
     <div class="sh">conexao mqtt</div>
@@ -1070,7 +1058,22 @@ function atualizaValMon(i, val) {
   if (gb) { gb.style.width = pct.toFixed(1)+'%'; gb.style.background = gc; }
 }
 
-function atualizaEstadoDigital(i) {
+function inverterLogicaDigital(i) {
+  var m = mons[i];
+  if (!m || m.tipo !== 'digital') return;
+  var tmp = m.valT; m.valT = m.valF; m.valF = tmp;
+  // Atualiza badge HIGH/LOW
+  atualizaEstadoDigital(i);
+  // Atualiza linha de status textual
+  var stLine = document.getElementById('dstline-'+i);
+  if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
+  // Atualiza inputs de valT/valF visíveis
+  var inpT = document.querySelector('#mp-'+i+' input[placeholder="ex: 1"]');
+  var inpF = document.querySelector('#mp-'+i+' input[placeholder="ex: 0"]');
+  if(inpT) inpT.value = m.valT;
+  if(inpF) inpF.value = m.valF;
+  saveLocal();
+}
   var m = mons[i];
   if (!m || m.tipo !== 'digital') return;
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
@@ -1205,9 +1208,14 @@ function addCoil() {
   if(num > MAX_COILS) { syncSt('Sem números de coil disponíveis!','#e24b4a'); return; }
   coils.push({ numero:num, nome:'Coil '+String(num).padStart(2,'0'), pino:COIL_PINOS_PADRAO[num]||14, estado:false, open:true, msgA:'1', msgD:'0' });
   coils.sort(function(a,b){ return a.numero-b.numero; });
-  renderCoils(); updateMetrics(); renderGeral(); saveLocal();
+  renderCoils(); updateMetrics(); renderGeral();
+  localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
 }
-function removeCoil(i) { coils.splice(i,1); renderCoils(); updateMetrics(); checkSPs(); renderGeral(); }
+function removeCoil(i) {
+  coils.splice(i,1);
+  renderCoils(); updateMetrics(); checkSPs(); renderGeral();
+  localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
+}
 function allCoils(s) {
   if (!_esp32Online) {
     syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a');
@@ -1345,8 +1353,14 @@ function renderCoils() {
           +'</div>'
 
           +'<div class="col">'
-            +'<label class="lbl">Pino (firmware)</label>'
-            +'<div style="font-size:13px;font-weight:600;color:#79c0ff;padding:5px 0;">GPIO '+(COIL_PINOS_PADRAO[c.numero]||14)+'</div>'
+            +'<label class="lbl">Nome (dashboard)</label>'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+
+              'value="'+c.nome+'" style="width:120px;" '+
+              'oninput="'+
+                'coils['+i+'].nome=this.value;'+
+                'var e=document.getElementById(\'cn-'+i+'\');'+
+                'if(e)e.textContent=this.value;'+
+                'saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
@@ -1557,15 +1571,11 @@ function renderMons() {
               +'</div>'
               +'<div class="col" style="justify-content:flex-end;">'
                 +'<label class="lbl">Inverter lógica</label>'
-                +'<button class="btn-sm" '+(isLocked('mon')?'disabled ':'')+'onclick="'
-                  +'var tmp=mons['+i+'].valT;'
-                  +'mons['+i+'].valT=mons['+i+'].valF;'
-                  +'mons['+i+'].valF=tmp;'
-                  +'renderMons();'
-                  +'saveLocal();">↕ Inverter</button>'
+                +'<button class="btn-sm" '+(isLocked('mon')?'disabled ':'')
+                  +'onclick="inverterLogicaDigital('+i+');">↕ Inverter</button>'
               +'</div>'
             +'</div>'
-            +'<div style="font-size:10px;color:#8b949e;margin-top:8px;background:#0d1117;border-radius:4px;padding:6px 8px;">'
+            +'<div id="dstline-'+i+'" style="font-size:10px;color:#8b949e;margin-top:8px;background:#0d1117;border-radius:4px;padding:6px 8px;">'
               +'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW'
             +'</div>'
           +'</div>'
@@ -1842,8 +1852,9 @@ function renderSPs() {
                     +'sps['+i+'].escMin=v;'
                     +'var sl=document.getElementById(\'slmin-'+i+'\');'
                     +'var sx=document.getElementById(\'slmax-'+i+'\');'
-                    +'if(sl){sl.min=v;}'
-                    +'if(sx){sx.min=v;}'
+                    +'if(sl){ sl.min=v; var cv=Math.max(parseFloat(sl.value),v); sl.value=cv; sps['+i+'].min=cv; var lm=document.getElementById(\'hmv-'+i+'\'); if(lm)lm.textContent=cv.toFixed(1)+\' \'+\''+(un||'')+'\'; }'
+                    +'if(sx){ sx.min=v; var cx=Math.max(parseFloat(sx.value),v); sx.value=cx; sps['+i+'].max=cx; var lx=document.getElementById(\'hxv-'+i+'\'); if(lx)lx.textContent=cx.toFixed(1)+\' \'+\''+(un||'')+'\'; }'
+                    +'var r=document.getElementById(\'escrange-'+i+'\'); if(r)r.textContent=v+\' → \'+sps['+i+'].escMax;'
                     +'updateSPSum('+i+');saveLocal();">'
               +'</div>'
               +'<div class="col">'
@@ -1858,8 +1869,9 @@ function renderSPs() {
                     +'sps['+i+'].escMax=v;'
                     +'var sl=document.getElementById(\'slmin-'+i+'\');'
                     +'var sx=document.getElementById(\'slmax-'+i+'\');'
-                    +'if(sl){sl.max=v;}'
-                    +'if(sx){sx.max=v;}'
+                    +'if(sl){ sl.max=v; var cv=Math.min(parseFloat(sl.value),v); sl.value=cv; sps['+i+'].min=cv; var lm=document.getElementById(\'hmv-'+i+'\'); if(lm)lm.textContent=cv.toFixed(1)+\' \'+\''+(un||'')+'\'; }'
+                    +'if(sx){ sx.max=v; var cx=Math.min(parseFloat(sx.value),v); sx.value=cx; sps['+i+'].max=cx; var lx=document.getElementById(\'hxv-'+i+'\'); if(lx)lx.textContent=cx.toFixed(1)+\' \'+\''+(un||'')+'\'; }'
+                    +'var r=document.getElementById(\'escrange-'+i+'\'); if(r)r.textContent=sps['+i+'].escMin+\' → \'+v;'
                     +'updateSPSum('+i+');saveLocal();">'
               +'</div>'
               +'<div style="font-size:10px;color:#8b949e;align-self:flex-end;padding-bottom:6px;">'
@@ -1878,29 +1890,13 @@ function renderSPs() {
                   +'id="slmin-'+i+'" '
                   +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
                   +'value="'+Math.min(Math.max(sps[i].min,sps[i].escMin),sps[i].escMax)+'" '
-                  +'style="width:110px;" '
+                  +'style="width:130px;" '
                   +'oninput="'
                     +'sps['+i+'].min=parseFloat(this.value);'
                     +'var e=document.getElementById(\'hmv-'+i+'\');'
                     +'if(e)e.textContent=parseFloat(this.value).toFixed(1)+\' \'+\''+un+'\';'
-                    +'var r=document.getElementById(\'escrange-'+i+'\');'
-                    +'if(r)r.textContent=sps['+i+'].escMin+\' → \'+sps['+i+'].escMax;'
                     +'updateSPSum('+i+');checkSPs();saveLocal();">'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
-                  +'style="width:65px;" '
-                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
-                  +'value="'+sps[i].min.toFixed(1)+'" '
-                  +'id="hmv-num-'+i+'" '
-                  +'oninput="'
-                    +'var v=parseFloat(this.value);'
-                    +'if(isNaN(v))return;'
-                    +'sps['+i+'].min=v;'
-                    +'var sl=document.getElementById(\'slmin-'+i+'\');'
-                    +'if(sl)sl.value=v;'
-                    +'var e=document.getElementById(\'hmv-'+i+'\');'
-                    +'if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
-                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
-                +'<span style="font-size:11px;color:#8b949e;" id="hmv-'+i+'">'+sps[i].min.toFixed(1)+' '+un+'</span>'
+                +'<span style="font-size:12px;font-weight:600;color:#e8eaf0;min-width:50px;" id="hmv-'+i+'">'+sps[i].min.toFixed(1)+' '+un+'</span>'
               +'</div>'
             +'</div>'
 
@@ -1911,27 +1907,13 @@ function renderSPs() {
                   +'id="slmax-'+i+'" '
                   +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
                   +'value="'+Math.min(Math.max(sps[i].max,sps[i].escMin),sps[i].escMax)+'" '
-                  +'style="width:110px;" '
+                  +'style="width:130px;" '
                   +'oninput="'
                     +'sps['+i+'].max=parseFloat(this.value);'
                     +'var e=document.getElementById(\'hxv-'+i+'\');'
                     +'if(e)e.textContent=parseFloat(this.value).toFixed(1)+\' \'+\''+un+'\';'
                     +'updateSPSum('+i+');checkSPs();saveLocal();">'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
-                  +'style="width:65px;" '
-                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
-                  +'value="'+sps[i].max.toFixed(1)+'" '
-                  +'id="hxv-num-'+i+'" '
-                  +'oninput="'
-                    +'var v=parseFloat(this.value);'
-                    +'if(isNaN(v))return;'
-                    +'sps['+i+'].max=v;'
-                    +'var sx=document.getElementById(\'slmax-'+i+'\');'
-                    +'if(sx)sx.value=v;'
-                    +'var e=document.getElementById(\'hxv-'+i+'\');'
-                    +'if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
-                    +'updateSPSum('+i+');checkSPs();saveLocal();">'
-                +'<span style="font-size:11px;color:#8b949e;" id="hxv-'+i+'">'+sps[i].max.toFixed(1)+' '+un+'</span>'
+                +'<span style="font-size:12px;font-weight:600;color:#e8eaf0;min-width:50px;" id="hxv-'+i+'">'+sps[i].max.toFixed(1)+' '+un+'</span>'
               +'</div>'
             +'</div>'
 
