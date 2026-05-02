@@ -632,9 +632,21 @@ var _provedor = 'jsonbin'; // 'jsonbin' ou 'custom'
 
 // Provedor ativo — lido dos campos da aba Config
 function getCfgArmazenamento() {
+  // Fallback para localStorage quando campos readonly/mascarados
+  function _getArqVal(id, fallbackKey) {
+    var el = document.getElementById(id);
+    var v = el ? el.value : '';
+    if (!v && fallbackKey) {
+      try {
+        var raw = localStorage.getItem('esp32conexao');
+        if (raw) { var d = JSON.parse(raw); v = d[fallbackKey] || ''; }
+      } catch(e) {}
+    }
+    return v;
+  }
   if (_provedor === 'jsonbin') {
-    var binId  = (document.getElementById('cfg-bin-id')  ||{}).value || '';
-    var mKey   = (document.getElementById('cfg-master-key')||{}).value || '';
+    var binId  = _getArqVal('cfg-bin-id',     'binId');
+    var mKey   = _getArqVal('cfg-master-key', 'masterKey');
     return {
       tipo:    'jsonbin',
       urlGet:  'https://api.jsonbin.io/v3/b/' + binId,
@@ -661,14 +673,25 @@ function getCfgArmazenamento() {
 
 // Config broker MQTT — lida dos campos
 function getCfgBroker() {
-  var proto    = (document.getElementById('cfg-mqtt-proto')    ||{}).value || 'wss';
-  var url      = (document.getElementById('cfg-mqtt-url')      ||{}).value || '';
-  var porta    = (document.getElementById('cfg-mqtt-porta')    ||{}).value || '8884';
-  var user     = (document.getElementById('cfg-mqtt-user')     ||{}).value || '';
-  var pass     = (document.getElementById('cfg-mqtt-pass')     ||{}).value || '';
-  var keepalive= parseInt((document.getElementById('cfg-mqtt-keepalive')||{}).value || '15');
-  var clientId = (document.getElementById('cfg-mqtt-clientid') ||{}).value || '';
-  if (!clientId) clientId = 'painel-' + Math.random().toString(16).substr(2,8);
+  // Lê campos do DOM — se vazio, tenta do localStorage (quando campo readonly/mascarado)
+  function _getBrokerVal(id, fallbackKey) {
+    var el = document.getElementById(id);
+    var v = el ? el.value : '';
+    if (!v && fallbackKey) {
+      try {
+        var raw = localStorage.getItem('esp32conexao');
+        if (raw) { var d = JSON.parse(raw); v = d[fallbackKey] || ''; }
+      } catch(e) {}
+    }
+    return v;
+  }
+  var proto    = _getBrokerVal('cfg-mqtt-proto',     'mqttProto') || 'wss';
+  var url      = _getBrokerVal('cfg-mqtt-url',       'mqttUrl')   || '';
+  var porta    = _getBrokerVal('cfg-mqtt-porta',     'mqttPorta') || '8884';
+  var user     = _getBrokerVal('cfg-mqtt-user',      'mqttUser')  || '';
+  var pass     = _getBrokerVal('cfg-mqtt-pass',      'mqttPass')  || '';
+  var keepalive= parseInt(_getBrokerVal('cfg-mqtt-keepalive','mqttKA') || '15');
+  var clientId = _getBrokerVal('cfg-mqtt-clientid',  '') || ('painel-' + Math.random().toString(16).substr(2,8));
   return {
     urlCompleta: proto + '://' + url + ':' + porta + '/mqtt',
     user:        user,
@@ -945,7 +968,7 @@ function aplicarConfig(c) {
   updateBase(); updateMetrics(); renderCoils(); renderMons(); renderSPs(); updateSpSels();
   renderGeral(); atualizarTodosLocks(); atualizarCamposConfig();
   // Conecta MQTT agora que config está pronta
-  var _pass2 = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
+  var _pass2 = _getBrokerVal ? _getBrokerVal('cfg-mqtt-pass','mqttPass') : (document.getElementById('cfg-mqtt-pass')||{}).value || '';
   if (!mqclient || !mqclient.connected) {
     if (_pass2) {
       conectarMQTT();
@@ -953,9 +976,11 @@ function aplicarConfig(c) {
       syncSt('Config carregada! Preencha a senha do broker e clique Conectar','#ef9f27');
     }
   } else {
-    // Já conectado — processa fila pendente e força resub
-    processarFilaPendente();
+    // Já conectado — resubscreve com a base correta agora que config carregou
+    var base = getBase();
+    addLog('clog','<b style="color:#3fb950;">Config carregada — resubscrevendo com base:</b> <code style="color:#79c0ff;">'+base+'</code>','pub');
     subscreverTopicos(true);
+    setTimeout(processarFilaPendente, 1500);
   }
 }
 
@@ -1451,12 +1476,7 @@ function conectarMQTT(){
     syncSt('Configure o broker MQTT na aba Config!','#e24b4a');
     return;
   }
-  // Verifica se senha foi preenchida
-  var _pass = (document.getElementById('cfg-mqtt-pass')||{}).value || '';
-  if (!_pass) {
-    syncSt('Digite a senha do broker na aba Config!','#ef9f27');
-    return;
-  }
+  // Senha lida via getCfgBroker que tem fallback para localStorage
   atualizarUrlsBroker();
   mqclient=mqtt.connect(_broker.urlCompleta,{
     clientId:       _broker.clientId,
@@ -1472,16 +1492,29 @@ function conectarMQTT(){
     st.textContent='Conectado'; st.style.color='#3fb950';
     document.getElementById('dot-broker').style.background='#3fb950';
     document.getElementById('lbl-broker').style.color='#3fb950';
-    // Limpa fila e estados antes dos retained chegarem
     _filaMsgs = [];
     localStorage.removeItem('esp32estados');
     coils.forEach(function(c){ c.estado=false; });
     sps.forEach(function(s){ s.estado=false; s._ultimoComando=null; });
     renderCoils(); updateMetrics(); renderGeral(); renderSPStatus();
-    subscreverTopicos();
-    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO — aguardando retained do ESP32...</b>','pub');
-    // Processa fila após pequeno delay (caso retained cheguem antes da config)
-    setTimeout(processarFilaPendente, 2000);
+
+    // Verifica se base está correta antes de subscrever
+    var base = getBase();
+    addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b> — base: <code style="color:#ef9f27;">'+base+'</code>','pub');
+
+    if(base === 'p/l/d' || base === '//') {
+      // Config ainda não carregou — aguarda e tenta novamente
+      addLog('clog','<b style="color:#ef9f27;">⚠️ Base padrão detectada — aguardando config...</b>','pub');
+      setTimeout(function(){
+        var base2 = getBase();
+        addLog('clog','<b style="color:#3fb950;">Subscrevendo com base:</b> <code style="color:#79c0ff;">'+base2+'</code>','pub');
+        subscreverTopicos();
+        setTimeout(processarFilaPendente, 1500);
+      }, 3000);
+    } else {
+      subscreverTopicos();
+      setTimeout(processarFilaPendente, 2000);
+    }
   });
 
   mqclient.on('message',function(topic,message){
@@ -1909,20 +1942,23 @@ function updateSpSels(){
   }
 }
 function toggleSP(i){
-  spItem.open=!spItem.open;
+  if(!sps[i]) return;
+  sps[i].open=!sps[i].open;
   var p=document.getElementById('spp-'+i), a=document.getElementById('spa-'+i);
-  if(p) p.style.maxHeight=spItem.open?'440px':'0';
-  if(a) a.style.transform=spItem.open?'rotate(90deg)':'rotate(0)';
+  if(p) p.style.maxHeight=sps[i].open?'440px':'0';
+  if(a) a.style.transform=sps[i].open?'rotate(90deg)':'rotate(0)';
 }
 function refreshSPBadge(i){
-  var c=CORES[spItem.cor], b=document.getElementById('spb-'+i);
+  if(!sps[i]) return;
+  var c=CORES[sps[i].cor], b=document.getElementById('spb-'+i);
   if(b){ b.style.background=c.bg; b.style.color=c.tx; b.style.border='0.5px solid '+c.bd; }
   checkSPs();
 }
 function updateSPSum(i){
-  var m=mons[spItem.monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
-  if(sl) sl.textContent=m?TIPOS[spItem.tipo]+' · '+m.nome+' · '+spItem.min.toFixed(2)+'-'+spItem.max.toFixed(2)+' '+(m.unid||''):'sem entrada';
-  if(ml) ml.textContent=spItem.acao>0?'pub: '+gst(i,'comando')+' → "'+spItem.msgA+'" / "'+spItem.msgD+'"':'';
+  if(!sps[i]) return;
+  var m=mons[sps[i].monIdx], sl=document.getElementById('sps-'+i), ml=document.getElementById('spm-'+i);
+  if(sl) sl.textContent=m?TIPOS[sps[i].tipo]+' · '+m.nome+' · '+sps[i].min.toFixed(2)+'-'+sps[i].max.toFixed(2)+' '+(m.unid||''):'sem entrada';
+  if(ml) ml.textContent=sps[i].acao>0?'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"':'';
 }
 
 function renderSPs(){
