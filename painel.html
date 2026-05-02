@@ -248,7 +248,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="col">
           <label class="lbl">Master Key</label>
           <div class="row" style="gap:4px;">
-            <input type="password" id="cfg-master-key" style="flex:1;font-family:monospace;font-size:11px;" placeholder="$2a$10$..." oninput="salvarConexaoLocal()">
+            <input type="text" id="cfg-master-key" style="flex:1;font-family:monospace;font-size:11px;" placeholder="$2a$10$..." oninput="salvarConexaoLocal()">
             <button class="btn-sm" onclick="toggleVerCampo('cfg-master-key')" title="Mostrar/Ocultar">&#128065;</button>
           </div>
         </div>
@@ -274,7 +274,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
         <div class="col">
           <label class="lbl">Token/Senha</label>
           <div class="row" style="gap:4px;">
-            <input type="password" id="cfg-auth-value" placeholder="Bearer eyJ..." style="flex:1;font-size:11px;" oninput="salvarConexaoLocal()">
+            <input type="text" id="cfg-auth-value" placeholder="Bearer eyJ..." style="flex:1;font-size:11px;" oninput="salvarConexaoLocal()">
             <button class="btn-sm" onclick="toggleVerCampo('cfg-auth-value')" title="Mostrar/Ocultar">&#128065;</button>
           </div>
         </div>
@@ -320,7 +320,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
       <div class="col">
         <label class="lbl">Senha</label>
         <div class="row" style="gap:4px;">
-          <input type="password" id="cfg-mqtt-pass" style="flex:1;" placeholder="••••••••••" oninput="salvarConexaoLocal()">
+          <input type="text" id="cfg-mqtt-pass" style="flex:1;" placeholder="digite a senha" oninput="salvarConexaoLocal()">
           <button class="btn-sm" onclick="toggleVerCampo('cfg-mqtt-pass')" title="Mostrar/Ocultar">&#128065;</button>
         </div>
       </div>
@@ -514,8 +514,11 @@ function toggleLock(aba) {
   if(aba==='coil')   renderCoils();
   if(aba==='mon')    renderMons();
   if(aba==='sp')     renderSPs();
-  if(aba==='arq')    atualizarUrlsBroker();
-  if(aba==='broker') atualizarUrlsBroker();
+  if(aba==='arq'||aba==='broker'){
+    atualizarUrlsBroker();
+    if(isLocked(aba)) _mascararCamposSensiveis();
+    else _desmascararCamposSensiveis();
+  }
 }
 
 function atualizarBotaoLock(aba) {
@@ -547,27 +550,50 @@ function atualizarTodosLocks() {
 }
 
 function atualizarCamposConfig() {
-  var bloqueado = isLocked('cfg');
+  // Identificação
+  var bloqCfg = isLocked('cfg');
   ['cfg-p','cfg-l','cfg-d'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.readOnly = bloqueado;
+    if (el) el.readOnly = bloqCfg;
   });
-  // Campos de armazenamento bloqueados
+
+  // Armazenamento
   var bloqArq = isLocked('arq');
   ['cfg-bin-id','cfg-master-key','cfg-url-get','cfg-url-put','cfg-auth-header','cfg-auth-value'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.readOnly = bloqArq;
+    if (!el) return;
+    el.readOnly = bloqArq;
+    el.style.opacity = bloqArq ? '0.5' : '1';
+    el.style.cursor  = bloqArq ? 'not-allowed' : '';
   });
-  // Campos de broker bloqueados
+  // Botões provedor
+  ['prov-jsonbin','prov-custom'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = bloqArq;
+    el.style.opacity = bloqArq ? '0.4' : '1';
+  });
+  // Botões olho armazenamento — desabilitar se locked
+  ['cfg-master-key','cfg-auth-value'].forEach(function(id){
+    var btn = document.querySelector('button[onclick="toggleVerCampo(\''+id+'\')"]');
+    if (btn) { btn.disabled = bloqArq; btn.style.opacity = bloqArq ? '0.4' : '1'; }
+  });
+
+  // Broker
   var bloqBroker = isLocked('broker');
   ['cfg-mqtt-url','cfg-mqtt-porta','cfg-mqtt-user','cfg-mqtt-pass','cfg-mqtt-keepalive','cfg-mqtt-clientid'].forEach(function(id){
     var el = document.getElementById(id);
-    if (el) el.readOnly = bloqBroker;
+    if (!el) return;
+    el.readOnly = bloqBroker;
+    el.style.opacity = bloqBroker ? '0.5' : '1';
+    el.style.cursor  = bloqBroker ? 'not-allowed' : '';
   });
-  ['cfg-mqtt-proto'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.disabled = bloqBroker;
-  });
+  var protoEl = document.getElementById('cfg-mqtt-proto');
+  if (protoEl) { protoEl.disabled = bloqBroker; protoEl.style.opacity = bloqBroker ? '0.5' : '1'; }
+  // Botão olho senha broker
+  var btnOlho = document.querySelector('button[onclick="toggleVerCampo(\'cfg-mqtt-pass\')"]');
+  if (btnOlho) { btnOlho.disabled = bloqBroker; btnOlho.style.opacity = bloqBroker ? '0.4' : '1'; }
+  // Botões Conectar/Desconectar — sempre disponíveis
 }
 
 // ════════════════════════════════════════════════
@@ -675,14 +701,31 @@ function atualizarUrlsBroker() {
 }
 
 // Salva config de conexão no sessionStorage (não no JSONBin — segurança)
+// Mascara campos sensíveis após salvar (type=password)
+// Desmascara quando UNLOCKED e usuário clica no olho
+function _mascararCamposSensiveis() {
+  ['cfg-master-key','cfg-mqtt-pass','cfg-auth-value'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el && el.value && el.value.length > 0) {
+      el.type = 'password';
+    }
+  });
+}
+
+function _desmascararCamposSensiveis() {
+  ['cfg-master-key','cfg-mqtt-pass','cfg-auth-value'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.type = 'text';
+  });
+}
+
 // Mostrar/ocultar campo de senha com botão olho
 function toggleVerCampo(id) {
   var el = document.getElementById(id);
   if (!el) return;
-  // Só revela se UNLOCKED da aba correspondente
   var aba = id.startsWith('cfg-mqtt') ? 'broker' : 'arq';
   if (isLocked(aba)) {
-    syncSt('Desbloqueie para revelar','#e24b4a');
+    syncSt('Desbloqueie primeiro para revelar o campo','#e24b4a');
     return;
   }
   el.type = el.type === 'password' ? 'text' : 'password';
@@ -711,7 +754,8 @@ function salvarConexaoLocal() {
     mqttKA:   (document.getElementById('cfg-mqtt-keepalive')||{}).value || '15'
     // ⚠️ Senhas NÃO são salvas — re-digitadas a cada sessão
   };
-  sessionStorage.setItem('esp32conexao', JSON.stringify(dados));
+  localStorage.setItem('esp32conexao', JSON.stringify(dados));
+  atualizarCamposConfig();
 }
 
 // Restaura config de conexão (sem senhas)
@@ -734,6 +778,10 @@ function restaurarConexaoLocal() {
     if (d.mqttPass)  _setCampo('cfg-mqtt-pass',      d.mqttPass);
     if (d.mqttKA)    _setCampo('cfg-mqtt-keepalive', d.mqttKA);
     atualizarUrlsBroker();
+    // Mascara campos sensíveis após restaurar
+    _mascararCamposSensiveis();
+    // Aplica readonly após restaurar
+    atualizarCamposConfig();
   } catch(e) {}
 }
 
@@ -991,7 +1039,7 @@ function showTab(id) {
   });
   document.getElementById('pane-'+id).classList.add('active');
   document.getElementById('btn-'+id).classList.add('active');
-  if (id==='cfg')   { updateTopics(); updateResumo(); atualizarUrlsBroker(); }
+  if (id==='cfg')   { updateTopics(); updateResumo(); atualizarUrlsBroker(); atualizarCamposConfig(); }
   if (id==='geral') { renderGeral(); }
 }
 
@@ -1358,17 +1406,17 @@ function subscreverTopicos(forcarRetained){
   Object.keys(tops).forEach(function(t){ topicos.push(t); });
 
   if(forcarRetained){
-    // Unsubscribe de todos primeiro — broker reentrega retained na próxima subscrição
     topicos.forEach(function(t){ try{ mqclient.unsubscribe(t); }catch(e){} });
-    // Aguarda unsubscribe processar antes de resubscrever
     setTimeout(function(){
       topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
-      addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — unsub+resub forçado, retained chegando...','pub');
+      addLog('clog','<b style="color:#3fb950;">SUBSCRITO (forçado)</b> base: <code style="color:#79c0ff;">'+base+'</code> | '+topicos.length+' tópicos','pub');
     }, 300);
   } else {
     topicos.forEach(function(t){ mqclient.subscribe(t,{qos:1}); });
-    addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> — base: '+base+' | mons: '+Object.keys(tops).length,'pub');
+    addLog('clog','<b style="color:#3fb950;">SUBSCRITO</b> base: <code style="color:#79c0ff;">'+base+'</code> | '+topicos.length+' tópicos','pub');
   }
+  // Log para debug — mostra os tópicos subscritos
+  addLog('clog','Tópicos: '+topicos.slice(0,4).join(', ')+'...','pub');
 }
 
 function desconectarMQTT(){
@@ -1504,15 +1552,14 @@ function removeCoil(i){ if(isLocked('coil')){ syncSt('Desbloqueie o card Coils p
 
 function allCoils(s){
   if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
-  if(!_esp32Online) syncSt('⚠️ ESP32 parece offline — publicando mesmo assim...','#ef9f27');
+  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
   coils.forEach(function(_,i){ _setCoilInterno(i,s); });
 }
 
 function setCoil(i,s){
   if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado! Va em Config.','#e24b4a'); return; }
-  if(!_esp32Online) syncSt('⚠️ ESP32 parece offline — publicando mesmo assim...','#ef9f27');
-  // Bloqueia comando duplicado apenas se status for confiável (online)
-  if(_esp32Online && coils[i].estado===s){ syncSt('Coil ja esta '+(s?'ACIONADO':'DESACIONADO'),'#8b949e'); return; }
+  if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
+  if(coils[i].estado===s){ syncSt('Coil ja esta '+(s?'ACIONADO':'DESACIONADO'),'#8b949e'); return; }
   _setCoilInterno(i,s);
 }
 
@@ -1552,14 +1599,9 @@ function setCoilGeral(i,s){
     nomeCor,
     function(){
       if(!mqclient||!mqclient.connected){ syncSt('MQTT desconectado!','#e24b4a'); return; }
-      // Publica mesmo se status parecer offline — pode ser dessincronizado
-      // O ESP32 vai confirmar via /estado se receber
+      if(!_esp32Online){ syncSt('ESP32 OFFLINE — comando bloqueado','#e24b4a'); return; }
       mqttPub(gct(i,'comando'), s ? coils[i].msgA : coils[i].msgD);
-      if(!_esp32Online){
-        syncSt('⚠️ Comando enviado mas ESP32 parece offline — aguarde confirmação','#ef9f27');
-      } else {
-        syncSt('Comando enviado — aguardando confirmação ESP32...','#ef9f27');
-      }
+      syncSt('Comando enviado — aguardando confirmacao ESP32...','#ef9f27');
       setTimeout(function(){ syncSt('pronto','#8b949e'); },3000);
     }
   );
