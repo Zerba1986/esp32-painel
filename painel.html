@@ -1070,6 +1070,12 @@ function processarMsg(topic, msg) {
   if (topic === getBase()+'/telemetria') {
     try {
       var tel = JSON.parse(msg);
+      // Log resumido no mlog
+      var telKeys = Object.keys(tel).filter(function(k){ return k!=='rssi'&&k!=='uptime'&&k!=='ip'; });
+      if(telKeys.length>0){
+        addLog('mlog','<b style="color:#58a6ff;">TEL</b> <code style="color:#79c0ff;">'+topic+'</code> → '
+          +telKeys.map(function(k){ return '<b>'+k+'</b>='+tel[k]; }).join(' · '),'sub');
+      }
       // Uptime
       if (tel.uptime !== undefined) {
         var s=parseInt(tel.uptime)||0, h=Math.floor(s/3600), m2=Math.floor((s%3600)/60), sec=s%60;
