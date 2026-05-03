@@ -697,6 +697,29 @@ function restaurarEstados() {
   } catch(ex) {}
 }
 
+function publicarConfigSPs() {
+  if (!mqclient || !mqclient.connected) return;
+  for (var i = 0; i < qty; i++) {
+    var sp = sps[i];
+    var m  = mons[sp.monIdx];
+    if (!m || m.tipo !== 'analog') continue; // só analógicos
+    var cfg = {
+      tipo:    sp.tipo,
+      escMin:  sp.escMin,
+      escMax:  sp.escMax,
+      spMin:   sp.min,
+      spMax:   sp.max,
+      entrada: m.jsonKey,  // ex: "an01", "temp", "umid"
+      msgA:    sp.msgA,
+      msgD:    sp.msgD
+    };
+    var topic = getBase()+'/setpoints/sp'+String(sp.numero).padStart(2,'0')+'/config';
+    mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
+    addLog('splog','<b style="color:#3fb950;">CFG PUB</b> <code style="color:#79c0ff;">'+topic+'</code> entrada=<b>'+m.jsonKey+'</b> min='+sp.min.toFixed(1)+' max='+sp.max.toFixed(1),'pub');
+  }
+  syncSt('Config SPs enviada ao ESP32!','#3fb950');
+}
+
 function salvarNuvem() {
   if (_carregando) return;
   if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') { syncSt('Insira a Master Key!','#e24b4a'); return; }
@@ -709,7 +732,7 @@ function salvarNuvem() {
     body: JSON.stringify({ config: cfg })
   })
   .then(function(r){ return r.json(); })
-  .then(function(){ syncSt('Salvo!','#3fb950'); })
+  .then(function(){ syncSt('Salvo!','#3fb950'); publicarConfigSPs(); })
   .catch(function(){ syncSt('Erro — salvo local','#e24b4a'); });
 }
 
@@ -1251,6 +1274,8 @@ function conectarMQTT() {
         +'<span style="color:#8b949e;margin-left:8px;">'+ts+'</span>'
         +'<span style="color:#5a6478;margin-left:8px;font-size:10px;">painel solicitou sincronização → ESP32 aplicará pinos e republicará estados</span>',
         'pub');
+      // Envia configs dos SPs ao ESP32
+      publicarConfigSPs();
     }, 2000);
     // Timer de segurança: se /status não chegar em 5s, aplica buffer mesmo assim
     setTimeout(function(){
@@ -2074,41 +2099,8 @@ function renderSPs() {
 
 
 function checkSPs() {
-  // checkSPs só decide SE deve publicar o comando
-  // Estado visual (acionado/desacionado) SÓ muda via confirmação do ESP32
-  // igual ao comportamento dos coils
-  if (!_esp32Online) return; // ESP32 offline — não publica nada
-
-  for (var i=0; i<qty; i++) {
-    var m = mons[sps[i].monIdx];
-    if (!m) continue;
-
-    var val = m.tipo==='analog' ? m.val : (m.estado?1:0);
-    var deveAcionar = false;
-    if (sps[i].tipo===0) {
-      // Histerese
-      if (val > sps[i].max)      deveAcionar = true;
-      else if (val < sps[i].min) deveAcionar = false;
-      else                        deveAcionar = sps[i]._ultimoComando === sps[i].msgA;
-    } else {
-      // Janela
-      deveAcionar = (val >= sps[i].min && val <= sps[i].max);
-    }
-
-    var msgDesejada = deveAcionar ? sps[i].msgA : sps[i].msgD;
-
-    // Só publica se mudou de comando
-    if (msgDesejada !== sps[i]._ultimoComando) {
-      sps[i]._ultimoComando = msgDesejada;
-      if (sps[i].acao > 0) {
-        mqttPub(gst(i,'comando'), msgDesejada);
-        addLog('splog',
-          '<b>'+sps[i].nome+'</b> pub: <code style="color:#79c0ff;">'+gst(i,'comando')+'</code> → <b style="color:'+(deveAcionar?'#7ee787':'#ffa0a0')+';">'+msgDesejada+'</b> — aguardando ESP32...','pub');
-      }
-    }
-  }
-
-  // Atualiza visual baseado no estado CONFIRMADO pelo ESP32 (sps[i].estado)
+  // Painel não decide mais — ESP32 faz a lógica localmente
+  // Painel só atualiza visual baseado nos /estado recebidos via MQTT
   renderSPStatus();
 }
 
