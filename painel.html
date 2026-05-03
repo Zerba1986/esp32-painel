@@ -1121,7 +1121,25 @@ function processarMsg(topic, msg) {
     return;
   }
 
-  // 6. Entradas de monitoramento — tópicos customizados (não telemetria)
+  // 5.5 Sensores extras (base/sensores/dht, base/sensores/bmp280, etc)
+  if (topic.indexOf(getBase()+'/sensores/') === 0) {
+    addLog('mlog','<b style="color:#79c0ff;">SENSOR</b> <code style="color:#79c0ff;">'+topic+'</code> → '+msg.substring(0,80),'sub');
+    try {
+      var tel2 = JSON.parse(msg);
+      mons.forEach(function(m, i) {
+        if (m.tipo !== 'analog') return;
+        if (m.topico !== topic) return;
+        if (tel2[m.jsonKey] !== undefined) {
+          m.val = parseFloat(tel2[m.jsonKey]);
+          atualizaValMon(i, m.val);
+        }
+      });
+      checkSPs();
+    } catch(e) {}
+    return;
+  }
+
+  // 6. Entradas de monitoramento — tópicos customizados
   mons.forEach(function(m, i) {
     if (topic !== m.topico) return;
     if (topic === getBase()+'/telemetria') return; // já processado acima
@@ -1202,13 +1220,15 @@ function subscreverTopicos(forcarRetained) {
   var topicos = [
     base+'/status',
     base+'/telemetria',
+    base+'/sensores/+',        // DHT, BMP280 e outros sensores extras
     base+'/atuadores/+/estado',
     base+'/setpoints/+/estado',
+    base+'/setpoints/+/config', // recebe config dos SPs
     base+'/entradas/digital/+'
   ];
   var tops = {};
   mons.forEach(function(m){
-    if(m.topico&&!tops[m.topico]) tops[m.topico]=1;
+    if(m.topico && !tops[m.topico]) tops[m.topico]=1;
   });
   Object.keys(tops).forEach(function(t){ topicos.push(t); });
 
