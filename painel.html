@@ -2522,20 +2522,28 @@ function updateMetrics() {
 // ════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════
+carregarCreds(); // garante credenciais carregadas antes de tudo
 carregarNuvem();
 setTimeout(function(){
-  if (!mqclient) conectarMQTT();
+  if (!mqclient) {
+    if(!CREDS.mqttUser || !CREDS.mqttPass){
+      addLog('clog','<b style="color:#e24b4a;">Configure as credenciais MQTT em Config!</b>','pub');
+      syncSt('Configure credenciais em Config','#e24b4a');
+    } else {
+      conectarMQTT();
+    }
+  }
 }, 1500);
 
 // Reconecta ao voltar para a página (BFCache, troca de aba, Alt+Tab)
 document.addEventListener('visibilitychange', function(){
   if (document.visibilityState === 'visible') {
-    // No mobile o cliente pode estar "conectado" mas morto — força reconexão
+    carregarCreds(); // recarrega credenciais caso tenham mudado
     addLog('clog','<b style="color:#ef9f27;">Página visível — verificando MQTT...</b>','pub');
     if (mqclient) { try{ mqclient.end(true); }catch(ex){} mqclient = null; }
     _esp32Online = false;
     _bufferRetained = {};
-    restaurarEstados(); // restaura cache visual imediatamente
+    restaurarEstados();
     setTimeout(conectarMQTT, 500);
   }
 });
