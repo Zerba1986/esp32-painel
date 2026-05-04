@@ -693,6 +693,17 @@ function carregarCreds() {
 
 function salvarCreds() {
   localStorage.setItem('esp32creds', btoa(JSON.stringify(CREDS)));
+  // Log para confirmar o que foi salvo
+  console.log('[CREDS] Salvo:', {
+    mqttUrl:    CREDS.mqttUrl    ? '✓ ('+CREDS.mqttUrl.substring(0,15)+'...)' : '✗ vazio',
+    mqttPort:   CREDS.mqttPort  || '8884',
+    mqttUser:   CREDS.mqttUser  ? '✓ '+CREDS.mqttUser : '✗ vazio',
+    mqttPass:   CREDS.mqttPass  ? '✓ ('+CREDS.mqttPass.length+' chars)' : '✗ vazio',
+    jsonbinId:  CREDS.jsonbinId  ? '✓' : '✗ vazio',
+    jsonbinKey: CREDS.jsonbinKey ? '✓' : '✗ vazio',
+    senhaAcesso:CREDS.senhaAcesso? '✓' : '✗ vazio',
+    senhaLock:  CREDS.senhaLock  ? '✓' : '✗ vazio'
+  });
 }
 
 function resetarCreds() {
