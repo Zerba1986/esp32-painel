@@ -946,16 +946,20 @@ function salvarNuvem() {
 }
 
 function carregarNuvem() {
-  // Garante que _carregando volta a false mesmo se algo der errado
   setTimeout(function(){ _carregando = false; }, 10000);
 
-  if (JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
-    syncSt('Sem Master Key — usando local','#ef9f27');
+  // Sem JSONBin configurado — usa localStorage diretamente
+  if (!JSONBIN_KEY || !JSONBIN_URL || JSONBIN_KEY === 'SUA_MASTER_KEY_AQUI') {
     var raw = localStorage.getItem('esp32cfg');
-    if (raw) { try { aplicarConfig(JSON.parse(raw)); syncSt('Config local','#8b949e'); } catch(e) { initDefault(); } }
-    else initDefault();
+    if (raw) {
+      try { aplicarConfig(JSON.parse(raw)); syncSt('Config local carregada','#8b949e'); }
+      catch(e) { initDefault(); }
+    } else {
+      initDefault();
+    }
     return;
   }
+
   syncSt('Carregando...','#ef9f27');
   fetch(JSONBIN_URL, { headers: { 'X-Master-Key': JSONBIN_KEY } })
   .then(function(r){ return r.json(); })
@@ -964,7 +968,7 @@ function carregarNuvem() {
       aplicarConfig(data.record.config);
       syncSt('Config carregada!','#3fb950');
     } else {
-      syncSt('Sem config — padrao','#8b949e');
+      syncSt('Sem config — padrão','#8b949e');
       initDefault();
     }
   })
