@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CLOUD IOT — Login</title>
+<title>ESP32 Painel — Login</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
@@ -30,8 +30,8 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
   <div class="login-card">
     <div class="logo">
       <div class="logo-icon"><div class="logo-dot pulse"></div></div>
-      <div class="logo-title">CLOUD IOT</div>
-    
+      <div class="logo-title">ESP32 Painel</div>
+      <div class="logo-sub">minha_casa/sala/esp32_01</div>
     </div>
     <div class="field">
       <label>Usuário</label>
@@ -41,22 +41,38 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
       <label>Senha</label>
       <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     </div>
+
     <button class="btn-login" onclick="login()">Entrar</button>
     <div class="error" id="err">Usuário ou senha incorretos</div>
   </div>
 </div>
 <script>
-// ── DEFINA SEU USUÁRIO E SENHA AQUI ──────────────────  /////////////////////////////////////////////////senhas
-var USUARIO = "admin";
-var SENHA   = "esp32";
-// ─────────────────────────────────────────────────────
+// Credenciais padrão — usadas apenas na primeira vez
+// Após configurar em Config do painel, usa as do localStorage
+var USUARIO_PADRAO = "admin";
+var SENHA_PADRAO   = "1234";
+
+function getSenhaAcesso() {
+  try {
+    var raw = localStorage.getItem('esp32creds');
+    if (!raw) return { usuario: USUARIO_PADRAO, senha: SENHA_PADRAO };
+    var c = JSON.parse(atob(raw));
+    return {
+      usuario: c.mqttUser    || USUARIO_PADRAO,
+      senha:   c.senhaAcesso || SENHA_PADRAO
+    };
+  } catch(e) {
+    return { usuario: USUARIO_PADRAO, senha: SENHA_PADRAO };
+  }
+}
 
 function login() {
-  var u = document.getElementById('user').value.trim();
-  var p = document.getElementById('pass').value;
+  var u   = document.getElementById('user').value.trim();
+  var p   = document.getElementById('pass').value;
   var err = document.getElementById('err');
-  if (u === USUARIO && p === SENHA) {
-    // Salva sessão por 8 horas
+  var creds = getSenhaAcesso();
+
+  if (u === creds.usuario && p === creds.senha) {
     var expira = Date.now() + 8 * 60 * 60 * 1000;
     sessionStorage.setItem('esp32auth', JSON.stringify({ok:true, expira:expira}));
     window.location.href = 'painel.html';

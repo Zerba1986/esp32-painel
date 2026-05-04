@@ -593,7 +593,6 @@ function atualizarCamposConfig(){
 }
 
 function salvarCredsDosCampos(){
-  // Lê campos apenas se unlocked
   if(isLocked('cfg')){ syncSt('Desbloqueie Config para salvar credenciais','#e24b4a'); return; }
   var url  = document.getElementById('cred-mqttUrl');
   var port = document.getElementById('cred-mqttPort');
@@ -603,20 +602,26 @@ function salvarCredsDosCampos(){
   var jbKey= document.getElementById('cred-jbKey');
   var sa   = document.getElementById('cred-senhaAcesso');
   var sl   = document.getElementById('cred-senhaLock');
-  if(url)  CREDS.mqttUrl     = url.value.trim();
-  if(port) CREDS.mqttPort    = port.value.trim() || '8884';
-  if(user) CREDS.mqttUser    = user.value.trim();
-  if(pass) CREDS.mqttPass    = pass.value;
-  if(jbId) CREDS.jsonbinId   = jbId.value.trim();
-  if(jbKey)CREDS.jsonbinKey  = jbKey.value.trim();
-  if(sa)   CREDS.senhaAcesso = sa.value;
-  if(sl)   CREDS.senhaLock   = sl.value;
+  // Só sobrescreve se o campo não estiver vazio ou com máscara
+  function atualizar(campo, chave) {
+    if(!campo) return;
+    var v = campo.value.trim();
+    if(v && v !== '••••••••') CREDS[chave] = campo.type==='password' ? campo.value : v;
+  }
+  atualizar(url,  'mqttUrl');
+  atualizar(port, 'mqttPort');
+  atualizar(user, 'mqttUser');
+  atualizar(pass, 'mqttPass');
+  atualizar(jbId, 'jsonbinId');
+  atualizar(jbKey,'jsonbinKey');
+  atualizar(sa,   'senhaAcesso');
+  atualizar(sl,   'senhaLock');
   // Atualiza JSONBin
-  JSONBIN_KEY = CREDS.jsonbinKey;
+  JSONBIN_KEY = CREDS.jsonbinKey || '';
   if(CREDS.jsonbinId) JSONBIN_URL = 'https://api.jsonbin.io/v3/b/'+CREDS.jsonbinId;
   salvarCreds();
-  syncSt('Credenciais salvas com segurança!','#3fb950');
-  // Reconecta MQTT com novas credenciais
+  syncSt('Credenciais salvas!','#3fb950');
+  // Reconecta MQTT com novas credenciais se mudou
   if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
   setTimeout(conectarMQTT, 800);
 }
