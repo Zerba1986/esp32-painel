@@ -1399,20 +1399,12 @@ function inverterLogicaDigital(i) {
   if (!m || m.tipo !== 'digital') return;
   // Troca valT e valF
   var tmp = m.valT; m.valT = m.valF; m.valF = tmp;
-  // Reavalia estado com o último valor recebido (sem esperar nova msg MQTT)
+  // Reavalia estado com o último valor recebido
   if(m.ultimoVal !== undefined) {
     m.estado = (m.ultimoVal === m.valT);
   }
-  // Atualiza badge HIGH/LOW e dval
-  atualizaEstadoDigital(i);
-  // Atualiza inputs por ID fixo
-  var inpT = document.getElementById('inp-valt-'+i);
-  var inpF = document.getElementById('inp-valf-'+i);
-  if(inpT) inpT.value = m.valT;
-  if(inpF) inpF.value = m.valF;
-  // Atualiza linha de status textual
-  var stLine = document.getElementById('dstline-'+i);
-  if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
+  // Re-renderiza o mon para garantir IDs corretos e visual atualizado
+  renderMons();
   saveLocal();
 }
 
