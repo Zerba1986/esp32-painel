@@ -61,6 +61,15 @@ html,body{margin:0;padding:0;background:#0d1117;color:#e8eaf0;font-family:sans-s
 /* INPUTS */
 input[type=text],input[type=number],select{font-size:12px;padding:4px 8px;border-radius:6px;border:0.5px solid #30363d;background:#0d1117;color:#e8eaf0;outline:none;}
 input:focus,select:focus{border-color:#58a6ff;}
+/* Força cor escura no autocomplete do browser */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0d1117 inset !important;
+  -webkit-text-fill-color: #e8eaf0 !important;
+  caret-color: #e8eaf0;
+}
 input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:#21262d;outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#58a6ff;cursor:pointer;border:2px solid #0d1117;}
 /* MISC */
@@ -270,19 +279,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Broker MQTT</div>
     <div class="grid2" style="margin-bottom:12px;">
       <div class="col"><label class="lbl">URL (sem wss:// e sem porta)</label>
-        <input type="text" id="cred-mqttUrl" value="" placeholder="xxxx.hivemq.cloud" style="width:100%;"
+        <input type="text" id="cred-mqttUrl" value="" autocomplete="off" placeholder="xxxx.hivemq.cloud" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.mqttUrl=this.value;">
       </div>
       <div class="col"><label class="lbl">Porta</label>
-        <input type="text" id="cred-mqttPort" value="8884" placeholder="8884" style="width:80px;"
+        <input type="text" id="cred-mqttPort" value="8884" autocomplete="off" placeholder="8884" style="width:80px;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.mqttPort=this.value;">
       </div>
       <div class="col"><label class="lbl">Usuário</label>
-        <input type="text" id="cred-mqttUser" value="" placeholder="usuario" style="width:100%;"
+        <input type="text" id="cred-mqttUser" value="" autocomplete="off" placeholder="usuario" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.mqttUser=this.value;">
       </div>
       <div class="col"><label class="lbl">Senha MQTT</label>
-        <input type="password" id="cred-mqttPass" value="" placeholder="••••••••" style="width:100%;"
+        <input type="text" id="cred-mqttPass" value="" autocomplete="off" placeholder="senha" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.mqttPass=this.value;">
       </div>
     </div>
@@ -290,11 +299,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">JSONBin (nuvem)</div>
     <div class="grid2" style="margin-bottom:12px;">
       <div class="col"><label class="lbl">Bin ID</label>
-        <input type="text" id="cred-jbId" value="" placeholder="ID do bin" style="width:100%;"
+        <input type="text" id="cred-jbId" value="" autocomplete="off" placeholder="ID do bin" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.jsonbinId=this.value;">
       </div>
       <div class="col"><label class="lbl">Master Key</label>
-        <input type="password" id="cred-jbKey" value="" placeholder="••••••••••••••••" style="width:100%;"
+        <input type="text" id="cred-jbKey" value="" autocomplete="off" placeholder="Master Key" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.jsonbinKey=this.value;">
       </div>
     </div>
@@ -302,11 +311,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Senhas do Painel</div>
     <div class="grid2" style="margin-bottom:12px;">
       <div class="col"><label class="lbl">Senha de Login</label>
-        <input type="password" id="cred-senhaAcesso" value="" placeholder="••••••••" style="width:100%;"
+        <input type="text" id="cred-senhaAcesso" value="" autocomplete="off" placeholder="senha de acesso" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.senhaAcesso=this.value;">
       </div>
       <div class="col"><label class="lbl">Senha do Lock (admin)</label>
-        <input type="password" id="cred-senhaLock" value="" placeholder="••••••••" style="width:100%;"
+        <input type="text" id="cred-senhaLock" value="" autocomplete="off" placeholder="senha do lock" style="width:100%;background:#0d1117;color:#e8eaf0;"
           oninput="CREDS.senhaLock=this.value;">
       </div>
     </div>
@@ -562,32 +571,34 @@ function atualizarCamposConfig(){
   });
   // Campos de credenciais — oculta ou exibe
   var campos = {
-    'cred-mqttUrl':     { val: CREDS.mqttUrl,    tipo:'text'     },
-    'cred-mqttPort':    { val: CREDS.mqttPort||'8884', tipo:'text' },
-    'cred-mqttUser':    { val: CREDS.mqttUser,   tipo:'text'     },
-    'cred-mqttPass':    { val: CREDS.mqttPass,   tipo:'password' },
-    'cred-jbId':        { val: CREDS.jsonbinId,  tipo:'text'     },
-    'cred-jbKey':       { val: CREDS.jsonbinKey, tipo:'password' },
-    'cred-senhaAcesso': { val: CREDS.senhaAcesso,tipo:'password' },
-    'cred-senhaLock':   { val: CREDS.senhaLock,  tipo:'password' }
+    'cred-mqttUrl':     CREDS.mqttUrl      || '',
+    'cred-mqttPort':    CREDS.mqttPort     || '8884',
+    'cred-mqttUser':    CREDS.mqttUser     || '',
+    'cred-mqttPass':    CREDS.mqttPass     || '',
+    'cred-jbId':        CREDS.jsonbinId    || '',
+    'cred-jbKey':       CREDS.jsonbinKey   || '',
+    'cred-senhaAcesso': CREDS.senhaAcesso  || '',
+    'cred-senhaLock':   CREDS.senhaLock    || ''
   };
+  var sensiveis = ['cred-mqttPass','cred-jbKey','cred-senhaAcesso','cred-senhaLock'];
   Object.keys(campos).forEach(function(id){
     var el = document.getElementById(id);
     if(!el) return;
+    el.style.background = '#0d1117';
+    el.style.color      = '#e8eaf0';
     if(bl){
-      // LOCKED — mostra máscara
-      el.type = 'password';
-      el.value = campos[id].val ? '••••••••' : '';
+      // LOCKED — mostra máscara em texto simples (evita fundo branco do browser)
+      var isSensivel = sensiveis.indexOf(id) !== -1;
+      el.value    = campos[id] ? (isSensivel ? '••••••••' : '••••••••••••') : '';
       el.readOnly = true;
       el.style.opacity = '0.5';
-      el.style.color = '#8b949e';
+      el.style.color   = '#8b949e';
     } else {
       // UNLOCKED — mostra valor real
-      el.type = campos[id].tipo;
-      el.value = campos[id].val || '';
+      el.value    = campos[id];
       el.readOnly = false;
       el.style.opacity = '1';
-      el.style.color = '#e8eaf0';
+      el.style.color   = '#e8eaf0';
     }
   });
 }
