@@ -257,10 +257,70 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 
 <!-- PANE CONFIG -->
 <div class="pane" id="pane-cfg">
+  <!-- CARD CREDENCIAIS -->
+  <div class="card" style="border-color:#e24b4a;">
+    <div class="hdr" style="margin-bottom:10px;">
+      <div>
+        <div class="sh" style="margin:0;color:#ffa0a0;">&#128274; credenciais e segurança</div>
+        <div style="font-size:11px;color:#8b949e;margin-top:2px;">Desbloqueie para editar — travado os dados ficam ocultos</div>
+      </div>
+      <button class="btn-lock locked" id="btn-lock-cfg" onclick="toggleLock('cfg')">&#128274; LOCKED</button>
+    </div>
+    <!-- Broker MQTT -->
+    <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Broker MQTT</div>
+    <div class="grid2" style="margin-bottom:12px;">
+      <div class="col"><label class="lbl">URL (sem wss:// e sem porta)</label>
+        <input type="text" id="cred-mqttUrl" value="" placeholder="xxxx.hivemq.cloud" style="width:100%;"
+          oninput="CREDS.mqttUrl=this.value;">
+      </div>
+      <div class="col"><label class="lbl">Porta</label>
+        <input type="text" id="cred-mqttPort" value="8884" placeholder="8884" style="width:80px;"
+          oninput="CREDS.mqttPort=this.value;">
+      </div>
+      <div class="col"><label class="lbl">Usuário</label>
+        <input type="text" id="cred-mqttUser" value="" placeholder="usuario" style="width:100%;"
+          oninput="CREDS.mqttUser=this.value;">
+      </div>
+      <div class="col"><label class="lbl">Senha MQTT</label>
+        <input type="password" id="cred-mqttPass" value="" placeholder="••••••••" style="width:100%;"
+          oninput="CREDS.mqttPass=this.value;">
+      </div>
+    </div>
+    <!-- JSONBin -->
+    <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">JSONBin (nuvem)</div>
+    <div class="grid2" style="margin-bottom:12px;">
+      <div class="col"><label class="lbl">Bin ID</label>
+        <input type="text" id="cred-jbId" value="" placeholder="ID do bin" style="width:100%;"
+          oninput="CREDS.jsonbinId=this.value;">
+      </div>
+      <div class="col"><label class="lbl">Master Key</label>
+        <input type="password" id="cred-jbKey" value="" placeholder="••••••••••••••••" style="width:100%;"
+          oninput="CREDS.jsonbinKey=this.value;">
+      </div>
+    </div>
+    <!-- Senhas -->
+    <div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Senhas do Painel</div>
+    <div class="grid2" style="margin-bottom:12px;">
+      <div class="col"><label class="lbl">Senha de Login</label>
+        <input type="password" id="cred-senhaAcesso" value="" placeholder="••••••••" style="width:100%;"
+          oninput="CREDS.senhaAcesso=this.value;">
+      </div>
+      <div class="col"><label class="lbl">Senha do Lock (admin)</label>
+        <input type="password" id="cred-senhaLock" value="" placeholder="••••••••" style="width:100%;"
+          oninput="CREDS.senhaLock=this.value;">
+      </div>
+    </div>
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <div style="font-size:11px;color:#8b949e;">
+        ⚠️ Código de emergência: <code style="color:#ef9f27;">ESP32RESET</code> — reseta tudo
+      </div>
+      <button class="btn-save" onclick="salvarCredsDosCampos()">&#128274; Salvar Credenciais</button>
+    </div>
+  </div>
+
   <div class="card">
     <div class="hdr" style="margin-bottom:10px;">
       <div class="sh" style="margin:0;">identificacao do dispositivo</div>
-      <button class="btn-lock locked" id="btn-lock-cfg" onclick="toggleLock('cfg')">&#128274; LOCKED</button>
     </div>
     <div class="grid3" style="margin-bottom:10px;">
       <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" readonly oninput="updateBase()"></div>
@@ -437,7 +497,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
 <script>
 // Lock individual por aba
-var ADMIN_PASS = '1234';
+var ADMIN_PASS = '1234'; // compatibilidade — sobrescrito por getSenhaLock()
 var LOCKS = { cfg: true, coil: true, mon: true, sp: true };
 var CONFIG_LOCKED = true; // compatibilidade
 
@@ -446,9 +506,19 @@ function isLocked(aba){ return LOCKS[aba] !== false; }
 function toggleLock(aba){
   if(isLocked(aba)){
     var s = prompt('Senha para liberar '+aba.toUpperCase()+':');
-    if(s !== ADMIN_PASS){ alert('Senha incorreta'); return; }
+    if(s === null) return;
+    // Código de reset de emergência
+    if(s === RESET_CODE){
+      if(confirm('⚠️ RESET TOTAL\n\nTodas as credenciais e configurações serão apagadas.\nO painel voltará para o estado inicial.\nConfirma?')){
+        resetarCreds();
+      }
+      return;
+    }
+    if(s !== getSenhaLock()){ alert('Senha incorreta'); return; }
     LOCKS[aba] = false;
   } else {
+    // Ao travar cfg → salva credenciais dos campos
+    if(aba === 'cfg') salvarCredsDosCampos();
     LOCKS[aba] = true;
     saveLocal();
   }
@@ -490,6 +560,65 @@ function atualizarCamposConfig(){
     var el = document.getElementById(id);
     if(el) el.readOnly = bl;
   });
+  // Campos de credenciais — oculta ou exibe
+  var campos = {
+    'cred-mqttUrl':     { val: CREDS.mqttUrl,    tipo:'text'     },
+    'cred-mqttPort':    { val: CREDS.mqttPort||'8884', tipo:'text' },
+    'cred-mqttUser':    { val: CREDS.mqttUser,   tipo:'text'     },
+    'cred-mqttPass':    { val: CREDS.mqttPass,   tipo:'password' },
+    'cred-jbId':        { val: CREDS.jsonbinId,  tipo:'text'     },
+    'cred-jbKey':       { val: CREDS.jsonbinKey, tipo:'password' },
+    'cred-senhaAcesso': { val: CREDS.senhaAcesso,tipo:'password' },
+    'cred-senhaLock':   { val: CREDS.senhaLock,  tipo:'password' }
+  };
+  Object.keys(campos).forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(bl){
+      // LOCKED — mostra máscara
+      el.type = 'password';
+      el.value = campos[id].val ? '••••••••' : '';
+      el.readOnly = true;
+      el.style.opacity = '0.5';
+      el.style.color = '#8b949e';
+    } else {
+      // UNLOCKED — mostra valor real
+      el.type = campos[id].tipo;
+      el.value = campos[id].val || '';
+      el.readOnly = false;
+      el.style.opacity = '1';
+      el.style.color = '#e8eaf0';
+    }
+  });
+}
+
+function salvarCredsDosCampos(){
+  // Lê campos apenas se unlocked
+  if(isLocked('cfg')){ syncSt('Desbloqueie Config para salvar credenciais','#e24b4a'); return; }
+  var url  = document.getElementById('cred-mqttUrl');
+  var port = document.getElementById('cred-mqttPort');
+  var user = document.getElementById('cred-mqttUser');
+  var pass = document.getElementById('cred-mqttPass');
+  var jbId = document.getElementById('cred-jbId');
+  var jbKey= document.getElementById('cred-jbKey');
+  var sa   = document.getElementById('cred-senhaAcesso');
+  var sl   = document.getElementById('cred-senhaLock');
+  if(url)  CREDS.mqttUrl     = url.value.trim();
+  if(port) CREDS.mqttPort    = port.value.trim() || '8884';
+  if(user) CREDS.mqttUser    = user.value.trim();
+  if(pass) CREDS.mqttPass    = pass.value;
+  if(jbId) CREDS.jsonbinId   = jbId.value.trim();
+  if(jbKey)CREDS.jsonbinKey  = jbKey.value.trim();
+  if(sa)   CREDS.senhaAcesso = sa.value;
+  if(sl)   CREDS.senhaLock   = sl.value;
+  // Atualiza JSONBin
+  JSONBIN_KEY = CREDS.jsonbinKey;
+  if(CREDS.jsonbinId) JSONBIN_URL = 'https://api.jsonbin.io/v3/b/'+CREDS.jsonbinId;
+  salvarCreds();
+  syncSt('Credenciais salvas com segurança!','#3fb950');
+  // Reconecta MQTT com novas credenciais
+  if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
+  setTimeout(conectarMQTT, 800);
 }
 
 // Compatibilidade com código antigo que chama toggleConfig
@@ -497,6 +626,9 @@ function toggleConfig(){ toggleLock('coil'); }
 // ════════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════════
+// Carrega credenciais antes de verificar auth
+carregarCreds();
+
 (function(){
   var a = sessionStorage.getItem('esp32auth');
   if (!a) { window.location.href = 'index.html'; return; }
@@ -516,16 +648,59 @@ function logout() {
 }
 
 // ════════════════════════════════════════════════
-// JSONBIN
+// CREDENCIAIS — carregadas do localStorage
+// Nunca hardcoded aqui — configuradas em Config
 // ════════════════════════════════════════════════
-var JSONBIN_ID  = '69ee74c6856a68218976161c';
-var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
-// ╔══════════════════════════════════════════════════════╗
-// ║           CONFIGURAÇÃO — EDITE AQUI                  ║
-// ║  Cole sua X-MASTER-KEY do JSONBin abaixo             ║
-// ╚══════════════════════════════════════════════════════╝
-var JSONBIN_KEY = '$2a$10$HPU0uDjSwrT7BpTdt1/as.vdnFGsC7BA/jKj6eMUVhDGykoclCotG';
-// ════════════════════════════════════════════════════════
+var CREDS = {
+  mqttUrl:    '',   // wss://broker:8884/mqtt
+  mqttUser:   '',
+  mqttPass:   '',
+  jsonbinId:  '',
+  jsonbinKey: '',
+  senhaAcesso:'',   // senha de login
+  senhaLock:  ''    // senha de desbloqueio
+};
+var RESET_CODE   = 'ESP32RESET';  // código de emergência — visível no fonte mas não é senha real
+var SENHA_PADRAO = '1234';        // senha padrão na primeira vez
+
+function carregarCreds() {
+  try {
+    var raw = localStorage.getItem('esp32creds');
+    if (!raw) return false;
+    var c = JSON.parse(atob(raw)); // decodifica base64
+    CREDS = Object.assign(CREDS, c);
+    // Atualiza variáveis globais usadas pelo resto do código
+    JSONBIN_KEY = CREDS.jsonbinKey || '';
+    if(CREDS.jsonbinId) {
+      JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + CREDS.jsonbinId;
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function salvarCreds() {
+  localStorage.setItem('esp32creds', btoa(JSON.stringify(CREDS)));
+}
+
+function resetarCreds() {
+  localStorage.removeItem('esp32creds');
+  localStorage.removeItem('esp32cfg');
+  localStorage.removeItem('esp32estados');
+  CREDS = { mqttUrl:'', mqttUser:'', mqttPass:'', jsonbinId:'', jsonbinKey:'', senhaAcesso:'', senhaLock:'' };
+  JSONBIN_KEY = '';
+  syncSt('Configurações resetadas — recarregando...','#ef9f27');
+  setTimeout(function(){ window.location.href='index.html'; }, 2000);
+}
+
+function getSenhaLock()   { return CREDS.senhaLock   || SENHA_PADRAO; }
+function getSenhaAcesso() { return CREDS.senhaAcesso  || SENHA_PADRAO; }
+
+// ════════════════════════════════════════════════
+// JSONBIN — URL dinâmica
+// ════════════════════════════════════════════════
+var JSONBIN_ID  = '';
+var JSONBIN_URL = '';
+var JSONBIN_KEY = '';
 var _carregando = false;
 
 var _toastTimer = null;
@@ -1280,10 +1455,21 @@ function conectarMQTT() {
   // Encerra conexão anterior
   if (mqclient) { try { mqclient.end(true); } catch(e){} mqclient = null; }
 
-  mqclient = mqtt.connect('wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt', {
+  var mqttUrl  = CREDS.mqttUrl  ? 'wss://'+CREDS.mqttUrl+':'+(CREDS.mqttPort||'8884')+'/mqtt' : 'wss://4e5adb75a65d4a99839584edb12deeac.s1.eu.hivemq.cloud:8884/mqtt';
+  var mqttUser = CREDS.mqttUser || '';
+  var mqttPass = CREDS.mqttPass || '';
+
+  if(!mqttUser || !mqttPass){
+    syncSt('Configure as credenciais MQTT em Config!','#e24b4a');
+    var st2=document.getElementById('mqtt-st');
+    if(st2){ st2.textContent='Sem credenciais'; st2.style.color='#e24b4a'; }
+    return;
+  }
+
+  mqclient = mqtt.connect(mqttUrl, {
     clientId:       'painel-'+Math.random().toString(16).substr(2,8),
-    username:       'joazeirofelipe',
-    password:       'Mqtt@Railway2026',
+    username:       mqttUser,
+    password:       mqttPass,
     keepalive:      30,
     reconnectPeriod:5000,
     connectTimeout: 10000,
