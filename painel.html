@@ -667,6 +667,16 @@ function aplicarConfig(c, preservarEstado) {
   if (!preservarEstado) restaurarEstados();
 }
 
+function parsePt(s) {
+  // Aceita vírgula e ponto como separador decimal
+  if(s===''||s===null||s===undefined) return NaN;
+  return parseFloat(String(s).replace(',','.'));
+}
+function formatN(v, dec) {
+  dec = dec===undefined ? 1 : dec;
+  return isNaN(v) ? '0' : v.toFixed(dec);
+}
+
 function salvarEstados() {
   var estados = {
     coils: coils.map(function(c){ return {numero:c.numero, estado:c.estado}; }),
@@ -2020,35 +2030,37 @@ function renderSPs() {
             +'<div class="row" style="gap:12px;flex-wrap:wrap;">'
               +'<div class="col">'
                 +'<label class="lbl">Dig Min</label>'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                +'<input type="text" inputmode="decimal" '+(isLocked('sp')?'readonly ':'')
                   +'id="escmin-'+i+'" '
                   +'value="'+sps[i].escMin+'" '
-                  +'min="-999" max="9999" step="1" style="width:75px;" '
+                  +'min="-999" max="9999" style="width:75px;" '
                   +'oninput="'
-                    +'var v=parseFloat(this.value);if(isNaN(v))return;'
+                    +'var v=parsePt(this.value);if(isNaN(v)||this.value===\'\'||this.value===\'-\')return;'
                     +'sps['+i+'].escMin=v;'
                     +'var mn=document.getElementById(\'spmin-'+i+'\');'
                     +'var mx=document.getElementById(\'spmax-'+i+'\');'
-                    +'if(mn){mn.min=v;if(parseFloat(mn.value)<v){mn.value=v;sps['+i+'].min=v;}}'
-                    +'if(mx){mx.min=v;if(parseFloat(mx.value)<v){mx.value=v;sps['+i+'].max=v;}}'
+                    +'if(mn){if(parsePt(mn.value)<v){mn.value=v.toFixed(1);sps['+i+'].min=v;}}'
+                    +'if(mx){if(parsePt(mx.value)<v){mx.value=v.toFixed(1);sps['+i+'].max=v;}}'
                     +'var r=document.getElementById(\'escrange-'+i+'\');if(r)r.textContent=v+\' → \'+sps['+i+'].escMax+\' \'+\''+un+'\';'
-                    +'updateSPSum('+i+');saveLocal();">'
+                    +'updateSPSum('+i+');saveLocal();" '
+                  +'onblur="var v=parsePt(this.value);if(isNaN(v))v=sps['+i+'].escMin;this.value=v;sps['+i+'].escMin=v;updateSPSum('+i+');saveLocal();">'
               +'</div>'
               +'<div class="col">'
                 +'<label class="lbl">Dig Max</label>'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                +'<input type="text" inputmode="decimal" '+(isLocked('sp')?'readonly ':'')
                   +'id="escmax-'+i+'" '
                   +'value="'+sps[i].escMax+'" '
-                  +'min="-999" max="9999" step="1" style="width:75px;" '
+                  +'style="width:75px;" '
                   +'oninput="'
-                    +'var v=parseFloat(this.value);if(isNaN(v))return;'
+                    +'var v=parsePt(this.value);if(isNaN(v)||this.value===\'\'||this.value===\'-\')return;'
                     +'sps['+i+'].escMax=v;'
                     +'var mn=document.getElementById(\'spmin-'+i+'\');'
                     +'var mx=document.getElementById(\'spmax-'+i+'\');'
-                    +'if(mn){mn.max=v;if(parseFloat(mn.value)>v){mn.value=v;sps['+i+'].min=v;}}'
-                    +'if(mx){mx.max=v;if(parseFloat(mx.value)>v){mx.value=v;sps['+i+'].max=v;}}'
+                    +'if(mn){if(parsePt(mn.value)>v){mn.value=v.toFixed(1);sps['+i+'].min=v;}}'
+                    +'if(mx){if(parsePt(mx.value)>v){mx.value=v.toFixed(1);sps['+i+'].max=v;}}'
                     +'var r=document.getElementById(\'escrange-'+i+'\');if(r)r.textContent=sps['+i+'].escMin+\' → \'+v+\' \'+\''+un+'\';'
-                    +'updateSPSum('+i+');saveLocal();">'
+                    +'updateSPSum('+i+');saveLocal();" '
+                  +'onblur="var v=parsePt(this.value);if(isNaN(v))v=sps['+i+'].escMax;this.value=v;sps['+i+'].escMax=v;updateSPSum('+i+');saveLocal();">'
               +'</div>'
               +'<div style="font-size:10px;color:#8b949e;align-self:flex-end;padding-bottom:6px;">'
                 +'Range: <b style="color:#e8eaf0;" id="escrange-'+i+'">'+sps[i].escMin+' → '+sps[i].escMax+'</b> '+(un||'')
@@ -2062,17 +2074,23 @@ function renderSPs() {
             +'<div class="col">'
               +'<label class="lbl" data-lbl="min">'+(sps[i].tipo===0?'Min — desaciona':'Min — limite inferior')+'</label>'
               +'<div class="row" style="gap:6px;align-items:center;">'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                +'<input type="text" inputmode="decimal" '+(isLocked('sp')?'readonly ':'')
                   +'id="spmin-'+i+'" '
-                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
                   +'value="'+sps[i].min.toFixed(1)+'" '
                   +'style="width:80px;" '
                   +'oninput="'
-                    +'var v=parseFloat(this.value);if(isNaN(v))return;'
+                    +'var v=parsePt(this.value);'
+                    +'if(isNaN(v)||this.value===\'\'||this.value===\'-\')return;'
                     +'v=Math.min(Math.max(v,sps['+i+'].escMin),sps['+i+'].escMax);'
-                    +'this.value=v;'
                     +'sps['+i+'].min=v;'
                     +'var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
+                    +'updateSPSum('+i+');saveLocal();" '
+                  +'onblur="'
+                    +'var v=parsePt(this.value);'
+                    +'if(isNaN(v))v=sps['+i+'].min;'
+                    +'v=Math.min(Math.max(v,sps['+i+'].escMin),sps['+i+'].escMax);'
+                    +'this.value=v.toFixed(1);'
+                    +'sps['+i+'].min=v;'
                     +'updateSPSum('+i+');saveLocal();">'
                 +'<span style="font-size:11px;color:#8b949e;" id="hmv-'+i+'">'+sps[i].min.toFixed(1)+' '+un+'</span>'
               +'</div>'
@@ -2081,17 +2099,23 @@ function renderSPs() {
             +'<div class="col">'
               +'<label class="lbl" data-lbl="max">'+(sps[i].tipo===0?'Max — aciona':'Max — limite superior')+'</label>'
               +'<div class="row" style="gap:6px;align-items:center;">'
-                +'<input type="number" '+(isLocked('sp')?'readonly ':'')
+                +'<input type="text" inputmode="decimal" '+(isLocked('sp')?'readonly ':'')
                   +'id="spmax-'+i+'" '
-                  +'min="'+sps[i].escMin+'" max="'+sps[i].escMax+'" step="0.1" '
                   +'value="'+sps[i].max.toFixed(1)+'" '
                   +'style="width:80px;" '
                   +'oninput="'
-                    +'var v=parseFloat(this.value);if(isNaN(v))return;'
+                    +'var v=parsePt(this.value);'
+                    +'if(isNaN(v)||this.value===\'\'||this.value===\'-\')return;'
                     +'v=Math.min(Math.max(v,sps['+i+'].escMin),sps['+i+'].escMax);'
-                    +'this.value=v;'
                     +'sps['+i+'].max=v;'
                     +'var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=v.toFixed(1)+\' \'+\''+un+'\';'
+                    +'updateSPSum('+i+');saveLocal();" '
+                  +'onblur="'
+                    +'var v=parsePt(this.value);'
+                    +'if(isNaN(v))v=sps['+i+'].max;'
+                    +'v=Math.min(Math.max(v,sps['+i+'].escMin),sps['+i+'].escMax);'
+                    +'this.value=v.toFixed(1);'
+                    +'sps['+i+'].max=v;'
                     +'updateSPSum('+i+');saveLocal();">'
                 +'<span style="font-size:11px;color:#8b949e;" id="hxv-'+i+'">'+sps[i].max.toFixed(1)+' '+un+'</span>'
               +'</div>'
