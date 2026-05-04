@@ -1403,8 +1403,23 @@ function inverterLogicaDigital(i) {
   if(m.ultimoVal !== undefined) {
     m.estado = (m.ultimoVal === m.valT);
   }
-  // Re-renderiza o mon para garantir IDs corretos e visual atualizado
-  renderMons();
+  // Atualiza badge, dval e linha de status diretamente no DOM
+  var badge  = document.getElementById('dbadge-'+i);
+  var dval   = document.getElementById('dval-'+i);
+  var stLine = document.getElementById('dstline-'+i);
+  var inpT   = document.getElementById('inp-valt-'+i);
+  var inpF   = document.getElementById('inp-valf-'+i);
+  var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
+  if(badge){
+    badge.textContent = m.estado ? 'HIGH' : 'LOW';
+    badge.style.background   = sc.bg;
+    badge.style.color        = sc.tx;
+    badge.style.borderColor  = sc.bd;
+  }
+  if(dval)   dval.textContent = m.estado ? m.valT : m.valF;
+  if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
+  if(inpT)   inpT.value = m.valT;
+  if(inpF)   inpF.value = m.valF;
   saveLocal();
 }
 
