@@ -526,7 +526,7 @@ function toggleLock(aba){
     if(s !== getSenhaLock()){ alert('Senha incorreta'); return; }
     LOCKS[aba] = false;
   } else {
-    // Ao travar cfg → salva credenciais dos campos
+    // Ao travar cfg → salva credenciais ANTES de travar
     if(aba === 'cfg') salvarCredsDosCampos();
     LOCKS[aba] = true;
     saveLocal();
@@ -604,35 +604,32 @@ function atualizarCamposConfig(){
 }
 
 function salvarCredsDosCampos(){
-  if(isLocked('cfg')){ syncSt('Desbloqueie Config para salvar credenciais','#e24b4a'); return; }
-  var url  = document.getElementById('cred-mqttUrl');
-  var port = document.getElementById('cred-mqttPort');
-  var user = document.getElementById('cred-mqttUser');
-  var pass = document.getElementById('cred-mqttPass');
-  var jbId = document.getElementById('cred-jbId');
-  var jbKey= document.getElementById('cred-jbKey');
-  var sa   = document.getElementById('cred-senhaAcesso');
-  var sl   = document.getElementById('cred-senhaLock');
-  // Só sobrescreve se o campo não estiver vazio ou com máscara
-  function atualizar(campo, chave) {
-    if(!campo) return;
-    var v = campo.value.trim();
-    if(v && v !== '••••••••') CREDS[chave] = campo.type==='password' ? campo.value : v;
+  if(isLocked('cfg')){ syncSt('Desbloqueie Config para salvar','#e24b4a'); return; }
+  // Lê valor real de cada campo — ignora apenas se contiver só bullets (máscara)
+  function ler(id) {
+    var el = document.getElementById(id);
+    if(!el) return null;
+    var v = el.value;
+    // Se campo só tem bullets é máscara — mantém valor anterior
+    if(/^[•]+$/.test(v)) return null;
+    return v;
   }
-  atualizar(url,  'mqttUrl');
-  atualizar(port, 'mqttPort');
-  atualizar(user, 'mqttUser');
-  atualizar(pass, 'mqttPass');
-  atualizar(jbId, 'jsonbinId');
-  atualizar(jbKey,'jsonbinKey');
-  atualizar(sa,   'senhaAcesso');
-  atualizar(sl,   'senhaLock');
+  var v;
+  if((v=ler('cred-mqttUrl'))    !== null) CREDS.mqttUrl     = v.trim();
+  if((v=ler('cred-mqttPort'))   !== null) CREDS.mqttPort    = v.trim() || '8884';
+  if((v=ler('cred-mqttUser'))   !== null) CREDS.mqttUser    = v.trim();
+  if((v=ler('cred-mqttPass'))   !== null) CREDS.mqttPass    = v;
+  if((v=ler('cred-jbId'))       !== null) CREDS.jsonbinId   = v.trim();
+  if((v=ler('cred-jbKey'))      !== null) CREDS.jsonbinKey  = v.trim();
+  if((v=ler('cred-senhaAcesso'))!== null) CREDS.senhaAcesso = v;
+  if((v=ler('cred-senhaLock'))  !== null) CREDS.senhaLock   = v;
   // Atualiza JSONBin
   JSONBIN_KEY = CREDS.jsonbinKey || '';
   if(CREDS.jsonbinId) JSONBIN_URL = 'https://api.jsonbin.io/v3/b/'+CREDS.jsonbinId;
   salvarCreds();
   syncSt('Credenciais salvas!','#3fb950');
-  // Reconecta MQTT com novas credenciais se mudou
+  addLog('clog','<b style="color:#3fb950;">Credenciais salvas no localStorage</b>','pub');
+  // Reconecta MQTT
   if(mqclient){ try{ mqclient.end(true); }catch(e){} mqclient=null; }
   setTimeout(conectarMQTT, 800);
 }
