@@ -2068,7 +2068,7 @@ var CORES = [
   {l:'Coral',   bg:'#2d1508',bd:'#d85a30',tx:'#ffa070'}
 ];
 var TIPOS = ['Histerese','Janela'];
-var ACOES = ['Dashboard','MQTT','Dashboard+MQTT'];
+
 var qty = 2;
 var sps = Array.from({length:10}, function(_,i){
   return {nome:'SP'+String(i+1).padStart(2,'0'), tipo:0, monIdx:-1, escMin:0, escMax:100, min:20, max:80, cor:i%CORES.length, acao:1, msgA:'1', msgD:'0', estado:false, open:false};
@@ -2096,7 +2096,7 @@ function addSP(){
   var num = 1;
   while(usados.indexOf(num) !== -1) num++;
   if(num > MAX_SPS) { syncSt('Sem números de SP disponíveis!','#e24b4a'); return; }
-  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,acao:1,msgA:'1',msgD:'0',labelOn:'ACIONADO',labelOff:'AGUARDANDO',estado:false,open:true,_ultimoComando:null});
+  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,msgA:'1',msgD:'0',labelOn:'ACIONADO',labelOff:'AGUARDANDO',estado:false,open:true,_ultimoComando:null});
   sps.sort(function(a,b){ return a.numero-b.numero; });
   qty=sps.length; atualizarQtyLabel(); atualizarBotoesSP(); renderSPs(); saveLocal();
   syncSt('SP'+String(num).padStart(2,'0')+' adicionado!','#3fb950');
@@ -2154,10 +2154,7 @@ function toggleSPBlocks(i) {
   if(lMin) lMin.textContent = sps[i].tipo===0 ? 'Min — desaciona' : 'Min — limite inferior';
   if(lMax) lMax.textContent = sps[i].tipo===0 ? 'Max — aciona'    : 'Max — limite superior';
 }
-function toggleSPMqtt(i) {
-  var m=document.getElementById('smqtt-'+i);
-  if(m) m.style.display = sps[i].acao>0 ? 'flex' : 'none';
-}
+
 function refreshSPBadge(i) {
   var c=CORES[sps[i].cor], b=document.getElementById('spb-'+i);
   if(b){ b.style.background=c.bg; b.style.color=c.tx; b.style.border='0.5px solid '+c.bd; }
@@ -2171,7 +2168,7 @@ function updateSPSum(i) {
   if(sl) sl.textContent = m
     ? TIPOS[sps[i].tipo]+' · '+m.nome+' · esc:['+escStr+'] · sp:['+spStr+']'
     : 'sem entrada';
-  if(ml) ml.textContent = sps[i].acao>0 ? 'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"' : '';
+  if(ml) ml.textContent = 'pub: '+gst(i,'comando')+' → "'+sps[i].msgA+'" / "'+sps[i].msgD+'"';
   // Atualiza labels e inputs de unidade
   var lmv=document.getElementById('hmv-'+i);
   var lxv=document.getElementById('hxv-'+i);
@@ -2206,10 +2203,6 @@ function renderSPs() {
 
     var cOpts = CORES.map(function(cc,ci){
       return '<option value="'+ci+'"'+(ci===sps[i].cor?' selected':'')+'>'+cc.l+'</option>';
-    }).join('');
-
-    var aOpts = ACOES.map(function(a,ai){
-      return '<option value="'+ai+'"'+(ai===sps[i].acao?' selected':'')+'>'+a+'</option>';
     }).join('');
 
     var tOpts = TIPOS.map(function(t,ti){
@@ -2319,12 +2312,7 @@ function renderSPs() {
             '</select>'
           +'</div>'
 
-          +'<div class="col">'
-            +'<label class="lbl">Acao</label>'
-            +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].acao=parseInt(this.value);toggleSPMqtt('+i+');updateSPSum('+i+');">'
-              +aOpts+
-            '</select>'
-          +'</div>'
+          
 
         +'</div>'
 
@@ -2495,7 +2483,7 @@ function renderSPStatus() {
       ac++;
       tag.textContent = sps[i].labelOn || 'acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
       card.style.border='1.5px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
-      var as=sps[i].acao===0?'dash':sps[i].acao===1?'MQTT':'dash+MQTT';
+      var as='MQTT';
       pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+sps[i].nome+' — '+m.nome+' — '+as+' → <b>'+sps[i].msgA+'</b></span>');
     } else {
       tag.textContent = sps[i].labelOff || 'aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
