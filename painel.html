@@ -829,8 +829,9 @@ function aplicarConfig(c, preservarEstado) {
     coils.forEach(function(cc){ estadosAtuais[cc.numero] = cc.estado; });
     coils = c.coils.map(function(cc, ci){
       if(cc.numero === undefined) cc.numero = ci+1;
-      if(cc.pino === undefined) cc.pino = COIL_PINOS_PADRAO[cc.numero]||14;
-      // Se preservarEstado, mantém estado em memória; senão reseta para false
+      if(cc.pino   === undefined) cc.pino   = COIL_PINOS_PADRAO[cc.numero]||14;
+      if(cc.labelOn  === undefined) cc.labelOn  = 'ACIONADO';
+      if(cc.labelOff === undefined) cc.labelOff = 'DESACIONADO';
       cc.estado = preservarEstado ? (estadosAtuais[cc.numero] || false) : false;
       return cc;
     });
@@ -1618,7 +1619,7 @@ function addCoil() {
   var num = 1;
   while(usados.indexOf(num) !== -1) num++;
   if(num > MAX_COILS) { syncSt('Sem números de coil disponíveis!','#e24b4a'); return; }
-  coils.push({ numero:num, nome:'Coil '+String(num).padStart(2,'0'), pino:COIL_PINOS_PADRAO[num]||14, estado:false, open:true, msgA:'1', msgD:'0' });
+  coils.push({ numero:num, nome:'Coil '+String(num).padStart(2,'0'), pino:COIL_PINOS_PADRAO[num]||14, estado:false, open:true, msgA:'1', msgD:'0', labelOn:'ACIONADO', labelOff:'DESACIONADO' });
   coils.sort(function(a,b){ return a.numero-b.numero; });
   renderCoils(); updateMetrics(); renderGeral();
   localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
@@ -1714,7 +1715,7 @@ function renderCoils() {
 
               +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';"> pino '+c.pino+'</span>'
 
-              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
+              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?(c.labelOn||'ACIONADO'):(c.labelOff||'DESACIONADO'))+'</span>'
 
             +'</div>'
 
@@ -1773,6 +1774,20 @@ function renderCoils() {
                 'var e=document.getElementById(\'cn-'+i+'\');'+
                 'if(e)e.textContent=this.value;'+
                 'saveLocal();">'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Label ON</label>'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+
+              'value="'+(c.labelOn||'ACIONADO')+'" style="width:120px;" '+
+              'oninput="coils['+i+'].labelOn=this.value;renderCoils();saveLocal();">'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Label OFF</label>'
+            +'<input type="text" '+(isLocked('coil')?'readonly ':'')+
+              'value="'+(c.labelOff||'DESACIONADO')+'" style="width:120px;" '+
+              'oninput="coils['+i+'].labelOff=this.value;renderCoils();saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
@@ -2039,7 +2054,7 @@ function addSP(){
   var num = 1;
   while(usados.indexOf(num) !== -1) num++;
   if(num > MAX_SPS) { syncSt('Sem números de SP disponíveis!','#e24b4a'); return; }
-  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,acao:1,msgA:'1',msgD:'0',estado:false,open:true,_ultimoComando:null});
+  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,acao:1,msgA:'1',msgD:'0',labelOn:'ACIONADO',labelOff:'AGUARDANDO',estado:false,open:true,_ultimoComando:null});
   sps.sort(function(a,b){ return a.numero-b.numero; });
   qty=sps.length; atualizarQtyLabel(); atualizarBotoesSP(); renderSPs(); saveLocal();
   syncSt('SP'+String(num).padStart(2,'0')+' adicionado!','#3fb950');
@@ -2390,6 +2405,16 @@ function renderSPs() {
               +'<input type="text" '+(isLocked('sp')?'readonly ':'')+'value="'+sps[i].msgD+'" oninput="sps['+i+'].msgD=this.value;updateSPSum('+i+');saveLocal();">'
             +'</div>'
 
+            +'<div class="col">'
+              +'<label class="lbl">&#9989; Label ON (dashboard)</label>'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+'value="'+(sps[i].labelOn||'ACIONADO')+'" style="width:100%;" oninput="sps['+i+'].labelOn=this.value;renderSPStatus();saveLocal();">'
+            +'</div>'
+
+            +'<div class="col">'
+              +'<label class="lbl">&#9711; Label OFF (dashboard)</label>'
+              +'<input type="text" '+(isLocked('sp')?'readonly ':'')+'value="'+(sps[i].labelOff||'AGUARDANDO')+'" style="width:100%;" oninput="sps['+i+'].labelOff=this.value;renderSPStatus();saveLocal();">'
+            +'</div>'
+
           +'</div>'
 
         +'</div>'
@@ -2426,12 +2451,12 @@ function renderSPStatus() {
     }
     if (sps[i].estado) {
       ac++;
-      tag.textContent='acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
+      tag.textContent = sps[i].labelOn || 'acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';';
       card.style.border='1.5px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
       var as=sps[i].acao===0?'dash':sps[i].acao===1?'MQTT':'dash+MQTT';
       pills.push('<span class="pill" style="background:'+c.bg+';color:'+c.tx+';border:0.5px solid '+c.bd+';">'+sps[i].nome+' — '+m.nome+' — '+as+' → <b>'+sps[i].msgA+'</b></span>');
     } else {
-      tag.textContent='aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
+      tag.textContent = sps[i].labelOff || 'aguardando'; tag.style.cssText='background:#21262d;color:#8b949e;';
       card.style.border='0.5px solid #30363d'; card.style.boxShadow='none';
     }
   }
@@ -2509,7 +2534,7 @@ function renderGeral() {
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:2px;">'+(m?m.nome:'sem entrada')+'</div>'
           +'<div style="font-size:10px;color:#5a6478;margin-bottom:2px;">Escala: '+sp.escMin+' – '+sp.escMax+(m&&m.unid?' '+m.unid:'')+'</div>'
           +'<div style="font-size:11px;color:#8b949e;margin-bottom:6px;">SP: '+sp.min.toFixed(1)+' / '+sp.max.toFixed(1)+(m&&m.unid?' '+m.unid:'')+'</div>'
-          +'<span class="sp-badge" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';">'+(sp.estado?'ACIONADO':'AGUARDANDO')+'</span>';
+          +'<span class="sp-badge" style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;background:'+(sp.estado?c.bg:'#1c1c1a')+';color:'+(sp.estado?c.tx:'#8b949e')+';border:0.5px solid '+(sp.estado?c.bd:'#30363d')+';">'+(sp.estado?(sp.labelOn||'ACIONADO'):(sp.labelOff||'AGUARDANDO'))+'</span>';
         gs.appendChild(d);
       }
     }
