@@ -2629,44 +2629,42 @@ setTimeout(function(){
   }
 }, 1500);
 
-// Reconecta ao voltar para a página (BFCache, troca de aba, Alt+Tab)
+// Reconexão automática gerenciada pela lib MQTT (reconnectPeriod: 5000)
+// Ao voltar para a página só verifica e restaura estados visuais
 document.addEventListener('visibilitychange', function(){
   if (document.visibilityState === 'visible') {
-    carregarCreds(); // recarrega credenciais caso tenham mudado
-    addLog('clog','<b style="color:#ef9f27;">Página visível — verificando MQTT...</b>','pub');
-    if (mqclient) { try{ mqclient.end(true); }catch(ex){} mqclient = null; }
-    _esp32Online = false;
-    _bufferRetained = {};
-    restaurarEstados();
-    setTimeout(conectarMQTT, 500);
+    restaurarEstados(); // restaura cache visual imediatamente
+    // Se desconectado, deixa a lib reconectar sozinha via reconnectPeriod
+    // Só força nova conexão se o cliente não existe
+    if (!mqclient) {
+      carregarCreds();
+      setTimeout(conectarMQTT, 500);
+    }
   }
 });
 
 // Cobre botão Voltar do browser (BFCache restore)
 window.addEventListener('pageshow', function(e){
   if (e.persisted) {
-    addLog('clog','<b style="color:#ef9f27;">BFCache restaurado — reconectando...</b>','pub');
-    if (mqclient) { try{ mqclient.end(true); }catch(ex){} mqclient = null; }
-    _esp32Online = false;
-    _bufferRetained = {};
     restaurarEstados();
-    setTimeout(conectarMQTT, 300);
+    if (!mqclient) {
+      carregarCreds();
+      setTimeout(conectarMQTT, 300);
+    }
   }
 });
 
-// Heartbeat — verifica conexão MQTT a cada 15s
-// Cobre casos onde mobile suspende sem disparar visibilitychange
+// Heartbeat — só reconecta se cliente não existir
+// Não interrompe conexão existente
 setInterval(function(){
   if (document.visibilityState !== 'visible') return;
-  if (!mqclient || !mqclient.connected) {
-    addLog('clog','<b style="color:#ef9f27;">Heartbeat — MQTT desconectado, reconectando...</b>','pub');
-    if (mqclient) { try{ mqclient.end(true); }catch(ex){} mqclient = null; }
-    _esp32Online = false;
-    _bufferRetained = {};
-    restaurarEstados();
+  if (!mqclient) {
+    addLog('clog','<b style="color:#ef9f27;">Heartbeat — reconectando...</b>','pub');
+    carregarCreds();
     conectarMQTT();
   }
 }, 15000);
+
 </script>
 </body>
 </html>
