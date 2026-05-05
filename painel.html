@@ -836,7 +836,13 @@ function aplicarConfig(c, preservarEstado) {
       return cc;
     });
   }
-  if (Array.isArray(c.mons))  mons  = c.mons;
+  if (Array.isArray(c.mons)) mons = c.mons.map(function(m){
+    if(m.tipo==='digital'){
+      if(m.labelHigh===undefined) m.labelHigh='HIGH';
+      if(m.labelLow ===undefined) m.labelLow ='LOW';
+    }
+    return m;
+  });
   if (Array.isArray(c.sps)) {
     var estadosSPs = {};
     sps.forEach(function(sp){ estadosSPs[sp.numero] = sp.estado; });
@@ -1440,7 +1446,7 @@ function inverterLogicaDigital(i) {
   var inpF   = document.getElementById('inp-valf-'+i);
   var raw    = document.getElementById('draw-'+i);
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
-  if(badge){ badge.textContent=m.estado?'HIGH':'LOW'; badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
+  if(badge){ badge.textContent=m.estado?(m.labelHigh||'HIGH'):(m.labelLow||'LOW'); badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
   if(dval)   dval.textContent = m.estado ? m.valT : m.valF;
   if(raw)    { raw.textContent = m.ultimoVal !== undefined ? m.ultimoVal : '---'; raw.style.color = m.ultimoVal !== undefined ? '#79c0ff' : '#5a6478'; }
   if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
@@ -1456,7 +1462,7 @@ function atualizaEstadoDigital(i) {
   var badge = document.getElementById('dbadge-'+i);
   var val   = document.getElementById('dval-'+i);
   var raw   = document.getElementById('draw-'+i);
-  if(badge){ badge.textContent=m.estado?'HIGH':'LOW'; badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
+  if(badge){ badge.textContent=m.estado?(m.labelHigh||'HIGH'):(m.labelLow||'LOW'); badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
   if(val)  { val.textContent = m.estado ? m.valT : m.valF; }
   if(raw)  { raw.textContent = m.ultimoVal !== undefined ? m.ultimoVal : '---'; raw.style.color = m.ultimoVal !== undefined ? '#79c0ff' : '#5a6478'; }
   checkSPs();
@@ -1715,7 +1721,7 @@ function renderCoils() {
 
               +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';"> pino '+c.pino+'</span>'
 
-              +'<span class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?(c.labelOn||'ACIONADO'):(c.labelOff||'DESACIONADO'))+'</span>'
+              +'<span id="cchip-'+i+'" class="chip" style="background:'+(c.estado?'#0f2d1a':'#3d1a1a')+';color:'+(c.estado?'#7ee787':'#ffa0a0')+';border:0.5px solid '+(c.estado?'#3fb950':'#e24b4a')+';"> '+(c.estado?(c.labelOn||'ACIONADO'):(c.labelOff||'DESACIONADO'))+'</span>'
 
             +'</div>'
 
@@ -1780,14 +1786,20 @@ function renderCoils() {
             +'<label class="lbl">Label ON</label>'
             +'<input type="text" '+(isLocked('coil')?'readonly ':'')+
               'value="'+(c.labelOn||'ACIONADO')+'" style="width:120px;" '+
-              'oninput="coils['+i+'].labelOn=this.value;renderCoils();saveLocal();">'
+              'onchange="coils['+i+'].labelOn=this.value||\'ACIONADO\';'+
+                'var ch=document.getElementById(\'cchip-'+i+'\');'+
+                'if(ch&&coils['+i+'].estado)ch.textContent=coils['+i+'].labelOn;'+
+                'renderGeral();saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
             +'<label class="lbl">Label OFF</label>'
             +'<input type="text" '+(isLocked('coil')?'readonly ':'')+
               'value="'+(c.labelOff||'DESACIONADO')+'" style="width:120px;" '+
-              'oninput="coils['+i+'].labelOff=this.value;renderCoils();saveLocal();">'
+              'onchange="coils['+i+'].labelOff=this.value||\'DESACIONADO\';'+
+                'var ch=document.getElementById(\'cchip-'+i+'\');'+
+                'if(ch&&!coils['+i+'].estado)ch.textContent=coils['+i+'].labelOff;'+
+                'renderGeral();saveLocal();">'
           +'</div>'
 
           +'<div class="col">'
@@ -1887,7 +1899,7 @@ function addMon(tipo) {
   var i = mons.length, base = getBase();
   mons.push(tipo==='analog'
     ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
-    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true}
+    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true, labelHigh:'HIGH', labelLow:'LOW'}
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
@@ -1958,7 +1970,7 @@ function renderMons() {
                +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span>'
              +'</div>'
              +'<div class="row" style="margin-top:6px;gap:8px;align-items:center;">'
-               +'<span id="dbadge-'+i+'" style="font-size:16px;font-weight:600;padding:3px 12px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';transition:all .2s;">'+(m.estado?'HIGH':'LOW')+'</span>'
+               +'<span id="dbadge-'+i+'" style="font-size:16px;font-weight:600;padding:3px 12px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';transition:all .2s;">'+(m.estado?(m.labelHigh||'HIGH'):(m.labelLow||'LOW'))+'</span>'
                +'<span id="dval-'+i+'" style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
                +'<span style="font-size:11px;color:#5a6478;padding:2px 8px;border-radius:4px;background:#161b22;border:0.5px solid #30363d;">status: <b id="draw-'+i+'" style="color:'+(m.ultimoVal!==undefined?'#79c0ff':'#5a6478')+';">'+(m.ultimoVal!==undefined?m.ultimoVal:'---')+'</b></span>'
              +'</div>'
@@ -1974,7 +1986,25 @@ function renderMons() {
             +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Tópico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
           +'</div>'
           +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;">'
-            +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Lógica HIGH / LOW</div>'
+            +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Labels do Dashboard</div>'
+            +'<div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:8px;">'
+              +'<div class="col">'
+                +'<label class="lbl">🟢 Label HIGH</label>'
+                +'<input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+(m.labelHigh||'HIGH')+'" style="width:100px;" '
+                  +'onchange="mons['+i+'].labelHigh=this.value||\'HIGH\';'
+                    +'var b=document.getElementById(\'dbadge-'+i+'\');'
+                    +'if(b&&mons['+i+'].estado)b.textContent=this.value||\'HIGH\';'
+                    +'saveLocal();">'
+              +'</div>'
+              +'<div class="col">'
+                +'<label class="lbl">⚪ Label LOW</label>'
+                +'<input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+(m.labelLow||'LOW')+'" style="width:100px;" '
+                  +'onchange="mons['+i+'].labelLow=this.value||\'LOW\';'
+                    +'var b=document.getElementById(\'dbadge-'+i+'\');'
+                    +'if(b&&!mons['+i+'].estado)b.textContent=this.value||\'LOW\';'
+                    +'saveLocal();">'
+              +'</div>'
+            +'</div>'
             +'<div class="row" style="gap:12px;flex-wrap:wrap;">'
               +'<div class="col">'
                 +'<label class="lbl">🟢 Valor que indica HIGH</label>'
@@ -2481,7 +2511,7 @@ function renderGeral() {
         d.className='gcard'+(c.estado?' gon':'');
         d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">COIL '+String(i+1).padStart(2,'0')+'</div>'
           +'<div style="font-size:14px;font-weight:600;color:'+(c.estado?'#7ee787':'#e8eaf0')+';margin-bottom:6px;">'+c.nome+'</div>'
-          +'<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';">'+(c.estado?'ACIONADO':'DESACIONADO')+'</span>'
+          +'<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:4px;background:'+(c.estado?'#0f2d1a':'#1c1c1a')+';color:'+(c.estado?'#7ee787':'#8b949e')+';border:0.5px solid '+(c.estado?'#3fb950':'#30363d')+';">'+(c.estado?(c.labelOn||'ACIONADO'):(c.labelOff||'DESACIONADO'))+'</span>'
           +'<div class="row" style="justify-content:center;gap:6px;margin-top:8px;">'
             +'<button class="btn-g'+(c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',true)">LIGA</button>'
             +'<button class="btn-r'+(!c.estado?' on':'')+'" style="font-size:11px;padding:3px 10px;" onclick="setCoil('+i+',false)">DESLIGA</button>'
@@ -2546,7 +2576,7 @@ function renderGeral() {
     var sp2 = sps[j], c2 = CORES[sp2.cor];
     var badge = spEl.querySelector('.sp-badge');
     if (badge) {
-      badge.textContent = sp2.estado ? 'ACIONADO' : 'AGUARDANDO';
+      badge.textContent = sp2.estado ? (sp2.labelOn||'ACIONADO') : (sp2.labelOff||'AGUARDANDO');
       badge.style.background = sp2.estado ? c2.bg : '#1c1c1a';
       badge.style.color = sp2.estado ? c2.tx : '#8b949e';
       badge.style.border = '0.5px solid '+(sp2.estado ? c2.bd : '#30363d');
