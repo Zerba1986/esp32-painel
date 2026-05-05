@@ -2543,7 +2543,7 @@ function renderGeral() {
           var sc=m.estado?{bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'}:{bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
           d.innerHTML='<div style="font-size:10px;color:#8b949e;margin-bottom:4px;">DIGITAL</div>'
             +'<div style="font-size:13px;font-weight:600;color:#e8eaf0;margin-bottom:8px;">'+m.nome+'</div>'
-            +'<span style="font-size:16px;font-weight:700;padding:4px 14px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?'HIGH':'LOW')+'</span>';
+            +'<span style="font-size:16px;font-weight:700;padding:4px 14px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';">'+(m.estado?(m.labelHigh||'HIGH'):(m.labelLow||'LOW'))+'</span>';
         }
         gm.appendChild(d);
       });
