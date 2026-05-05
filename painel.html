@@ -328,9 +328,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
   </div>
 
   <div class="card">
-    <div class="hdr" style="margin-bottom:10px;">
+    <div class="hdr" style="margin-bottom:10px;cursor:pointer;" onclick="toggleCfgCard('id-body')">
       <div class="sh" style="margin:0;">identificacao do dispositivo</div>
+      <span class="arr" id="id-arr" style="transform:rotate(90deg);">&#9654;</span>
     </div>
+    <div id="id-body">
     <div class="grid3" style="margin-bottom:10px;">
       <div class="col"><label class="lbl">Projeto</label><input type="text" id="cfg-p" value="minha_casa" readonly oninput="updateBase()"></div>
       <div class="col"><label class="lbl">Local</label><input type="text" id="cfg-l" value="sala" readonly oninput="updateBase()"></div>
@@ -339,6 +341,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
     <div style="background:#0d1117;border-radius:6px;padding:8px 10px;">
       <div style="font-size:10px;color:#8b949e;font-weight:700;margin-bottom:6px;">TOPICOS GERADOS</div>
       <div id="topic-list" style="font-size:11px;color:#8b949e;line-height:1.8;"></div>
+    </div>
     </div>
   </div>
   <div class="card">
@@ -561,6 +564,15 @@ function atualizarBotaoLock(aba){
 function atualizarTodosLocks(){
   Object.keys(LOCKS).forEach(function(aba){ atualizarBotaoLock(aba); });
   atualizarCamposConfig();
+}
+
+function toggleCfgCard(id) {
+  var body = document.getElementById(id);
+  var arr  = document.getElementById(id.replace('body','arr'));
+  if(!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if(arr) arr.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 function atualizarCamposConfig(){
