@@ -1409,14 +1409,11 @@ function inverterLogicaDigital(i) {
   var stLine = document.getElementById('dstline-'+i);
   var inpT   = document.getElementById('inp-valt-'+i);
   var inpF   = document.getElementById('inp-valf-'+i);
+  var raw    = document.getElementById('draw-'+i);
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
-  if(badge){
-    badge.textContent = m.estado ? 'HIGH' : 'LOW';
-    badge.style.background   = sc.bg;
-    badge.style.color        = sc.tx;
-    badge.style.borderColor  = sc.bd;
-  }
+  if(badge){ badge.textContent=m.estado?'HIGH':'LOW'; badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
   if(dval)   dval.textContent = m.estado ? m.valT : m.valF;
+  if(raw)    { raw.textContent = m.ultimoVal !== undefined ? m.ultimoVal : '---'; raw.style.color = m.ultimoVal !== undefined ? '#79c0ff' : '#5a6478'; }
   if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
   if(inpT)   inpT.value = m.valT;
   if(inpF)   inpF.value = m.valF;
@@ -1429,8 +1426,10 @@ function atualizaEstadoDigital(i) {
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
   var badge = document.getElementById('dbadge-'+i);
   var val   = document.getElementById('dval-'+i);
-  if(badge){ badge.textContent = m.estado?'HIGH':'LOW'; badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
+  var raw   = document.getElementById('draw-'+i);
+  if(badge){ badge.textContent=m.estado?'HIGH':'LOW'; badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
   if(val)  { val.textContent = m.estado ? m.valT : m.valF; }
+  if(raw)  { raw.textContent = m.ultimoVal !== undefined ? m.ultimoVal : '---'; raw.style.color = m.ultimoVal !== undefined ? '#79c0ff' : '#5a6478'; }
   checkSPs();
 }
 
@@ -1915,9 +1914,10 @@ function renderMons() {
                +'<span class="chip" style="background:#2d2010;color:#ffc060;border:0.5px solid #ef9f27;">DIGITAL</span>'
                +'<span style="font-size:11px;color:#8b949e;">chave: <code style="color:#79c0ff;" id="mjk-'+i+'">'+m.jsonKey+'</code></span>'
              +'</div>'
-             +'<div class="row" style="margin-top:6px;gap:8px;">'
+             +'<div class="row" style="margin-top:6px;gap:8px;align-items:center;">'
                +'<span id="dbadge-'+i+'" style="font-size:16px;font-weight:600;padding:3px 12px;border-radius:6px;background:'+sc.bg+';color:'+sc.tx+';border:0.5px solid '+sc.bd+';transition:all .2s;">'+(m.estado?'HIGH':'LOW')+'</span>'
                +'<span id="dval-'+i+'" style="font-size:12px;color:#8b949e;">'+(m.estado?m.valT:m.valF)+'</span>'
+               +'<span style="font-size:11px;color:#5a6478;padding:2px 8px;border-radius:4px;background:#161b22;border:0.5px solid #30363d;">status: <b id="draw-'+i+'" style="color:'+(m.ultimoVal!==undefined?'#79c0ff':'#5a6478')+';">'+(m.ultimoVal!==undefined?m.ultimoVal:'---')+'</b></span>'
              +'</div>'
            +'</div>'
          +'</div>'
