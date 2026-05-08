@@ -859,7 +859,7 @@ function aplicarConfig(c, preservarEstado) {
     var estadosSPs = {};
     sps.forEach(function(sp){ estadosSPs[sp.numero] = sp.estado; });
     sps = c.sps.map(function(s, si){
-      if(s.escMin === undefined) s.escMin = 0;
+      if(s.saidaCoil  === undefined) s.saidaCoil  = -1;
       if(s.escMax === undefined) s.escMax = 100;
       if(s.numero === undefined) s.numero = si+1;
       s.estado = preservarEstado ? (estadosSPs[s.numero] || false) : false;
@@ -932,20 +932,35 @@ function publicarConfigSPs() {
     var m  = mons[sp.monIdx];
     if (!m || m.tipo !== 'analog') continue; // só analógicos
     var cfg = {
-      tipo:    sp.tipo,
-      escMin:  sp.escMin,
-      escMax:  sp.escMax,
-      spMin:   sp.min,
-      spMax:   sp.max,
-      entrada: m.jsonKey,  // ex: "an01", "temp", "umid"
-      msgA:    sp.msgA,
-      msgD:    sp.msgD
+      tipo:      sp.tipo,
+      escMin:    sp.escMin,
+      escMax:    sp.escMax,
+      spMin:     sp.min,
+      spMax:     sp.max,
+      entrada:   m.jsonKey,
+      msgA:      sp.msgA,
+      msgD:      sp.msgD,
+      saidaCoil: sp.saidaCoil !== undefined ? sp.saidaCoil : -1
     };
     var topic = getBase()+'/setpoints/sp'+String(sp.numero).padStart(2,'0')+'/config';
     mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
-    addLog('splog','<b style="color:#3fb950;">CFG PUB</b> <code style="color:#79c0ff;">'+topic+'</code> entrada=<b>'+m.jsonKey+'</b> min='+sp.min.toFixed(1)+' max='+sp.max.toFixed(1),'pub');
+    addLog('splog','<b style="color:#3fb950;">CFG PUB</b> <code style="color:#79c0ff;">'+topic+'</code> entrada=<b>'+m.jsonKey+'</b> saída=<b>'+(sp.saidaCoil>=0?coils[sp.saidaCoil]?coils[sp.saidaCoil].nome:'Coil '+(sp.saidaCoil+1):'SP próprio')+'</b>','pub');
   }
   syncSt('Config SPs enviada ao ESP32!','#3fb950');
+}
+
+function publicarConfigDigital(i) {
+  if (!mqclient || !mqclient.connected) return;
+  var m = mons[i];
+  if (!m || m.tipo !== 'digital') return;
+  var cfg = { saidaCoil: m.saidaCoil !== undefined ? m.saidaCoil : -1 };
+  var base = getBase();
+  // Extrai o nome do tópico digital (ex: sn01 de base/entradas/digital/sn01)
+  var partes = m.topico.split('/');
+  var snNome = partes[partes.length-1];
+  var topic = base+'/entradas/digital/'+snNome+'/config';
+  mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
+  addLog('mlog','<b style="color:#3fb950;">CFG DIG</b> <code style="color:#79c0ff;">'+topic+'</code> saidaCoil=<b>'+(cfg.saidaCoil>=0?coils[cfg.saidaCoil]?coils[cfg.saidaCoil].nome:'Coil '+(cfg.saidaCoil+1):'sinalizar')+'</b>','pub');
 }
 
 function salvarNuvem() {
@@ -1551,8 +1566,8 @@ function conectarMQTT() {
     clientId:       'painel-'+Math.random().toString(16).substr(2,8),
     username:       mqttUser,
     password:       mqttPass,
-    keepalive:      30,
-    reconnectPeriod:5000,
+    keepalive:      10,
+    reconnectPeriod:1000,
     connectTimeout: 10000,
     clean:          true
   });
@@ -1561,6 +1576,7 @@ function conectarMQTT() {
     st.textContent = 'Conectado'; st.style.color = '#3fb950';
     document.getElementById('dot-broker').style.background = '#3fb950';
     document.getElementById('lbl-broker').style.color      = '#3fb950';
+    clearTimeout(window._offlineTimer); // cancela timer de offline
     var base = getBase();
     addLog('clog','<b style="color:#3fb950;">MQTT CONECTADO</b> — base: <code style="color:#ef9f27;">'+base+'</code>','pub');
     setESP32Status('---');
@@ -1597,19 +1613,25 @@ function conectarMQTT() {
   });
 
   mqclient.on('reconnect', function() {
-    st.textContent = 'Reconectando...'; st.style.color = '#ef9f27';
-    document.getElementById('dot-broker').style.background = '#ef9f27';
-    document.getElementById('lbl-broker').style.color      = '#ef9f27';
-    addLog('clog','<b style="color:#ef9f27;">Reconectando automaticamente...</b>','sub');
+    // Não muda visual durante reconexão automática — apenas loga
+    addLog('clog','<b style="color:#ef9f27;">Reconectando...</b>','sub');
   });
 
   mqclient.on('close', function() {
-    st.textContent = 'Desconectado'; st.style.color = '#e24b4a';
-    document.getElementById('dot-broker').style.background = '#8b949e';
-    document.getElementById('lbl-broker').style.color      = '#8b949e';
-    setESP32Status('---');
-    
-    syncSt('Broker desconectado — reconectando em 5s...','#ef9f27');
+    // Só mostra desconectado no log — não muda o badge visualmente
+    // A lib reconecta em 1s automaticamente
+    addLog('clog','<b style="color:#ef9f27;">Conexão fechada — reconectando...</b>','sub');
+    // Só marca offline se ficar mais de 5s sem reconectar
+    clearTimeout(window._offlineTimer);
+    window._offlineTimer = setTimeout(function(){
+      if(!mqclient || !mqclient.connected){
+        st.textContent = 'Desconectado'; st.style.color = '#e24b4a';
+        document.getElementById('dot-broker').style.background = '#8b949e';
+        document.getElementById('lbl-broker').style.color      = '#8b949e';
+        setESP32Status('---');
+        syncSt('Broker desconectado — reconectando...','#ef9f27');
+      }
+    }, 5000);
   });
 
   mqclient.on('error', function(e) {
@@ -1911,7 +1933,7 @@ function addMon(tipo) {
   var i = mons.length, base = getBase();
   mons.push(tipo==='analog'
     ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
-    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true, labelHigh:'HIGH', labelLow:'LOW'}
+    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true, labelHigh:'HIGH', labelLow:'LOW', saidaCoil:-1}
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
@@ -1998,6 +2020,20 @@ function renderMons() {
             +'<div class="col" style="grid-column:1/-1;"><label class="lbl">Tópico subscribe</label><input type="text" '+(isLocked('mon')?'readonly ':'')+'value="'+m.topico+'" style="width:100%;" oninput="mons['+i+'].topico=this.value;saveLocal();"></div>'
           +'</div>'
           +'<div style="background:#161b22;border-radius:8px;padding:10px 12px;">'
+            +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Modo de Operação</div>'
+            +'<div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:10px;">'
+              +'<div class="col">'
+                +'<label class="lbl">Modo</label>'
+                +'<select '+(isLocked('mon')?'disabled ':'')
+                  +'onchange="mons['+i+'].saidaCoil=parseInt(this.value);publicarConfigDigital('+i+');saveLocal();">'
+                  +'<option value="-1"'+(m.saidaCoil===-1?' selected':'')+'>Sinalizar apenas</option>'
+                  +coils.map(function(c,ci){
+                    return '<option value="'+ci+'"'+(m.saidaCoil===ci?' selected':'')+'>Acionar '+c.nome+'</option>';
+                  }).join('')+
+                '</select>'
+              +'</div>'
+              +(m.saidaCoil>=0?'<div style="font-size:11px;color:#ef9f27;align-self:flex-end;padding-bottom:6px;">⚡ OR lógico — HIGH aciona, LOW libera</div>':'')+
+            +'</div>'
             +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Labels do Dashboard</div>'
             +'<div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:8px;">'
               +'<div class="col">'
@@ -2096,7 +2132,7 @@ function addSP(){
   var num = 1;
   while(usados.indexOf(num) !== -1) num++;
   if(num > MAX_SPS) { syncSt('Sem números de SP disponíveis!','#e24b4a'); return; }
-  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,msgA:'1',msgD:'0',labelOn:'ACIONADO',labelOff:'AGUARDANDO',estado:false,open:true,_ultimoComando:null});
+  sps.push({numero:num,nome:'SP'+String(num).padStart(2,'0'),tipo:0,monIdx:-1,escMin:0,escMax:100,min:20,max:80,cor:(sps.length)%CORES.length,msgA:'1',msgD:'0',labelOn:'ACIONADO',labelOff:'AGUARDANDO',saidaCoil:-1,estado:false,open:true,_ultimoComando:null});
   sps.sort(function(a,b){ return a.numero-b.numero; });
   qty=sps.length; atualizarQtyLabel(); atualizarBotoesSP(); renderSPs(); saveLocal();
   syncSt('SP'+String(num).padStart(2,'0')+' adicionado!','#3fb950');
@@ -2302,6 +2338,16 @@ function renderSPs() {
             +'<label class="lbl">Tipo</label>'
             +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].tipo=parseInt(this.value);toggleSPBlocks('+i+');updateSPSum('+i+');">'
               +tOpts+
+            '</select>'
+          +'</div>'
+
+          +'<div class="col">'
+            +'<label class="lbl">Saída</label>'
+            +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].saidaCoil=parseInt(this.value);saveLocal();">'
+              +'<option value="-1"'+(sps[i].saidaCoil===-1?' selected':'')+'>SP próprio</option>'
+              +coils.map(function(c,ci){
+                return '<option value="'+ci+'"'+(sps[i].saidaCoil===ci?' selected':'')+'>'+c.nome+'</option>';
+              }).join('')+
             '</select>'
           +'</div>'
 
