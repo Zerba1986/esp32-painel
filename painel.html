@@ -783,9 +783,26 @@ function resubscribirTopicos() {
     syncSt('MQTT desconectado — conecte primeiro', '#e24b4a');
     return;
   }
-  subscreverTopicos();
-  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — topicos re-subscritos','pub');
-  syncSt('Topicos atualizados!','#3fb950');
+  subscreverTopicos(true); // força re-subscrição
+  addLog('clog','<b style="color:#3fb950;">REFRESH</b> — re-subscrito + enviando configs ao ESP32','pub');
+
+  // Reenvia todas as configs e solicita republicação dos estados
+  setTimeout(function(){
+    publicarConfigCoils();
+    publicarConfigSPs();
+    // Config digitais
+    mons.forEach(function(m, i){
+      if(m.tipo === 'digital' && m.saidaCoil !== undefined && m.saidaCoil >= 0){
+        publicarConfigDigital(i);
+      }
+    });
+    // Sync — ESP32 republica todos os estados
+    if(mqclient && mqclient.connected){
+      mqclient.publish(getBase()+'/sync', 'sync', {qos:1, retain:false});
+      addLog('clog','<b style="color:#3fb950;">SYNC enviado → ESP32 republicará estados</b>','pub');
+    }
+    syncSt('Refresh completo!','#3fb950');
+  }, 800);
 }
 var _saveLocalTimer = null;
 
@@ -1290,19 +1307,20 @@ function processarMsg(topic, msg) {
     for(var k=0;k<coils.length;k++){ if(coils[k].numero===cnum){ ci=k; break; } }
     if (ci >= 0) {
       var coil = coils[ci];
-      addLog('clog','<b style="color:#8b949e;">DBG</b> coil_'+cnum+' msg="'+msg+'" msgA="'+coil.msgA+'" msgD="'+coil.msgD+'"','sub');
-      if (msg === coil.msgA) {
+      // /estado sempre usa "1"/"0" (estado físico do pino)
+      // msgA/msgD são apenas para o /comando
+      if (msg === '1') {
         coil.estado = true;
         salvarEstados();
-        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓','sub');
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> → ACIONADO ✓','sub');
         renderCoils(); updateMetrics(); renderGeral();
-      } else if (msg === coil.msgD) {
+      } else if (msg === '0') {
         coil.estado = false;
         salvarEstados();
-        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓','sub');
+        addLog('clog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> → DESACIONADO ✓','sub');
         renderCoils(); updateMetrics(); renderGeral();
       } else {
-        addLog('clog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+coil.msgA+'") nem msgOFF("'+coil.msgD+'")','sub');
+        addLog('clog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" (esperado 1 ou 0)','sub');
       }
     }
     return;
@@ -1320,18 +1338,18 @@ function processarMsg(topic, msg) {
     for(var k=0;k<sps.length;k++){ if(sps[k].numero===snum && k<qty){ si=k; break; } }
     if (si >= 0) {
       var sp = sps[si];
-      if (msg === sp.msgA) {
+      if (msg === '1') {
         sp.estado = true;
         salvarEstados();
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> = msgON → ACIONADO ✓ (ESP32 confirmou)','sub');
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#7ee787;">'+msg+'</b> → ACIONADO ✓','sub');
         renderSPStatus();
-      } else if (msg === sp.msgD) {
+      } else if (msg === '0') {
         sp.estado = false;
         salvarEstados();
-        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> = msgOFF → DESACIONADO ✓ (ESP32 confirmou)','sub');
+        addLog('splog','<b style="color:#58a6ff;">SUB</b> <code style="color:#79c0ff;">'+topic+'</code> → <b style="color:#ffa0a0;">'+msg+'</b> → DESACIONADO ✓','sub');
         renderSPStatus();
       } else {
-        addLog('splog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'" não corresponde a msgON("'+sp.msgA+'") nem msgOFF("'+sp.msgD+'")','sub');
+        addLog('splog','<b style="color:#e24b4a;">SUB IGNORADO</b> <code style="color:#79c0ff;">'+topic+'</code> → "'+msg+'"','sub');
       }
     }
     return;
@@ -2354,7 +2372,7 @@ function renderSPs() {
 
           +'<div class="col">'
             +'<label class="lbl">Saída</label>'
-            +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].saidaCoil=parseInt(this.value);saveLocal();">'
+            +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].saidaCoil=parseInt(this.value);publicarConfigSPs();saveLocal();">'
               +'<option value="-1"'+(sps[i].saidaCoil===-1?' selected':'')+'>SP próprio</option>'
               +coils.map(function(c,ci){
                 return '<option value="'+ci+'"'+(sps[i].saidaCoil===ci?' selected':'')+'>'+c.nome+'</option>';
