@@ -925,6 +925,16 @@ function restaurarEstados() {
   } catch(ex) {}
 }
 
+function publicarConfigCoils() {
+  if (!mqclient || !mqclient.connected) return;
+  coils.forEach(function(c, i) {
+    var topic = getBase()+'/atuadores/coil_'+String(c.numero).padStart(2,'0')+'/config';
+    var cfg = { msgA: c.msgA, msgD: c.msgD };
+    mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
+    addLog('clog','<b style="color:#3fb950;">CFG COIL</b> <code style="color:#79c0ff;">'+topic+'</code> msgA=<b>'+c.msgA+'</b> msgD=<b>'+c.msgD+'</b>','pub');
+  });
+}
+
 function publicarConfigSPs() {
   if (!mqclient || !mqclient.connected) return;
   for (var i = 0; i < qty; i++) {
@@ -1593,7 +1603,8 @@ function conectarMQTT() {
         +'<span style="color:#8b949e;margin-left:8px;">'+ts+'</span>'
         +'<span style="color:#5a6478;margin-left:8px;font-size:10px;">painel solicitou sincronização → ESP32 aplicará pinos e republicará estados</span>',
         'pub');
-      // Envia configs dos SPs ao ESP32
+      // Envia configs ao ESP32
+      publicarConfigCoils();
       publicarConfigSPs();
     }, 2000);
     // Timer de segurança: se /status não chegar em 5s, aplica buffer mesmo assim
