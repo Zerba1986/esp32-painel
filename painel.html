@@ -1529,10 +1529,9 @@ function subscreverTopicos(forcarRetained) {
   var topicos = [
     base+'/status',
     base+'/telemetria',
-    base+'/sensores/+',        // DHT, BMP280 e outros sensores extras
-    base+'/atuadores/+/estado',
-    base+'/setpoints/+/estado',
-    base+'/setpoints/+/config', // recebe config dos SPs
+    base+'/sensores/+',
+    base+'/atuadores/#',        // todos os tópicos de coils
+    base+'/setpoints/#',        // todos os tópicos de SPs
     base+'/entradas/digital/+'
   ];
   var tops = {};
