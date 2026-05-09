@@ -1694,9 +1694,21 @@ function addCoil() {
   localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
 }
 function removeCoil(i) {
+  var c = coils[i];
+  if (!c) return;
+  // Publica desligamento antes de remover
+  if (mqclient && mqclient.connected) {
+    var num = String(c.numero).padStart(2,'0');
+    var base = getBase();
+    mqclient.publish(base+'/atuadores/coil_'+num+'/comando', c.msgD, {qos:1, retain:false});
+    mqclient.publish(base+'/atuadores/coil_'+num+'/estado', '0', {qos:1, retain:true});
+    // Publica config com saidaCoil=-1 para liberar links SP/digital
+    mqclient.publish(base+'/atuadores/coil_'+num+'/config', JSON.stringify({msgA:'1',msgD:'0',desativado:true}), {qos:1, retain:true});
+    addLog('clog','<b style="color:#e24b4a;">COIL REMOVIDO</b> → desligado e publicado','pub');
+  }
   coils.splice(i,1);
-  renderCoils(); updateMetrics(); checkSPs(); renderGeral();
-  localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
+  renderCoils(); updateMetrics(); renderGeral();
+  saveLocal();
 }
 function allCoils(s) {
   if (!_esp32Online) {
@@ -1967,7 +1979,18 @@ function addMon(tipo) {
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
 }
-function removeMon(i) { mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral(); }
+function removeMon(i) {
+  var m = mons[i];
+  if(m && m.tipo === 'digital' && m.saidaCoil >= 0 && mqclient && mqclient.connected){
+    // Libera coil publicando config com saidaCoil=-1
+    var partes = m.topico.split('/');
+    var snNome = partes[partes.length-1];
+    var topic = getBase()+'/entradas/digital/'+snNome+'/config';
+    mqclient.publish(topic, JSON.stringify({saidaCoil:-1}), {qos:1, retain:true});
+    addLog('mlog','<b style="color:#e24b4a;">DIGITAL REMOVIDO</b> → coil liberado','pub');
+  }
+  mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral();
+}
 function toggleMonPanel(i) {
   mons[i].open = !mons[i].open;
   var p=document.getElementById('mp-'+i), a=document.getElementById('ma-'+i);
@@ -2192,6 +2215,18 @@ function atualizarBotoesSP(){
 
 function removeSP(i){
   if(isLocked('sp')){ syncSt('Desbloqueie o card SPs primeiro!','#e24b4a'); return; }
+  var sp = sps[i];
+  if(sp && mqclient && mqclient.connected){
+    var num = String(sp.numero).padStart(2,'0');
+    var base = getBase();
+    // Libera o coil alvo publicando config com saidaCoil=-1
+    var cfg = {tipo:sp.tipo,escMin:sp.escMin,escMax:sp.escMax,
+               spMin:sp.min,spMax:sp.max,entrada:'',msgA:sp.msgA,msgD:sp.msgD,saidaCoil:-1};
+    mqclient.publish(base+'/setpoints/sp'+num+'/config', JSON.stringify(cfg), {qos:1, retain:true});
+    // Publica estado 0 do SP
+    mqclient.publish(base+'/setpoints/sp'+num+'/estado', '0', {qos:1, retain:true});
+    addLog('splog','<b style="color:#e24b4a;">SP REMOVIDO</b> → coil liberado','pub');
+  }
   sps.splice(i,1); qty=sps.length; atualizarQtyLabel(); renderSPs(); updateMetrics(); renderGeral(); saveLocal();
 }
 function updateSpSels() {
