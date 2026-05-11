@@ -1697,20 +1697,45 @@ function addCoil() {
   localStorage.setItem('esp32cfg', JSON.stringify(getConfig()));
 }
 function removeCoil(i) {
-  var c = coils[i];
-  if (!c) return;
-  // Publica desligamento antes de remover
+  var coil = coils[i];
+  if (!coil) return;
   if (mqclient && mqclient.connected) {
-    var num = String(c.numero).padStart(2,'0');
+    var num = String(coil.numero).padStart(2,'0');
     var base = getBase();
-    mqclient.publish(base+'/atuadores/coil_'+num+'/comando', c.msgD, {qos:1, retain:false});
+    // Desliga o coil
     mqclient.publish(base+'/atuadores/coil_'+num+'/estado', '0', {qos:1, retain:true});
-    // Publica config com saidaCoil=-1 para liberar links SP/digital
-    mqclient.publish(base+'/atuadores/coil_'+num+'/config', JSON.stringify({msgA:'1',msgD:'0',desativado:true}), {qos:1, retain:true});
-    addLog('clog','<b style="color:#e24b4a;">COIL REMOVIDO</b> → desligado e publicado','pub');
+    mqclient.publish(base+'/atuadores/coil_'+num+'/config', JSON.stringify({desativado:true}), {qos:1, retain:true});
+    addLog('clog','<b style="color:#e24b4a;">COIL REMOVIDO</b> → desligado','pub');
+    // Desvincular digitais que apontavam para este coil
+    mons.forEach(function(m, mi){
+      if(m.tipo==='digital' && m.saidaCoil===i){
+        m.saidaCoil = -1;
+        m.invertirSaida = false;
+        var partes = m.topico.split('/');
+        var snNome = partes[partes.length-1];
+        mqclient.publish(base+'/entradas/digital/'+snNome+'/config',
+          JSON.stringify({saidaCoil:-1, invertido:false, invertirSaida:false}), {qos:1, retain:true});
+        addLog('clog','<b style="color:#ef9f27;">Digital '+m.nome+' desvinculado</b>','pub');
+      }
+    });
+    // Desvincular SPs que apontavam para este coil
+    sps.forEach(function(sp){
+      if(sp.saidaCoil===i){
+        sp.saidaCoil = -1;
+        publicarConfigSPs();
+        addLog('clog','<b style="color:#ef9f27;">SP '+sp.nome+' desvinculado</b>','pub');
+      }
+    });
   }
+  // Corrigir índices de digitais e SPs que apontavam para coils com índice maior
+  mons.forEach(function(m){
+    if(m.tipo==='digital' && m.saidaCoil > i) m.saidaCoil--;
+  });
+  sps.forEach(function(sp){
+    if(sp.saidaCoil > i) sp.saidaCoil--;
+  });
   coils.splice(i,1);
-  renderCoils(); updateMetrics(); renderGeral();
+  renderCoils(); renderMons(); renderSPs(); updateMetrics(); renderGeral();
   saveLocal();
 }
 function allCoils(s) {
@@ -2111,7 +2136,7 @@ function renderMons() {
                   +'onchange="mons['+i+'].saidaCoil=parseInt(this.value);publicarConfigDigital('+i+');saveLocal();">'
                   +'<option value="-1"'+(m.saidaCoil===-1?' selected':'')+'>Sinalizar apenas</option>'
                   +coils.map(function(c,ci){
-                    return '<option value="'+ci+'"'+(m.saidaCoil===ci?' selected':'')+'>Acionar '+c.nome+'</option>';
+                    return '<option value="'+c.numero+'"'+(m.saidaCoil===c.numero?' selected':'')+'>Acionar '+c.nome+'</option>';
                   }).join('')+
                 '</select>'
               +'</div>'
@@ -2434,7 +2459,7 @@ function renderSPs() {
             +'<select '+(isLocked('sp')?'disabled ':'')+'onchange="sps['+i+'].saidaCoil=parseInt(this.value);publicarConfigSPs();saveLocal();">'
               +'<option value="-1"'+(sps[i].saidaCoil===-1?' selected':'')+'>SP próprio</option>'
               +coils.map(function(c,ci){
-                return '<option value="'+ci+'"'+(sps[i].saidaCoil===ci?' selected':'')+'>'+c.nome+'</option>';
+                return '<option value="'+c.numero+'"'+(sps[i].saidaCoil===c.numero?' selected':'')+'>'+c.nome+'</option>';
               }).join('')+
             '</select>'
           +'</div>'
