@@ -2246,8 +2246,16 @@ function addSP(){
 function removeSPLast(){
   if(isLocked('sp')){ syncSt('Desbloqueie os SPs primeiro (🔒 LOCKED)','#e24b4a'); return; }
   if(sps.length===0){ syncSt('Nenhum SP para remover','#8b949e'); return; }
+  var sp = sps[sps.length-1];
+  if(sp && mqclient && mqclient.connected){
+    var num = String(sp.numero).padStart(2,'0');
+    var base = getBase();
+    mqclient.publish(base+'/setpoints/sp'+num+'/estado', '0', {qos:1, retain:true});
+    mqclient.publish(base+'/setpoints/sp'+num+'/config', JSON.stringify({desativado:true}), {qos:1, retain:true});
+    addLog('clog','<b style="color:#e24b4a;">SP REMOVIDO</b> → desligado e publicado','pub');
+    syncSt('SP removido — desligado','#e24b4a');
+  }
   sps.pop(); qty=sps.length; atualizarQtyLabel(); atualizarBotoesSP(); renderSPs(); updateMetrics(); renderGeral(); saveLocal();
-  syncSt('Último SP removido','#ef9f27');
 }
 
 function atualizarBotoesSP(){
