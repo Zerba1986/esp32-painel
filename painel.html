@@ -867,8 +867,10 @@ function aplicarConfig(c, preservarEstado) {
   }
   if (Array.isArray(c.mons)) mons = c.mons.map(function(m){
     if(m.tipo==='digital'){
-      if(m.labelHigh===undefined) m.labelHigh='HIGH';
-      if(m.labelLow ===undefined) m.labelLow ='LOW';
+      if(m.labelHigh===undefined)    m.labelHigh    = 'HIGH';
+      if(m.labelLow ===undefined)    m.labelLow     = 'LOW';
+      if(m.saidaCoil===undefined)    m.saidaCoil    = -1;
+      if(m.invertirSaida===undefined) m.invertirSaida = false;
     }
     return m;
   });
@@ -984,8 +986,9 @@ function publicarConfigDigital(i) {
   // valT="0" → invertido, valT="1" → normal
   var invertido = (m.valT === '0' || m.valT === 'false' || m.valT === '0' );
   var cfg = {
-    saidaCoil: m.saidaCoil !== undefined ? m.saidaCoil : -1,
-    invertido:  invertido
+    saidaCoil:    m.saidaCoil !== undefined ? m.saidaCoil : -1,
+    invertido:    (m.valT === '0' || m.valT === 'false'),
+    invertirSaida: m.invertirSaida || false
   };
   var base = getBase();
   var partes = m.topico.split('/');
@@ -1995,7 +1998,7 @@ function addMon(tipo) {
   var i = mons.length, base = getBase();
   mons.push(tipo==='analog'
     ? {tipo:'analog', nome:'Sensor '+(i+1), topico:base+'/telemetria', jsonKey:'volt', unid:'V', min:0, max:3.3, val:0, open:true}
-    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/btn_01', jsonKey:'btn_01', valT:'1', valF:'0', estado:false, open:true, labelHigh:'HIGH', labelLow:'LOW', saidaCoil:-1}
+    : {tipo:'digital', nome:'Entrada '+(i+1), topico:base+'/entradas/digital/sn01', jsonKey:'sn01', valT:'1', valF:'0', estado:false, open:true, labelHigh:'HIGH', labelLow:'LOW', saidaCoil:-1, invertirSaida:false}
   );
   renderMons(); updateMetrics(); updateSpSels(); renderGeral();
   if (mqclient && mqclient.connected) mqclient.subscribe(mons[i].topico, {qos:1});
@@ -2003,12 +2006,19 @@ function addMon(tipo) {
 function removeMon(i) {
   var m = mons[i];
   if(m && m.tipo === 'digital' && m.saidaCoil >= 0 && mqclient && mqclient.connected){
-    // Libera coil publicando config com saidaCoil=-1
     var partes = m.topico.split('/');
     var snNome = partes[partes.length-1];
-    var topic = getBase()+'/entradas/digital/'+snNome+'/config';
-    mqclient.publish(topic, JSON.stringify({saidaCoil:-1}), {qos:1, retain:true});
-    addLog('mlog','<b style="color:#e24b4a;">DIGITAL REMOVIDO</b> → coil liberado','pub');
+    var base = getBase();
+    // Publica estado 0 no coil alvo
+    var coil = coils[m.saidaCoil];
+    if(coil){
+      var num = String(coil.numero).padStart(2,'0');
+      mqclient.publish(base+'/atuadores/coil_'+num+'/estado', '0', {qos:1, retain:true});
+    }
+    // Libera link digital→coil
+    var topic = base+'/entradas/digital/'+snNome+'/config';
+    mqclient.publish(topic, JSON.stringify({saidaCoil:-1, invertido:false, invertirSaida:false}), {qos:1, retain:true});
+    addLog('mlog','<b style="color:#e24b4a;">DIGITAL REMOVIDO</b> → coil liberado + estado 0','pub');
   }
   mons.splice(i,1); renderMons(); updateMetrics(); updateSpSels(); checkSPs(); renderGeral();
 }
@@ -2105,7 +2115,20 @@ function renderMons() {
                   }).join('')+
                 '</select>'
               +'</div>'
-              +(m.saidaCoil>=0?'<div style="font-size:11px;color:#ef9f27;align-self:flex-end;padding-bottom:6px;">⚡ OR lógico — HIGH aciona, LOW libera</div>':'')+
+              +(m.saidaCoil>=0
+                ? '<div class="col">'
+                    +'<label class="lbl">Saída invertida</label>'
+                    +'<div class="row" style="gap:6px;align-items:center;margin-top:4px;">'
+                      +'<input type="checkbox" id="dninv-'+i+'" '+(m.invertirSaida?'checked ':'')+
+                        (isLocked('mon')?'disabled ':'')
+                        +'onchange="mons['+i+'].invertirSaida=this.checked;publicarConfigDigital('+i+');saveLocal();">'
+                      +'<label for="dninv-'+i+'" style="font-size:11px;color:#ef9f27;cursor:pointer;">'
+                        +(m.invertirSaida?'HIGH desaciona':'HIGH aciona')
+                      +'</label>'
+                    +'</div>'
+                  +'</div>'
+                : ''
+              )+
             +'</div>'
             +'<div style="font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Labels do Dashboard</div>'
             +'<div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:8px;">'
