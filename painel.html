@@ -980,14 +980,18 @@ function publicarConfigDigital(i) {
   if (!mqclient || !mqclient.connected) return;
   var m = mons[i];
   if (!m || m.tipo !== 'digital') return;
-  var cfg = { saidaCoil: m.saidaCoil !== undefined ? m.saidaCoil : -1 };
+  var cfg = {
+    saidaCoil: m.saidaCoil !== undefined ? m.saidaCoil : -1,
+    valT:      m.valT || '1',   // valor que significa HIGH/ativo
+    valF:      m.valF || '0',   // valor que significa LOW/inativo
+    estadoAtual: m.ultimoVal !== undefined ? m.ultimoVal : null
+  };
   var base = getBase();
-  // Extrai o nome do tópico digital (ex: sn01 de base/entradas/digital/sn01)
   var partes = m.topico.split('/');
   var snNome = partes[partes.length-1];
   var topic = base+'/entradas/digital/'+snNome+'/config';
   mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
-  addLog('mlog','<b style="color:#3fb950;">CFG DIG</b> <code style="color:#79c0ff;">'+topic+'</code> saidaCoil=<b>'+(cfg.saidaCoil>=0?coils[cfg.saidaCoil]?coils[cfg.saidaCoil].nome:'Coil '+(cfg.saidaCoil+1):'sinalizar')+'</b>','pub');
+  addLog('mlog','<b style="color:#3fb950;">CFG DIG</b> <code style="color:#79c0ff;">'+topic+'</code> saidaCoil=<b>'+(cfg.saidaCoil>=0?coils[cfg.saidaCoil]?coils[cfg.saidaCoil].nome:'Coil '+(cfg.saidaCoil+1):'sinalizar')+'</b> valT='+cfg.valT+' valF='+cfg.valF,'pub');
 }
 
 function salvarNuvem() {
@@ -1507,6 +1511,8 @@ function inverterLogicaDigital(i) {
   if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
   if(inpT)   inpT.value = m.valT;
   if(inpF)   inpF.value = m.valF;
+  // Publica nova config com valT/valF invertidos ao ESP32
+  if(m.saidaCoil >= 0) publicarConfigDigital(i);
   saveLocal();
 }
 
