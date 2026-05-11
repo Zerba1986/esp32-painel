@@ -980,18 +980,19 @@ function publicarConfigDigital(i) {
   if (!mqclient || !mqclient.connected) return;
   var m = mons[i];
   if (!m || m.tipo !== 'digital') return;
+  // Lógica simples: invertido=true significa que 0=ativo, invertido=false significa 1=ativo
+  // valT="0" → invertido, valT="1" → normal
+  var invertido = (m.valT === '0' || m.valT === 'false' || m.valT === '0' );
   var cfg = {
     saidaCoil: m.saidaCoil !== undefined ? m.saidaCoil : -1,
-    valT:      m.valT || '1',   // valor que significa HIGH/ativo
-    valF:      m.valF || '0',   // valor que significa LOW/inativo
-    estadoAtual: m.ultimoVal !== undefined ? m.ultimoVal : null
+    invertido:  invertido
   };
   var base = getBase();
   var partes = m.topico.split('/');
   var snNome = partes[partes.length-1];
   var topic = base+'/entradas/digital/'+snNome+'/config';
   mqclient.publish(topic, JSON.stringify(cfg), {qos:1, retain:true});
-  addLog('mlog','<b style="color:#3fb950;">CFG DIG</b> <code style="color:#79c0ff;">'+topic+'</code> saidaCoil=<b>'+(cfg.saidaCoil>=0?coils[cfg.saidaCoil]?coils[cfg.saidaCoil].nome:'Coil '+(cfg.saidaCoil+1):'sinalizar')+'</b> valT='+cfg.valT+' valF='+cfg.valF,'pub');
+  addLog('mlog','<b style="color:#3fb950;">CFG DIG</b> <code style="color:#79c0ff;">'+topic+'</code> saidaCoil=<b>'+(cfg.saidaCoil>=0?coils[cfg.saidaCoil]?coils[cfg.saidaCoil].nome:'Coil '+(cfg.saidaCoil+1):'sinalizar')+'</b> invertido='+invertido,'pub');
 }
 
 function salvarNuvem() {
@@ -1500,19 +1501,13 @@ function inverterLogicaDigital(i) {
   // Atualiza badge, dval e linha de status diretamente no DOM
   var badge  = document.getElementById('dbadge-'+i);
   var dval   = document.getElementById('dval-'+i);
-  var stLine = document.getElementById('dstline-'+i);
-  var inpT   = document.getElementById('inp-valt-'+i);
-  var inpF   = document.getElementById('inp-valf-'+i);
   var raw    = document.getElementById('draw-'+i);
   var sc = m.estado ? {bg:'#0f2d1a',bd:'#3fb950',tx:'#7ee787'} : {bg:'#1c1c1a',bd:'#8b949e',tx:'#c9d1d9'};
   if(badge){ badge.textContent=m.estado?(m.labelHigh||'HIGH'):(m.labelLow||'LOW'); badge.style.background=sc.bg; badge.style.color=sc.tx; badge.style.borderColor=sc.bd; }
   if(dval)   dval.textContent = m.estado ? m.valT : m.valF;
   if(raw)    { raw.textContent = m.ultimoVal !== undefined ? m.ultimoVal : '---'; raw.style.color = m.ultimoVal !== undefined ? '#79c0ff' : '#5a6478'; }
-  if(stLine) stLine.innerHTML = 'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW';
-  if(inpT)   inpT.value = m.valT;
-  if(inpF)   inpF.value = m.valF;
-  // Publica nova config com valT/valF invertidos ao ESP32
-  if(m.saidaCoil >= 0) publicarConfigDigital(i);
+  // Atualiza badge de lógica
+  renderMons();
   saveLocal();
 }
 
@@ -2131,35 +2126,18 @@ function renderMons() {
                     +'saveLocal();">'
               +'</div>'
             +'</div>'
-            +'<div class="row" style="gap:12px;flex-wrap:wrap;">'
+            +'<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end;">'
               +'<div class="col">'
-                +'<label class="lbl">🟢 Valor que indica HIGH</label>'
-                +'<input type="text" id="inp-valt-'+i+'" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valT+'" style="width:70px;" '
-                  +'placeholder="ex: 1" '
-                  +'oninput="'
-                    +'if(this.value===mons['+i+'].valF){syncSt(\'HIGH e LOW não podem ser iguais\',\'#e24b4a\');return;}'
-                    +'mons['+i+'].valT=this.value;'
-                    +'atualizaEstadoDigital('+i+');'
-                    +'saveLocal();">'
-              +'</div>'
-              +'<div class="col">'
-                +'<label class="lbl">⚪ Valor que indica LOW</label>'
-                +'<input type="text" id="inp-valf-'+i+'" '+(isLocked('mon')?'readonly ':'')+'value="'+m.valF+'" style="width:70px;" '
-                  +'placeholder="ex: 0" '
-                  +'oninput="'
-                    +'if(this.value===mons['+i+'].valT){syncSt(\'HIGH e LOW não podem ser iguais\',\'#e24b4a\');return;}'
-                    +'mons['+i+'].valF=this.value;'
-                    +'atualizaEstadoDigital('+i+');'
-                    +'saveLocal();">'
+                +'<label class="lbl">Lógica atual</label>'
+                +'<div style="font-size:12px;padding:4px 8px;border-radius:6px;background:#0d1117;border:0.5px solid #30363d;color:'+(m.valT==='1'?'#7ee787':'#ef9f27')+';display:inline-block;">'
+                  +(m.valT==='1' ? '▲ Normal — 1 = ativo' : '▼ Invertido — 0 = ativo')+
+                '</div>'
               +'</div>'
               +'<div class="col" style="justify-content:flex-end;">'
                 +'<label class="lbl">Inverter lógica</label>'
                 +'<button class="btn-sm" '+(isLocked('mon')?'disabled ':'')
                   +'onclick="inverterLogicaDigital('+i+');">↕ Inverter</button>'
               +'</div>'
-            +'</div>'
-            +'<div id="dstline-'+i+'" style="font-size:10px;color:#8b949e;margin-top:8px;background:#0d1117;border-radius:4px;padding:6px 8px;">'
-              +'Estado atual: mensagem <code style="color:#79c0ff;">"'+m.valT+'"</code> → HIGH &nbsp;|&nbsp; <code style="color:#79c0ff;">"'+m.valF+'"</code> → LOW'
             +'</div>'
           +'</div>'
         +'</div>';
