@@ -2246,11 +2246,10 @@ function removeSP(i){
   if(sp && mqclient && mqclient.connected){
     var num = String(sp.numero).padStart(2,'0');
     var base = getBase();
-    // Limpa retained do broker — publica payload vazio
-    mqclient.publish(base+'/setpoints/sp'+num+'/config',  '', {qos:1, retain:true});
-    mqclient.publish(base+'/setpoints/sp'+num+'/estado',  '0', {qos:1, retain:true});
-    mqclient.publish(base+'/setpoints/sp'+num+'/comando', '', {qos:1, retain:true});
-    addLog('splog','<b style="color:#e24b4a;">SP REMOVIDO</b> → flash + broker limpos','pub');
+    // Igual ao coil — publica flag excluido para o ESP32 limpar tudo
+    mqclient.publish(base+'/setpoints/sp'+num+'/config', JSON.stringify({excluido:true}), {qos:1, retain:true});
+    mqclient.publish(base+'/setpoints/sp'+num+'/estado', '0', {qos:1, retain:true});
+    addLog('splog','<b style="color:#e24b4a;">SP REMOVIDO</b> → desligado e publicado','pub');
   }
   sps.splice(i,1); qty=sps.length; atualizarQtyLabel(); renderSPs(); updateMetrics(); renderGeral(); saveLocal();
 }
