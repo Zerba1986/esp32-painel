@@ -2246,10 +2246,10 @@ function removeSP(i){
   if(sp && mqclient && mqclient.connected){
     var num = String(sp.numero).padStart(2,'0');
     var base = getBase();
-    // Igual ao coil — publica flag excluido para o ESP32 limpar tudo
-    mqclient.publish(base+'/setpoints/sp'+num+'/config', JSON.stringify({excluido:true}), {qos:1, retain:true});
-    mqclient.publish(base+'/setpoints/sp'+num+'/estado', '0', {qos:1, retain:true});
-    addLog('splog','<b style="color:#e24b4a;">SP REMOVIDO</b> → desligado e publicado','pub');
+    mqclient.publish(base+'/setpoints/sp'+num+'/estado',  '0',  {qos:1, retain:true});
+    mqclient.publish(base+'/setpoints/sp'+num+'/config',  JSON.stringify({desativado:true}), {qos:1, retain:true});
+    addLog('clog','<b style="color:#e24b4a;">SP REMOVIDO</b> → desligado e publicado','pub');
+    syncSt('SP removido — desligado','#e24b4a');
   }
   sps.splice(i,1); qty=sps.length; atualizarQtyLabel(); renderSPs(); updateMetrics(); renderGeral(); saveLocal();
 }
