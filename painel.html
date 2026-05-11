@@ -1813,6 +1813,27 @@ function renderCoils() {
 
           +'<button class="btn-r'+(!c.estado?' on':'')+'" onclick="setCoil('+i+',false)">&#11015; DESLIGA</button>'
 
+          // Badge de fontes ativas
+          +(function(){
+            var fontes = [];
+            // Verifica SPs apontando para este coil
+            for(var si=0; si<qty; si++){
+              if(sps[si] && sps[si].saidaCoil===i && sps[si].estado){
+                fontes.push('<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#2d2010;color:#ffc060;border:0.5px solid #ef9f27;">SP'+String(sps[si].numero).padStart(2,'0')+'</span>');
+              }
+            }
+            // Verifica digitais apontando para este coil
+            mons.forEach(function(m,mi){
+              if(m.tipo==='digital' && m.saidaCoil===i && m.estado){
+                fontes.push('<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;">'+m.nome+'</span>');
+              }
+            });
+            if(fontes.length > 0){
+              return '<span title="Coil segurado por estas fontes" style="font-size:10px;color:#ef9f27;display:flex;align-items:center;gap:3px;">🔒 '+fontes.join('')+'</span>';
+            }
+            return '';
+          })()
+
           +(
             !isLocked('coil')
             ? '<button class="btn-del" onclick="removeCoil('+i+')">&#10005;</button>'
