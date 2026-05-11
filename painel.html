@@ -1708,7 +1708,7 @@ function removeCoil(i) {
     addLog('clog','<b style="color:#e24b4a;">COIL REMOVIDO</b> → desligado','pub');
     // Desvincular digitais que apontavam para este coil
     mons.forEach(function(m, mi){
-      if(m.tipo==='digital' && m.saidaCoil===i){
+      if(m.tipo==='digital' && m.saidaCoil===coil.numero){
         m.saidaCoil = -1;
         m.invertirSaida = false;
         var partes = m.topico.split('/');
@@ -1720,7 +1720,7 @@ function removeCoil(i) {
     });
     // Desvincular SPs que apontavam para este coil
     sps.forEach(function(sp){
-      if(sp.saidaCoil===i){
+      if(sp.saidaCoil===coil.numero){
         sp.saidaCoil = -1;
         publicarConfigSPs();
         addLog('clog','<b style="color:#ef9f27;">SP '+sp.nome+' desvinculado</b>','pub');
@@ -1729,10 +1729,10 @@ function removeCoil(i) {
   }
   // Corrigir índices de digitais e SPs que apontavam para coils com índice maior
   mons.forEach(function(m){
-    if(m.tipo==='digital' && m.saidaCoil > i) m.saidaCoil--;
+    // saidaCoil agora usa numero do coil — não precisa reindexar
   });
   sps.forEach(function(sp){
-    if(sp.saidaCoil > i) sp.saidaCoil--;
+    // saidaCoil agora usa numero do coil — não precisa reindexar
   });
   coils.splice(i,1);
   renderCoils(); renderMons(); renderSPs(); updateMetrics(); renderGeral();
@@ -1845,15 +1845,16 @@ function renderCoils() {
           // Badge de fontes ativas
           +(function(){
             var fontes = [];
-            // Verifica SPs apontando para este coil
+            var cNum = coils[i] ? coils[i].numero : -1;
+            // Verifica SPs apontando para este coil (por número)
             for(var si=0; si<qty; si++){
-              if(sps[si] && sps[si].saidaCoil===i && sps[si].estado){
+              if(sps[si] && sps[si].saidaCoil===cNum && sps[si].estado){
                 fontes.push('<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#2d2010;color:#ffc060;border:0.5px solid #ef9f27;">SP'+String(sps[si].numero).padStart(2,'0')+'</span>');
               }
             }
-            // Verifica digitais apontando para este coil
+            // Verifica digitais apontando para este coil (por número)
             mons.forEach(function(m,mi){
-              if(m.tipo==='digital' && m.saidaCoil===i && m.estado){
+              if(m.tipo==='digital' && m.saidaCoil===cNum && m.estado){
                 fontes.push('<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#0d1f3c;color:#79c0ff;border:0.5px solid #58a6ff;">'+m.nome+'</span>');
               }
             });
