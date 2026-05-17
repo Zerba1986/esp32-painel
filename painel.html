@@ -1727,9 +1727,7 @@ function conectarMQTT() {
         +'<span style="color:#8b949e;margin-left:8px;">'+ts+'</span>'
         +'<span style="color:#5a6478;margin-left:8px;font-size:10px;">painel solicitou sincronização → ESP32 aplicará pinos e republicará estados</span>',
         'pub');
-      // Envia configs ao ESP32
-      publicarConfigCoils();
-      publicarConfigSPs();
+      // Sync enviado — configs já estão no flash do ESP32
     }, 2000);
     // Timer de segurança: se /status não chegar em 5s, aplica buffer mesmo assim
     setTimeout(function(){
