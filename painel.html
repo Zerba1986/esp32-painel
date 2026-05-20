@@ -289,6 +289,7 @@ code{color:var(--blu3);font-family:inherit;}
       <div class="row">
         <button class="btn-r" style="font-size:11px;padding:4px 10px;" onclick="allCoils(false)">Todos OFF</button>
         <button class="btn-g" style="font-size:11px;padding:4px 10px;" onclick="allCoils(true)">Todos ON</button>
+        <select id="sel-coil-num" style="padding:4px 8px;border-radius:5px;border:1px solid var(--bord);background:var(--bg);color:var(--tx);font-size:12px;width:70px;"></select>
         <button class="btn-b" id="btn-add-coil" onclick="addCoil()">+ Coil</button>
         <button class="btn-lock" id="btn-lock-coils" onclick="toggleLock('coils')"
           style="background:var(--red);color:#fff;">🔒 LOCKED</button>
@@ -458,14 +459,39 @@ function updateBase(){
 function updateTopics(){
   var b=getBase();
   var items=[
-    ['telemetria', b+'/telemetria'],
-    ['status',     b+'/status'],
-    ['sync',       b+'/sync'],
-    ['coil_01/cmd',b+'/atuadores/coil_01/comando'],
-    ['sp01/cmd',   b+'/setpoints/sp01/comando'],
+    ['telemetria',   b+'/telemetria'],
+    ['status',       b+'/status'],
+    ['sync',         b+'/sync'],
+    ['ota/url',      b+'/ota/url'],
+    ['ota/status',   b+'/ota/status'],
+    ['──── Coils ────',''],
   ];
+  for(var i=1;i<=5;i++){
+    var n=String(i).padStart(2,'0');
+    items.push(['coil_'+n+'/cmd', b+'/atuadores/coil_'+n+'/comando']);
+    items.push(['coil_'+n+'/est', b+'/atuadores/coil_'+n+'/estado']);
+    items.push(['coil_'+n+'/cfg', b+'/atuadores/coil_'+n+'/config']);
+  }
+  items.push(['──── Set Points ────','']);
+  for(var i=1;i<=5;i++){
+    var n=String(i).padStart(2,'0');
+    items.push(['sp'+n+'/cmd', b+'/setpoints/sp'+n+'/comando']);
+    items.push(['sp'+n+'/est', b+'/setpoints/sp'+n+'/estado']);
+    items.push(['sp'+n+'/cfg', b+'/setpoints/sp'+n+'/config']);
+  }
+  items.push(['──── Digitais ────','']);
+  for(var i=1;i<=4;i++){
+    var n=String(i).padStart(2,'0');
+    items.push(['sn'+n,        b+'/entradas/digital/sn'+n]);
+    items.push(['sn'+n+'/cfg', b+'/entradas/digital/sn'+n+'/config']);
+  }
+  items.push(['──── Sensores ────','']);
+  items.push(['dht',    b+'/sensores/dht']);
+  items.push(['bmp280', b+'/sensores/bmp280']);
+
   document.getElementById('topic-list').innerHTML = items.map(function(x){
-    return '<div><span style="color:var(--tx3);display:inline-block;min-width:100px;">'+x[0]+':</span><code>'+x[1]+'</code></div>';
+    if(!x[1]) return '<div style="margin-top:8px;font-size:10px;color:var(--tx3);font-weight:700;letter-spacing:1px;">'+x[0]+'</div>';
+    return '<div><span style="color:var(--tx3);display:inline-block;min-width:130px;">'+x[0]+':</span><code>'+x[1]+'</code></div>';
   }).join('');
 }
 
@@ -738,7 +764,12 @@ function processarMsg(topic, msg){
           if(novo!==m.estado){ m.estado=novo; atualizaDigital(mi); }
         }
       });
-      addLog('mlog','<b style="color:var(--tx2);">TEL</b> <code>'+topic+'</code> → version='+tel.version+' · an01='+tel.an01,'sub');
+      // Log dinâmico com todos os analógicos presentes
+      var logParts=['version='+tel.version, 'rssi='+tel.rssi, 'uptime='+tel.uptime];
+      mons.forEach(function(m){
+        if(m.tipo==='analog'&&tel[m.jsonKey]!==undefined) logParts.push(m.jsonKey+'='+tel[m.jsonKey]);
+      });
+      addLog('mlog','<b style="color:var(--tx2);">TEL</b> <code>'+topic+'</code> → '+logParts.join(' · '),'sub');
     }catch(e){}
     return;
   }
@@ -793,8 +824,12 @@ function processarOTA(msg){
 // ══════════════════════════════════════════════════════
 function addCoil(){
   if(coils.length>=MAX_COILS){ toast('Limite de '+MAX_COILS+' coils','var(--red)'); return; }
-  var num=_coilNum++;
+  var sel=document.getElementById('sel-coil-num');
+  var num=sel?parseInt(sel.value)||1:_coilNum;
+  // Verifica se número já existe
+  if(coils.some(function(c){ return c.numero===num; })){ toast('Coil '+num+' já existe','var(--red)'); return; }
   coils.push({numero:num, nome:'Coil '+String(num).padStart(2,'0'), pino:2, estado:false, msgA:'1', msgD:'0', open:true});
+  _coilNum=Math.max(_coilNum, num+1);
   renderCoils(); updateMetrics(); renderGeral(); saveLocal();
 }
 
@@ -843,6 +878,15 @@ function renderCoils(){
   var el=document.getElementById('coils-list'); if(!el) return;
   var btnAdd=document.getElementById('btn-add-coil');
   if(btnAdd){ btnAdd.disabled=coils.length>=MAX_COILS||locked.coils; }
+  // Atualiza select com números disponíveis
+  var sel=document.getElementById('sel-coil-num');
+  if(sel){
+    var usados=coils.map(function(c){ return c.numero; });
+    var disponiveis=[];
+    for(var n=1;n<=MAX_COILS;n++){ if(usados.indexOf(n)<0) disponiveis.push(n); }
+    sel.innerHTML=disponiveis.map(function(n){ return '<option value="'+n+'">'+String(n).padStart(2,'0')+'</option>'; }).join('');
+    sel.disabled=locked.coils;
+  }
   if(!coils.length){ el.innerHTML='<p style="color:var(--tx2);">Nenhum coil. Clique em + Coil.</p>'; return; }
   el.innerHTML='';
   var coilsOrdenados=[].concat(coils).sort(function(a,b){return a.numero-b.numero;});
@@ -1258,7 +1302,7 @@ function renderSPs(){
         +'<div style="background:var(--bg2);border-radius:6px;padding:10px;">'
           +'<div style="font-size:10px;color:var(--tx2);font-weight:700;margin-bottom:6px;">LÓGICA DE SAÍDA</div>'
           +'<div class="row" style="gap:8px;">'
-            +'<input type="checkbox" id="spinv-'+i+'" '+(sp.invertirSaida?'checked ':'')+(!locked.sp?'':'disabled ')+'onchange="sps['+i+'].invertirSaida=this.checked;publicarConfigSP('+i+');saveLocal();">'
+            +'<input type="checkbox" id="spinv-'+i+'" '+(sp.invertirSaida?'checked ':'')+(!locked.sp?'':'disabled ')+'onchange="sps['+i+'].invertirSaida=this.checked;sps['+i+']._ultimo=null;publicarConfigSP('+i+');checkSPs();saveLocal();">'
             +'<label for="spinv-'+i+'" style="font-size:12px;color:'+(sp.invertirSaida?'var(--amb3)':'var(--tx2)')+';cursor:pointer;">'+(sp.invertirSaida?'⚡ Invertido — acionado = saída OFF':'Normal — acionado = saída ON')+'</label>'
           +'</div>'
         +'</div>'
