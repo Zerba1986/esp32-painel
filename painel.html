@@ -1243,7 +1243,11 @@ function checkSPs(){
     var msg=saidaFinal?'1':'0';
     if(msg!==sp._ultimo){
       sp._ultimo=msg;
-      if(sp.saidaCoil>=0) mqPub(getBase()+'/setpoints/sp'+String(sp.numero).padStart(2,'00')+'/comando',msg);
+      // SP próprio — painel envia comando diretamente
+      // SP→Coil — firmware controla via avaliarSPs, painel não interfere
+      if(sp.saidaCoil<0){
+        mqPub(getBase()+'/setpoints/sp'+String(sp.numero).padStart(2,'00')+'/comando',msg);
+      }
     }
     if(sp.estado) ac++;
   });
