@@ -47,23 +47,12 @@ html,body{height:100%;background:#0d1117;font-family:sans-serif;color:#e8eaf0;}
   </div>
 </div>
 <script>
-// Credenciais padrão — usadas apenas na primeira vez
-// Após configurar em Config do painel, usa as do localStorage
-var USUARIO_PADRAO = "admin";
+// Credenciais fixas — iguais em todos os computadores
+var USUARIO_PADRAO = "joazeirofelipe";
 var SENHA_PADRAO   = "1234";
 
 function getSenhaAcesso() {
-  try {
-    var raw = localStorage.getItem('esp32creds');
-    if (!raw) return { usuario: USUARIO_PADRAO, senha: SENHA_PADRAO };
-    var c = JSON.parse(atob(raw));
-    return {
-      usuario: c.mqttUser    || USUARIO_PADRAO,
-      senha:   c.senhaAcesso || SENHA_PADRAO
-    };
-  } catch(e) {
-    return { usuario: USUARIO_PADRAO, senha: SENHA_PADRAO };
-  }
+  return { usuario: USUARIO_PADRAO, senha: SENHA_PADRAO };
 }
 
 function login() {
