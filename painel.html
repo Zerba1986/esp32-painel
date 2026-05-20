@@ -205,8 +205,11 @@ code{color:var(--blu3);font-family:inherit;}
       <div class="col"><label class="lbl">Device ID</label><input type="text" id="cfg-d" value="esp32_01" oninput="updateBase()"></div>
     </div>
     <div style="background:var(--bg);border-radius:5px;padding:8px 10px;">
-      <div style="font-size:10px;color:var(--tx2);font-weight:700;margin-bottom:5px;">TÓPICOS BASE</div>
-      <div id="topic-list" style="font-size:11px;color:var(--tx2);line-height:1.8;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:5px;" onclick="toggleTopicos()">
+        <div style="font-size:10px;color:var(--tx2);font-weight:700;">TÓPICOS BASE</div>
+        <span id="arr-topicos" style="font-size:10px;color:var(--tx2);transition:transform .2s;display:inline-block;">▶</span>
+      </div>
+      <div id="topic-list" style="font-size:11px;color:var(--tx2);line-height:1.8;overflow:hidden;max-height:0;transition:max-height .3s ease;"></div>
     </div>
   </div>
 
@@ -330,7 +333,8 @@ code{color:var(--blu3);font-family:inherit;}
       <div class="sh" style="margin:0;">set points de controle</div>
       <div class="row">
         <button class="btn-sm" onclick="removeSPLast()">− SP</button>
-        <button class="btn-b"  onclick="addSP()">+ SP</button>
+        <select id="sel-sp-num" style="padding:4px 8px;border-radius:5px;border:1px solid var(--bord);background:var(--bg);color:var(--tx);font-size:12px;width:70px;"></select>
+        <button class="btn-b" onclick="addSP()">+ SP</button>
         <button class="btn-lock" id="btn-lock-sp" onclick="toggleLock('sp')"
           style="background:var(--red);color:#fff;">🔒 LOCKED</button>
       </div>
@@ -448,6 +452,15 @@ function getBase(){
 }
 function gct(num,t){ return getBase()+'/atuadores/coil_'+String(num).padStart(2,'0')+'/'+t; }
 function gst(num,t){ return getBase()+'/setpoints/sp'+String(num).padStart(2,'00')+'/'+t; }
+
+function toggleTopicos(){
+  var el=document.getElementById('topic-list');
+  var arr=document.getElementById('arr-topicos');
+  if(!el) return;
+  var open=el.style.maxHeight&&el.style.maxHeight!=='0px';
+  el.style.maxHeight=open?'0':'600px';
+  if(arr) arr.style.transform=open?'rotate(0)':'rotate(90deg)';
+}
 
 function updateBase(){
   var b=getBase();
@@ -593,7 +606,9 @@ function subscrever(){
     b+'/atuadores/+/estado',
     b+'/setpoints/+/estado',
     b+'/entradas/digital/+',
-    b+'/ota/status'
+    b+'/ota/status',
+    b+'/sensores/dht',
+    b+'/sensores/bmp280'
   ];
   mons.forEach(function(m){
     if(m.tipo==='analog'&&m.topico&&tops.indexOf(m.topico)<0) tops.push(m.topico);
@@ -719,6 +734,23 @@ function processarMsg(topic, msg){
       }
       addLog('mlog','<b style="color:var(--amb);">'+snKey.toUpperCase()+'</b> → <b style="color:'+(novo?'var(--grn3)':'var(--red3)')+';">'+(novo?'HIGH':'LOW')+'</b> ('+msg+')','sub');
     });
+    return;
+  }
+  // Sensores extras (DHT, BMP280)
+  if(topic.endsWith('/sensores/dht')||topic.endsWith('/sensores/bmp280')){
+    try{
+      var sen=JSON.parse(msg);
+      Object.keys(sen).forEach(function(key){
+        var val=parseFloat(sen[key]);
+        if(isNaN(val)) return;
+        mons.forEach(function(m,mi){
+          if(m.tipo==='analog'&&m.jsonKey===key){
+            m.val=val; atualizaAnalogico(mi,val);
+          }
+        });
+      });
+      addLog('mlog','<b style="color:var(--tx2);">SENSOR</b> <code>'+topic+'</code> → '+msg.substring(0,60),'sub');
+    }catch(e){}
     return;
   }
   // Telemetria
@@ -1133,10 +1165,13 @@ function renderMons(){
 // ══════════════════════════════════════════════════════
 function addSP(){
   if(sps.length>=MAX_SPS){ toast('Limite de '+MAX_SPS+' SPs','var(--red)'); return; }
-  var num=_spNum++;
+  var sel=document.getElementById('sel-sp-num');
+  var num=sel?parseInt(sel.value)||1:_spNum;
+  if(sps.some(function(s){ return s.numero===num; })){ toast('SP '+num+' já existe','var(--red)'); return; }
   sps.push({numero:num, nome:'SP'+String(num).padStart(2,'00'), tipo:0, monIdx:-1,
     escMin:0, escMax:100, min:20, max:80, cor:sps.length%CORES.length,
-    saidaCoil:-1, invertirSaida:false, estado:false, open:true, _ultimo:null});
+    saidaCoil:-1, invertirSaida:false, estado:false, open:true, _ultimo:null, _deveAcionar:false});
+  _spNum=Math.max(_spNum, num+1);
   qty=sps.length;
   renderSPs(); updateMetrics(); renderGeral(); saveLocal();
 }
@@ -1240,7 +1275,19 @@ function renderSPs(){
   var btnLock=document.getElementById('btn-lock-sp');
   if(btnLock){ btnLock.innerHTML=locked.sp?'🔒 LOCKED':'🔓 UNLOCKED'; btnLock.style.background=locked.sp?'var(--red)':'#238636'; }
 
-  sps.forEach(function(sp,i){
+  // Atualiza select com números disponíveis
+  var sel=document.getElementById('sel-sp-num');
+  if(sel){
+    var usados=sps.map(function(s){ return s.numero; });
+    var disp=[];
+    for(var n=1;n<=MAX_SPS;n++){ if(usados.indexOf(n)<0) disp.push(n); }
+    sel.innerHTML=disp.map(function(n){ return '<option value="'+n+'">'+String(n).padStart(2,'0')+'</option>'; }).join('');
+    sel.disabled=locked.sp;
+  }
+
+  // Ordenar por número
+  var spsOrdenados=[].concat(sps).sort(function(a,b){ return a.numero-b.numero; });
+  spsOrdenados.forEach(function(sp){ var i=sps.indexOf(sp);
     var c=CORES[sp.cor||0];
     var curM=mons[sp.monIdx];
     var mn=curM?curM.min:0, mx=curM?curM.max:100, un=curM?curM.unid:'';
