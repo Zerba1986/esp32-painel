@@ -35,7 +35,7 @@ input,select{font-family:inherit;font-size:12px;outline:none;}
 input[readonly]{opacity:.5;pointer-events:none;}
 
 /* ─── LAYOUT ───────────────────────────────────── */
-.wrap{max-width:1400px;padding:10px 14px;}
+.wrap{max-width:1400px;padding:10px 16px;margin:0 auto;}
 .card{background:var(--bg2);border:1px solid var(--bord);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
 .icard{background:var(--bg);border:1px solid var(--bord);border-radius:6px;padding:10px 12px;margin-bottom:6px;transition:border .2s,box-shadow .2s;}
 .icard.on{border-color:var(--grn)!important;box-shadow:0 0 12px #3fb95020;}
@@ -51,10 +51,10 @@ input[readonly]{opacity:.5;pointer-events:none;}
 .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
 
 /* ─── METRICS ──────────────────────────────────── */
-.mbox{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-.mt{background:var(--bg2);border:1px solid var(--bord);border-radius:6px;padding:8px 12px;flex:1;min-width:70px;}
+.mbox{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.mt{background:var(--bg2);border:1px solid var(--bord);border-radius:var(--r);padding:10px 14px;flex:1;min-width:80px;}
 .ml{font-size:10px;color:var(--tx2);margin-bottom:2px;}
-.mv{font-size:18px;font-weight:600;}
+.mv{font-size:20px;font-weight:700;line-height:1.2;}
 
 /* ─── TABS ─────────────────────────────────────── */
 .tabs{display:flex;gap:3px;background:var(--bg2);border-radius:var(--r);padding:4px;margin-bottom:10px;}
@@ -845,7 +845,8 @@ function renderCoils(){
   if(btnAdd){ btnAdd.disabled=coils.length>=MAX_COILS||locked.coils; }
   if(!coils.length){ el.innerHTML='<p style="color:var(--tx2);">Nenhum coil. Clique em + Coil.</p>'; return; }
   el.innerHTML='';
-  coils.forEach(function(c,i){
+  var coilsOrdenados=[].concat(coils).sort(function(a,b){return a.numero-b.numero;});
+  coilsOrdenados.forEach(function(c){ var i=coils.indexOf(c);
     var tc=gct(c.numero,'comando'), te=gct(c.numero,'estado');
     // Badge de fontes
     var fontes=[];
@@ -879,8 +880,7 @@ function renderCoils(){
         +'<div class="grid4">'
           +'<div class="col"><label class="lbl">Nome</label>'
             +'<input type="text" '+(locked.coils?'readonly ':'')+' value="'+c.nome+'" oninput="coils['+i+'].nome=this.value;var e=document.getElementById(\'cn-'+i+'\');if(e)e.textContent=this.value;saveLocal();"></div>'
-          +'<div class="col"><label class="lbl">Pino</label>'
-            +'<input type="number" '+(locked.coils?'readonly ':'')+' value="'+c.pino+'" style="width:60px;" oninput="coils['+i+'].pino=parseInt(this.value)||2;saveLocal();"></div>'
+          ''
           +'<div class="col"><label class="lbl">Msg ON</label>'
             +'<input type="text" '+(locked.coils?'readonly ':'')+' value="'+c.msgA+'" style="width:55px;" oninput="if(this.value===coils['+i+'].msgD){this.value=coils['+i+'].msgA;return;}coils['+i+'].msgA=this.value;saveLocal();"></div>'
           +'<div class="col"><label class="lbl">Msg OFF</label>'
@@ -1222,7 +1222,8 @@ function renderSPs(){
           +'</div>'
         +'</div>'
         +'<div class="row">'
-          +'<span class="tag" id="sptag-'+i+'" style="background:var(--bg3);color:var(--tx2);">aguardando</span>'
+          +'<span class="tag" id="sptag-'+i+'" style="background:var(--bg3);color:var(--tx2);border:1px solid var(--bord);">aguardando</span>'
+          +'<span class="chip" id="spbadge-'+i+'" style="background:var(--bg3);color:var(--tx2);border:1px solid var(--bord);padding:2px 10px;border-radius:5px;font-size:12px;">DESACIONADO</span>'
           +(!locked.sp?'<button class="btn-del" onclick="removeSP('+i+')">✕</button>':'')
         +'</div>'
       +'</div>'
@@ -1240,15 +1241,15 @@ function renderSPs(){
           +'<div style="font-size:10px;color:var(--tx2);font-weight:700;margin-bottom:8px;">FAIXA DE ACIONAMENTO</div>'
           +'<div class="row" style="gap:16px;flex-wrap:wrap;">'
             +'<div class="col"><label class="lbl">Min — desaciona</label>'
-              +'<div class="row" style="gap:6px;">'
-                +'<input type="range" '+(locked.sp?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sp.min+'" style="width:90px;" oninput="sps['+i+'].min=parseFloat(this.value);var e=document.getElementById(\'hmv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' '+un+'\';saveLocal();">'
-                +'<span style="font-size:12px;font-weight:500;" id="hmv-'+i+'">'+sp.min.toFixed(2)+' '+un+'</span>'
+              +'<div class="row" style="gap:4px;">'
+                +'<input type="number" '+(locked.sp?'readonly ':'')+' value="'+sp.min.toFixed(2)+'" step="0.01" style="width:80px;" oninput="sps['+i+'].min=parseFloat(this.value)||0;saveLocal();">'
+                +'<span style="font-size:11px;color:var(--tx2);">'+un+'</span>'
               +'</div>'
             +'</div>'
             +'<div class="col"><label class="lbl">Max — aciona</label>'
-              +'<div class="row" style="gap:6px;">'
-                +'<input type="range" '+(locked.sp?'disabled ':'')+' min="'+mn+'" max="'+mx+'" step="0.01" value="'+sp.max+'" style="width:90px;" oninput="sps['+i+'].max=parseFloat(this.value);var e=document.getElementById(\'hxv-'+i+'\');if(e)e.textContent=parseFloat(this.value).toFixed(2)+\' '+un+'\';saveLocal();">'
-                +'<span style="font-size:12px;font-weight:500;" id="hxv-'+i+'">'+sp.max.toFixed(2)+' '+un+'</span>'
+              +'<div class="row" style="gap:4px;">'
+                +'<input type="number" '+(locked.sp?'readonly ':'')+' value="'+sp.max.toFixed(2)+'" step="0.01" style="width:80px;" oninput="sps['+i+'].max=parseFloat(this.value)||100;saveLocal();">'
+                +'<span style="font-size:11px;color:var(--tx2);">'+un+'</span>'
               +'</div>'
             +'</div>'
           +'</div>'
@@ -1339,13 +1340,16 @@ function renderGeral(){
   // Tags SP
   sps.forEach(function(sp,i){
     var tag=document.getElementById('sptag-'+i), card=document.getElementById('spc-'+i);
+    var badge=document.getElementById('spbadge-'+i);
     if(!tag||!card) return;
     var c=CORES[sp.cor||0];
     if(sp.estado){
       tag.textContent='acionado'; tag.style.cssText='background:'+c.bg+';color:'+c.tx+';border:1px solid '+c.bd+';';
+      if(badge){ badge.textContent='ACIONADO'; badge.style.cssText='background:var(--grn2);color:var(--grn3);border:1px solid var(--grn);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:600;'; }
       card.style.border='1px solid '+c.bd; card.style.boxShadow='0 0 10px '+c.bd+'30';
     } else {
-      tag.textContent='aguardando'; tag.style.cssText='background:var(--bg3);color:var(--tx2);';
+      tag.textContent='aguardando'; tag.style.cssText='background:var(--bg3);color:var(--tx2);border:1px solid var(--bord);';
+      if(badge){ badge.textContent='DESACIONADO'; badge.style.cssText='background:var(--red2);color:var(--red3);border:1px solid var(--red);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:600;'; }
       card.style.border='1px solid var(--bord)'; card.style.boxShadow='none';
     }
   });
